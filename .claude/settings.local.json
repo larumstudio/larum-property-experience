@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(python -)",
+      "mcp__9f16e60a-e043-4b48-ad00-0e48aada9413__list_deployments",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} en %{time_total}s\\\\n\" --max-time 20 https://api.vercel.com/v2/user)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 20 https://larum-property-experience.vercel.app/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 20 https://api.vercel.com/v2/files)",
+      "Bash(curl -s --max-time 20 -X POST https://larum-property-experience.vercel.app/api/concierge -H \"Content-Type: application/json\" -d '{\"property\":\"madrid\",\"lang\":\"en\",\"question\":\"test\"}')",
+      "Bash(vercel redeploy *)",
+      "Bash(curl -s --max-time 60 -X POST https://larum-property-experience.vercel.app/api/concierge -H \"Content-Type: application/json\" -d '{\"property\":\"marbella\",\"lang\":\"es\",\"question\":\"Podria desayunar fuera en noviembre? Que tal el clima esos meses?\"}')",
+      "Bash(vercel env *)"
+    ]
+  }
+}

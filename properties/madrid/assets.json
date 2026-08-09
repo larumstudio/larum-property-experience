@@ -1,0 +1,28 @@
+{
+  "propertyId": "M1558",
+  "status": "prototype-reference",
+  "comment": "Stand-in photography, licence-cleared, chosen to match the art direction of this property (light as the organising subject, warm neutral palette). It is NOT the residence. Replace with agency material once Christie's authorises it — see properties/README.md.",
+  "authorised": false,
+  "hero": {
+    "video": null,
+    "poster": null,
+    "fallbackImage": "https://images.unsplash.com/photo-1783014619871-75f897c5ffb1?w=2400&q=78&auto=format&fit=crop",
+    "provenance": {
+      "source": "Unsplash",
+      "licence": "Unsplash License",
+      "author": "Stephen Pontes",
+      "url": "https://unsplash.com/photos/mFNrRXASu2w",
+      "delivery": "Unsplash CDN — no binary in the deployment, and the images are served from their edge."
+    }
+  },
+  "bandImage": "https://images.unsplash.com/photo-1786034293668-e64b4010fcec?w=2400&q=78&auto=format&fit=crop",
+  "bandProvenance": {
+    "source": "Unsplash",
+    "licence": "Unsplash License",
+    "author": "Sou Jest",
+    "url": "https://unsplash.com/photos/Rg3lyeixy5o"
+  },
+  "propertyFilm": null,
+  "comment_spaces": "Optional per-space media, keyed by the space names in content.sceneSpaces. Falls back to the band image when empty.",
+  "spaces": {}
+}

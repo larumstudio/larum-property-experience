@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <!-- Private prototype: never serve a stale build to a demo. -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Larum Property Experience — Private Prototype</title>
+  <link rel="stylesheet" href="styles.css?v=6" />
+  <style>
+    /* `overflow-x: hidden` here turns body into a scroll container, which
+       silently kills every smooth scroll — the chapter rail, the whole menu
+       and every jumpTo did nothing. `clip` contains the overflow without
+       creating a scroller. */
+    body { overflow-x: clip; }
+    /* Smooth scrolling belongs to the document, for in-page navigation only.
+       Applying it to every element made each programmatic scroll animate,
+       including the ones that must land instantly. */
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js?v=6"></script>
+
+  <!-- Property data: JSON under properties/ over http://, generated pack over file:// -->
+  <script src="property-pack.js?v=6"></script>
+  <script src="property-loader.js?v=6"></script>
+
+  <script src="consent.js?v=6"></script>
+  <script src="analytics.js?v=6"></script>
+  <script src="app.js?v=6"></script>
+
+  <script>
+    /* Data first, then the experience, then the consent gate. */
+    (function () {
+      LarumLoader.autoLoad().then(function (ok) {
+        if (!ok) console.warn('Larum loader:', LarumLoader.getErrors());
+        LarumApp.boot();
+        LarumConsent.init(function (accepted) {
+          /* Declining is an answer too: it has to reach analytics, or the
+             buffered events sit there waiting for a consent that never comes. */
+          if (accepted) LarumAnalytics.grantConsent();
+          else LarumAnalytics.denyConsent();
+        });
+        if (location.search.indexOf('debug') !== -1) LarumApp.debugPanel();
+      });
+    })();
+  </script>
+</body>
+</html>

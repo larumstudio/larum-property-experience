@@ -1,0 +1,290 @@
+{
+  "slug": "marbella",
+  "label": "Nueva Andalucía · Marbella",
+  "brand": "NVOGA",
+  "title": "The Private\nResort",
+  "subtitle": "A residence designed for the art of living outdoors.",
+  "intro": "Villa Casia is a sequence of outdoor rituals: arrival, water, gathering, retreat and the slow transition from afternoon light to evening.",
+  "shortRef": "Villa Casia · Nueva Andalucía",
+  "referencePrice": 3990000,
+  "defaultRegion": "Andalucía",
+  "facts": [
+    [
+      "4",
+      "BEDROOMS"
+    ],
+    [
+      "5",
+      "BATHROOMS"
+    ],
+    [
+      "710",
+      "M² BUILT"
+    ],
+    [
+      "980",
+      "M² PLOT"
+    ]
+  ],
+  "experiences": [
+    [
+      "01",
+      "The Garden",
+      "The first room is outside: landscape, shade and distance from the world."
+    ],
+    [
+      "02",
+      "The Water",
+      "A day organised around reflection, movement and the temperature of the light."
+    ],
+    [
+      "03",
+      "The Social House",
+      "A residence built for gathering — without giving up privacy."
+    ]
+  ],
+  "conciergeIntro": "I am the private digital advisor for Villa Casia. Ask me about the residence, its spaces or Nueva Andalucía.",
+  "sequences": [
+    [
+      "First light",
+      "08:06",
+      "The day begins outdoors. Garden, shade and the first reflection in the water become part of the morning ritual."
+    ],
+    [
+      "Gather",
+      "14:20",
+      "The social heart of the house opens: kitchen, living spaces and the exterior become one continuous place."
+    ],
+    [
+      "Golden hour",
+      "20:14",
+      "The water catches the last light. The villa shifts from a home into a private world for the evening."
+    ],
+    [
+      "Night garden",
+      "23:08",
+      "The noise falls away. What remains is privacy, warmth and the feeling of having nowhere else to be."
+    ]
+  ],
+  "sceneSpaces": [
+    [
+      "First light",
+      [
+        "Garden",
+        "Pool terrace",
+        "Master suite"
+      ]
+    ],
+    [
+      "Gather",
+      [
+        "Kitchen",
+        "Dining room",
+        "Outdoor lounge"
+      ]
+    ],
+    [
+      "Golden hour",
+      [
+        "Infinity pool",
+        "Terrace",
+        "Living room"
+      ]
+    ],
+    [
+      "Night garden",
+      [
+        "Spa",
+        "Cinema",
+        "Private rooms"
+      ]
+    ]
+  ],
+  "spatial": [
+    [
+      "01",
+      "Private retreat",
+      "Master suite · Private rooms"
+    ],
+    [
+      "02",
+      "Social heart",
+      "Kitchen · Dining room · Outdoor lounge"
+    ],
+    [
+      "03",
+      "Open landscape",
+      "Garden · Pool terrace · Infinity pool"
+    ]
+  ],
+  "spatialNodeDetails": {
+    "en": [
+      "The private retreat is protected from the social rhythm of the house.",
+      "The social heart connects kitchen, dining and outdoor life.",
+      "The landscape is not a background; it is the largest room."
+    ],
+    "es": [
+      "El retiro privado queda protegido del ritmo social de la casa.",
+      "El corazón social conecta cocina, comedor y vida exterior.",
+      "El paisaje no es un fondo: es la estancia más grande."
+    ]
+  },
+  "dna": {
+    "title": "The Private Resort",
+    "intro": "A residence shaped by outdoor life, water and gathering — with enough privacy to make the entire property feel like a world of its own.",
+    "dimensions": [
+      {
+        "label": "Outdoor life",
+        "score": "97",
+        "note": {
+          "en": "The first room has no ceiling. The day begins in the garden and ends beside the water; the house is where you go to sleep.",
+          "es": "La primera estancia no tiene techo. El día empieza en el jardín y termina junto al agua; la casa es donde vas a dormir."
+        }
+      },
+      {
+        "label": "Privacy",
+        "score": "94",
+        "note": {
+          "en": "No neighbours to greet, no windows to close. The property does not sit within a landscape — it contains one.",
+          "es": "Ningún vecino al que saludar, ninguna ventana que cerrar. La propiedad no está dentro de un paisaje: contiene uno."
+        }
+      },
+      {
+        "label": "Entertaining",
+        "score": "92",
+        "note": {
+          "en": "Twelve for lunch that become six for dinner and two at midnight. The house absorbs every version of the day without ever feeling emptied.",
+          "es": "Doce para comer que se convierten en seis para cenar y dos a medianoche. La casa absorbe cada versión del día sin llegar a sentirse vacía."
+        }
+      },
+      {
+        "label": "Wellness",
+        "score": "88",
+        "note": {
+          "en": "Spa, water, shade, and the particular silence of the Golf Valley at seven in the morning. Recovery here is architectural, not scheduled.",
+          "es": "Spa, agua, sombra y el silencio particular del Valle del Golf a las siete de la mañana. Aquí el descanso es arquitectónico, no una cita en la agenda."
+        }
+      },
+      {
+        "label": "Landscape",
+        "score": "95",
+        "note": {
+          "en": "La Concha on one side, the sea on the other, and between them a garden that answers to no one. The view is not a feature — it is the reason for the floor plan.",
+          "es": "La Concha a un lado, el mar al otro, y entre ambos un jardín que no rinde cuentas a nadie. La vista no es una característica: es la razón del plano."
+        }
+      }
+    ]
+  },
+  "setting": {
+    "title": "The Golf Valley, reimagined.",
+    "intro": "Nueva Andalucía becomes a landscape of mornings outdoors, long lunches, golf, coast and private return.",
+    "cards": [
+      {
+        "title": "Morning",
+        "line": "Outdoor life in the Golf Valley",
+        "source": "golf"
+      },
+      {
+        "title": "Afternoon",
+        "line": "Water, shade and the rhythm of the garden",
+        "source": "beaches"
+      },
+      {
+        "title": "Evening",
+        "line": "Marbella, the coast and private return",
+        "source": "restaurants"
+      },
+      {
+        "title": "Connection",
+        "line": "A residential world close to the life of Marbella",
+        "source": "distances"
+      },
+      {
+        "title": "Verification",
+        "line": "Distances and local claims to be confirmed by the advisor",
+        "source": "verification"
+      }
+    ]
+  },
+  "copy": {
+    "identityNote": {
+      "en": "The experience begins before the front door — in the relationship between landscape, water and the life of the house.",
+      "es": "La experiencia comienza antes de la puerta — en la relación entre el paisaje, el agua y la vida de la casa."
+    },
+    "bandLabel": {
+      "en": "The garden & water",
+      "es": "El jardín y el agua"
+    },
+    "sequenceTitle": {
+      "en": "A day shaped by water.",
+      "es": "Un día formado por el agua."
+    },
+    "sequenceIntro": {
+      "en": "Villa Casia is not a collection of amenities. It is a rhythm of light, water, gathering and retreat.",
+      "es": "Villa Casia no es una colección de amenidades. Es un ritmo de luz, agua, reunión y retiro."
+    },
+    "filmLabel": {
+      "en": "Watch Villa Casia",
+      "es": "Ver Villa Casia"
+    },
+    "spatialTitle": {
+      "en": "A house organised around living.",
+      "es": "Una casa organizada alrededor de vivir."
+    },
+    "spatialIntro": {
+      "en": "The property is understood through its relationships: private retreat, social heart and open landscape.",
+      "es": "La propiedad se entiende a través de sus relaciones: retiro privado, corazón social y paisaje abierto."
+    },
+    "spatialDetail": {
+      "en": "The house moves from private retreat to social heart and then dissolves into the open landscape.",
+      "es": "La casa pasa del retiro privado al corazón social y después se disuelve en el paisaje abierto."
+    },
+    "detailsTitle": {
+      "en": "Made for gathering.",
+      "es": "Hecha para reunir."
+    },
+    "detailsIntro": {
+      "en": "A home where the exterior is not an amenity, but a central part of daily life.",
+      "es": "Un hogar donde el exterior no es una amenidad, sino una parte central de la vida cotidiana."
+    }
+  },
+  "arrival": {
+    "en": [
+      [
+        "The arrival",
+        "The first room at Villa Casia is outside.",
+        "The experience begins in the garden, before the threshold."
+      ],
+      [
+        "The water",
+        "The day is shaped by light, water and movement.",
+        "A home that turns the outdoors into a way of living."
+      ],
+      [
+        "Your private retreat",
+        "Gather, retreat, begin again.",
+        "Now you can explore how it lives."
+      ]
+    ],
+    "es": [
+      [
+        "La llegada",
+        "El primer espacio de Villa Casia está fuera.",
+        "La experiencia comienza en el jardín, antes de cruzar el umbral."
+      ],
+      [
+        "El agua",
+        "El día se organiza alrededor de la luz, el agua y el movimiento.",
+        "Una casa que convierte el exterior en una forma de vida."
+      ],
+      [
+        "Tu refugio privado",
+        "Celebrar, retirarse, volver a empezar.",
+        "Ahora puedes explorar cómo se vive aquí."
+      ]
+    ]
+  },
+  "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIwIDEwODAiPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkMSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM4QjczNTU7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iNTAlIiBzdHlsZT0ic3RvcC1jb2xvcjojQTA4MjZEO3N0b3Atb3BhY2l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM2QjVCNEY7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiBmaWxsPSJ1cmwoI2dyYWQxKSIvPgogIDx0ZXh0IHg9Ijk2MCIgeT0iNTQwIiBmb250LWZhbWlseT0iR2VvcmdpYSwgc2VyaWYiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBvcGFjaXR5PSIwLjMiPgogICAgUHJvcGVydHkgSGVybyBJbWFnZQogIDwvdGV4dD4KPC9zdmc+",
+  "band": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIwIDYwMCI+CiAgPGRlZnM+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQyIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM0QTU1Njg7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iNTAlIiBzdHlsZT0ic3RvcC1jb2xvcjojNzE4MDk2O3N0b3Atb3BhY2l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMyRDM3NDg7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICA8cmVjdCB3aWR0aD0iMTkyMCIgaGVpZ2h0PSI2MDAiIGZpbGw9InVybCgjZ3JhZDIpIi8+CiAgPHRleHQgeD0iOTYwIiB5PSIzMDAiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIzNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIG9wYWNpdHk9IjAuMyI+CiAgICBQcm9wZXJ0eSBCYW5kIEltYWdlCiAgPC90ZXh0Pgo8L3N2Zz4=",
+  "defaultPropertyType": "new"
+}

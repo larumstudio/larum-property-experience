@@ -1,0 +1,29 @@
+{
+  "propertyId": "NVG-H11",
+  "status": "prototype-reference",
+  "comment": "Stand-in photography, licence-cleared, chosen to match the art direction of this property (outdoor life, water, golden hour). It is NOT the villa. Replace with agency material once NVOGA authorises it — see properties/README.md.",
+  "authorised": false,
+  "hero": {
+    "video": null,
+    "poster": null,
+    "fallbackImage": "https://images.unsplash.com/photo-1724618702364-8cde016bda22?w=2400&h=960&q=78&auto=format&fit=crop&crop=top",
+    "provenance": {
+      "source": "Unsplash",
+      "licence": "Unsplash License",
+      "author": "Ingeborg Korme",
+      "url": "https://unsplash.com/photos/D17teQjXm9A",
+      "edit": "Cropped to 2400x960 to remove a bather from the water — the thesis is privacy.",
+      "delivery": "Unsplash CDN — no binary in the deployment, and the images are served from their edge."
+    }
+  },
+  "bandImage": "https://images.unsplash.com/photo-1702655359115-609b3b2a0e71?w=2400&q=78&auto=format&fit=crop",
+  "bandProvenance": {
+    "source": "Unsplash",
+    "licence": "Unsplash License",
+    "author": "Quick PS",
+    "url": "https://unsplash.com/photos/cdDDUi4a_uY"
+  },
+  "propertyFilm": "https://www.youtube.com/embed/422ZgNjArzE",
+  "comment_spaces": "Optional per-space media, keyed by the space names in content.sceneSpaces. Falls back to the band image when empty.",
+  "spaces": {}
+}

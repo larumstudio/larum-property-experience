@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "larum-prototype",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "4173"],
+      "port": 4173
+    },
+    {
+      "name": "larum-prototype-alt",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "4174"],
+      "port": 4174
+    }
+  ]
+}

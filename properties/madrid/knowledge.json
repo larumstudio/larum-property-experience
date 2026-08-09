@@ -1,0 +1,697 @@
+{
+  "fallback": {
+    "en": "I don't want to speculate about that detail. The property advisor can confirm it precisely. I can, however, show you the areas of the residence that are most relevant to your question.",
+    "es": "No quiero especular sobre ese detalle. El asesor puede confirmarlo con precisión. Sin embargo, puedo mostrarte las zonas de la residencia más relevantes para tu pregunta."
+  },
+  "property": {
+    "facts": {
+      "bedrooms": {
+        "value": 3,
+        "status": "confirmed",
+        "source": "Christie's Madrid own listing M1558 (christiesrealestate-madrid.com) — checked 9 Aug 2026"
+      },
+      "bathrooms": {
+        "value": "4 (3 en-suite)",
+        "status": "confirmed",
+        "source": "Christie's Madrid own listing M1558 (christiesrealestate-madrid.com) — checked 9 Aug 2026"
+      },
+      "totalArea": {
+        "value": "237 m²",
+        "status": "confirmed",
+        "source": "Christie's Madrid own listing M1558 (christiesrealestate-madrid.com) — checked 9 Aug 2026"
+      },
+      "interiorArea": {
+        "value": "190 m²",
+        "status": "confirmed",
+        "source": "Christie's Madrid own listing M1558 (christiesrealestate-madrid.com) — checked 9 Aug 2026"
+      },
+      "terraceArea": {
+        "value": "47 m²",
+        "status": "pending",
+        "source": "derived from total minus interior — confirm with advisor"
+      },
+      "orientation": {
+        "value": "West",
+        "status": "confirmed",
+        "source": "Christie's Madrid own listing M1558 (christiesrealestate-madrid.com) — checked 9 Aug 2026"
+      },
+      "floor": {
+        "value": "6th — penthouse",
+        "status": "confirmed",
+        "source": "Christie's Madrid own listing M1558 (christiesrealestate-madrid.com) — checked 9 Aug 2026"
+      },
+      "yearBuilt": {
+        "value": null,
+        "status": "requires-advisor"
+      },
+      "energyCert": {
+        "value": "In progress",
+        "status": "pending",
+        "source": "Christie's Madrid own listing M1558 (christiesrealestate-madrid.com) — checked 9 Aug 2026 — listing states EPC in progress"
+      },
+      "referencePrice": {
+        "value": "€3,796,000",
+        "status": "confirmed",
+        "source": "Christie's listing M1558 — subject to availability"
+      },
+      "communityFees": {
+        "value": null,
+        "status": "requires-advisor"
+      },
+      "propertyTax": {
+        "value": null,
+        "status": "requires-advisor"
+      },
+      "development": {
+        "value": "General Pardiñas 20 · communal pool",
+        "status": "confirmed",
+        "source": "Christie's Madrid own listing M1558 (christiesrealestate-madrid.com) — checked 9 Aug 2026"
+      }
+    },
+    "systems": {
+      "climate": {
+        "description": "Aerothermal climate control with underfloor heating throughout.",
+        "status": "confirmed",
+        "sceneLink": "spatial",
+        "note": "Technology is present to disappear."
+      },
+      "homeAutomation": {
+        "description": "Integrated home automation for lighting, climate and blinds.",
+        "status": "confirmed",
+        "sceneLink": "After dark",
+        "note": "Comfort becomes invisible after dark."
+      },
+      "windows": {
+        "description": "Floor-to-ceiling windows and interior patios that bring light deep into the residence.",
+        "status": "confirmed",
+        "sceneLink": "Morning light"
+      },
+      "materials": {
+        "description": "Natural material palette selected for warmth, durability and quiet elegance.",
+        "status": "pending"
+      }
+    },
+    "spaces": {
+      "Master suite": {
+        "description": "The private heart of the residence: controlled light, calm and a direct relationship with the inner patios.",
+        "type": "private",
+        "sequence": "Morning light",
+        "zone": "Private core",
+        "descriptionEs": "La estancia privada de la vivienda: luz controlada, calma y una relación directa con los patios interiores."
+      },
+      "Interior patios": {
+        "description": "Quiet thresholds of light and air that bring the outside into the centre of the home.",
+        "type": "transition",
+        "sequence": "Morning light",
+        "zone": "Private core",
+        "descriptionEs": "Pequeños umbrales de luz que introducen aire y silencio en el corazón de la residencia."
+      },
+      "Living room": {
+        "description": "The room where the city becomes a backdrop and daily life finds its centre.",
+        "type": "social",
+        "sequence": "The threshold",
+        "zone": "Living axis",
+        "descriptionEs": "El espacio donde la ciudad se convierte en fondo y la vida cotidiana encuentra su centro."
+      },
+      "Kitchen": {
+        "description": "Connected to the living axis and designed for daily life.",
+        "type": "social",
+        "sequence": "The threshold",
+        "zone": "Living axis",
+        "descriptionEs": "Conectada al eje de vida y diseñada para el día a día."
+      },
+      "Entrance hall": {
+        "description": "A deliberate threshold between the city and the private interior.",
+        "type": "transition",
+        "sequence": "The threshold",
+        "zone": "Living axis",
+        "descriptionEs": "Un umbral deliberado entre la ciudad y el interior privado."
+      },
+      "Terrace": {
+        "description": "A natural extension of the residence and a private vantage point over Goya.",
+        "type": "outdoor",
+        "sequence": "Golden hour",
+        "zone": "City edge",
+        "descriptionEs": "Una extensión natural de la vivienda y un punto de observación sobre Goya."
+      },
+      "Goya skyline": {
+        "description": "Madrid becomes a landscape rather than a source of noise.",
+        "type": "view",
+        "sequence": "Golden hour",
+        "zone": "City edge",
+        "descriptionEs": "Madrid aparece como paisaje, no como ruido."
+      },
+      "Home automation": {
+        "description": "Technology is present in order to disappear: comfort, temperature and light, quietly controlled.",
+        "type": "system",
+        "sequence": "After dark",
+        "zone": "Living axis",
+        "descriptionEs": "La tecnología está presente para desaparecer: confort, temperatura y luz bajo control."
+      },
+      "Bedrooms": {
+        "description": "Private rooms designed to close the day in calm.",
+        "type": "private",
+        "sequence": "After dark",
+        "zone": "Private core",
+        "descriptionEs": "Espacios privados diseñados para cerrar el día con calma."
+      },
+      "Private terrace": {
+        "description": "The final room of the day. Madrid is no longer the destination; it is the view.",
+        "type": "outdoor",
+        "sequence": "After dark",
+        "zone": "City edge",
+        "descriptionEs": "La última estancia del día. Madrid deja de ser el destino para convertirse en la vista."
+      }
+    }
+  },
+  "surroundings": {
+    "neighborhood": {
+      "name": "Goya / Barrio de Salamanca",
+      "character": "One of Madrid's most central and discreet residential areas — cultural, refined and quiet.",
+      "status": "confirmed"
+    },
+    "distances": [
+      {
+        "place": "Puerta de Alcalá",
+        "distance": "~800 m",
+        "status": "pending"
+      },
+      {
+        "place": "Parque del Retiro",
+        "distance": "~1 km",
+        "status": "pending"
+      },
+      {
+        "place": "Serrano shopping street",
+        "distance": "~400 m",
+        "status": "pending"
+      },
+      {
+        "place": "Metro station (nearest)",
+        "distance": "~300 m",
+        "status": "requires-advisor"
+      },
+      {
+        "place": "Barajas Airport",
+        "distance": "~15 km",
+        "status": "pending"
+      },
+      {
+        "place": "Atocha station",
+        "distance": "~2.5 km",
+        "status": "pending"
+      }
+    ],
+    "lifestyle": {
+      "morning": {
+        "en": "Retiro and the city waking around you",
+        "es": "El Retiro y la ciudad que despierta a tu alrededor",
+        "status": "confirmed"
+      },
+      "lunch": {
+        "en": "The restaurants and galleries of Salamanca",
+        "es": "Los restaurantes y galerías de Salamanca",
+        "status": "confirmed"
+      },
+      "evening": {
+        "en": "A residence above Madrid's urban rhythm",
+        "es": "Una residencia por encima del ritmo urbano de Madrid",
+        "status": "confirmed"
+      }
+    },
+    "schools": {
+      "status": "requires-advisor",
+      "note": "Several international schools within 15–20 min by car"
+    },
+    "golf": {
+      "status": "requires-advisor",
+      "note": "Closest courses are 25–35 min by car"
+    },
+    "hospitals": {
+      "status": "requires-advisor"
+    },
+    "restaurants": {
+      "en": "Salamanca offers some of Madrid's finest dining within walking distance.",
+      "es": "Salamanca ofrece algunos de los mejores restaurantes de Madrid a poca distancia a pie.",
+      "status": "confirmed"
+    },
+    "transport": {
+      "metro": {
+        "en": "Multiple metro lines within a few minutes' walk, connecting to all of central Madrid.",
+        "es": "Varias líneas de metro a pocos minutos a pie, conectando con todo el Madrid central.",
+        "status": "confirmed"
+      },
+      "bus": {
+        "en": "Extensive bus network along Serrano and Goya streets.",
+        "es": "Amplia red de autobuses por las calles Serrano y Goya.",
+        "status": "pending"
+      },
+      "taxi": {
+        "en": "Taxi ranks on Serrano and Velázquez.",
+        "es": "Paradas de taxi en Serrano y Velázquez.",
+        "status": "pending"
+      }
+    },
+    "culture": {
+      "en": "The area is surrounded by museums, galleries and cultural institutions — from the historic centre to the art triangle.",
+      "es": "La zona está rodeada de museos, galerías e instituciones culturales — desde el centro histórico hasta el triángulo del arte.",
+      "status": "confirmed"
+    },
+    "shopping": {
+      "en": "Serrano, Ortega y Gasset and Velázquez form Madrid's luxury shopping axis, all within walking distance.",
+      "es": "Serrano, Ortega y Gasset y Velázquez forman el eje de compras de lujo de Madrid, todo a distancia a pie.",
+      "status": "confirmed"
+    },
+    "parks": {
+      "en": "The Retiro — Madrid's great park — is approximately one kilometre away, a natural extension of daily life.",
+      "es": "El Retiro — el gran parque de Madrid — está a aproximadamente un kilómetro, una extensión natural de la vida cotidiana.",
+      "status": "confirmed"
+    }
+  },
+  "intents": [
+    {
+      "id": "light",
+      "keywords": [
+        "light",
+        "luz",
+        "patio",
+        "window",
+        "ventana",
+        "sun",
+        "sol",
+        "brightness",
+        "brillo"
+      ],
+      "en": "The residence is organised around natural light, floor-to-ceiling windows and interior patios. The light enters through the private core in the morning, shifts through the living axis during the day, and reaches the terrace at golden hour.",
+      "es": "La residencia está organizada alrededor de la luz natural, los grandes ventanales y los patios interiores. La luz entra por el núcleo privado por la mañana, recorre el eje de vida durante el día y alcanza la terraza en la hora dorada.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "Morning light",
+        "The threshold",
+        "Golden hour"
+      ],
+      "spaceLinks": [
+        "Interior patios",
+        "Master suite"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore how the light changes throughout the day?",
+        "es": "¿Te gustaría explorar cómo cambia la luz durante el día?"
+      }
+    },
+    {
+      "id": "technology",
+      "keywords": [
+        "technology",
+        "tecnologia",
+        "domotic",
+        "aerothermal",
+        "heating",
+        "calefaccion",
+        "smart",
+        "home automation",
+        "suelo radiante",
+        "efficient",
+        "eficiente",
+        "climate",
+        "clima"
+      ],
+      "en": "The published specification includes home automation, aerothermal climate control and underfloor heating. These systems are designed to remain invisible — comfort without theatre.",
+      "es": "La información publicada incluye domótica, climatización aerotérmica y suelo radiante. Estos sistemas están diseñados para permanecer invisibles — confort sin teatro.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "After dark"
+      ],
+      "spaceLinks": [
+        "Home automation",
+        "Bedrooms"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to know more about the private spaces where comfort is most present?",
+        "es": "¿Quieres saber más sobre los espacios privados donde el confort está más presente?"
+      }
+    },
+    {
+      "id": "price",
+      "keywords": [
+        "price",
+        "precio",
+        "cost",
+        "cuesta",
+        "value",
+        "valor",
+        "budget",
+        "presupuesto",
+        "mortgage",
+        "hipoteca",
+        "financing",
+        "financiacion"
+      ],
+      "en": "The published reference price is €3,796,000. The acquisition calculator on this page can help you estimate the total envelope including taxes and costs. Price and availability must be confirmed by the property advisor.",
+      "es": "El precio publicado de referencia es 3.796.000 €. La calculadora de adquisición en esta página puede ayudarte a estimar el envolvente total incluyendo impuestos y gastos. El asesor debe confirmar precio y disponibilidad.",
+      "confidence": "confirmed",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": [
+        "calculator"
+      ],
+      "followUp": {
+        "en": "Would you like to use the acquisition calculator, or shall I connect you with the advisor?",
+        "es": "¿Te gustaría usar la calculadora de adquisición, o prefieres que te conecte con el asesor?"
+      }
+    },
+    {
+      "id": "bedrooms",
+      "keywords": [
+        "bedroom",
+        "dormitorio",
+        "habitacion",
+        "bathroom",
+        "baño",
+        "suite",
+        "room",
+        "master",
+        "principal"
+      ],
+      "en": "The residence has three bedrooms and four bathrooms, including en-suite bedrooms. The master suite is part of the private core — designed around light, calm and the inner patios.",
+      "es": "La residencia tiene tres dormitorios y cuatro baños, incluyendo dormitorios en suite. La suite principal forma parte del núcleo privado — diseñada alrededor de la luz, la calma y los patios interiores.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "Morning light",
+        "After dark"
+      ],
+      "spaceLinks": [
+        "Master suite",
+        "Bedrooms"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the private core of the residence?",
+        "es": "¿Te gustaría explorar el núcleo privado de la residencia?"
+      }
+    },
+    {
+      "id": "terrace",
+      "keywords": [
+        "terrace",
+        "terraza",
+        "outdoor",
+        "exterior",
+        "view",
+        "vista",
+        "skyline",
+        "balcony",
+        "balcon"
+      ],
+      "en": "The terrace is the final room of the day — a private edge above Goya where Madrid becomes a landscape, not a noise. It connects the living axis to the city skyline.",
+      "es": "La terraza es la última estancia del día — un borde privado sobre Goya donde Madrid se convierte en paisaje, no en ruido. Conecta el eje de vida con el skyline de la ciudad.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "Golden hour",
+        "After dark"
+      ],
+      "spaceLinks": [
+        "Terrace",
+        "Goya skyline",
+        "Private terrace"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to experience the golden hour sequence?",
+        "es": "¿Te gustaría vivir la secuencia de la hora dorada?"
+      }
+    },
+    {
+      "id": "location",
+      "keywords": [
+        "location",
+        "ubicacion",
+        "neighborhood",
+        "barrio",
+        "goya",
+        "salamanca",
+        "area",
+        "zona",
+        "nearby",
+        "cerca",
+        "surroundings",
+        "entorno",
+        "where",
+        "donde"
+      ],
+      "en": "The residence is on Goya street in the Barrio de Salamanca — one of Madrid's most central, cultural and discreet areas. Retiro is about a kilometre away, Serrano shopping just a few hundred metres.",
+      "es": "La residencia está en la calle Goya, en el Barrio de Salamanca — una de las zonas más céntricas, culturales y discretas de Madrid. El Retiro está a aproximadamente un kilómetro, las tiendas de Serrano a pocos cientos de metros.",
+      "confidence": "confirmed",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to know about daily life around the property?",
+        "es": "¿Te gustaría saber sobre la vida cotidiana alrededor de la propiedad?"
+      }
+    },
+    {
+      "id": "privacy",
+      "keywords": [
+        "privacy",
+        "privacidad",
+        "quiet",
+        "silence",
+        "silencio",
+        "calm",
+        "calma",
+        "peaceful",
+        "tranquilo",
+        "noise",
+        "ruido"
+      ],
+      "en": "Privacy is one of the defining qualities of M1558. The private core sits away from the city, the interior patios bring silence into the heart of the home, and the floor-to-ceiling windows create distance without losing the city.",
+      "es": "La privacidad es una de las cualidades definitorias de M1558. El núcleo privado se sitúa alejado de la ciudad, los patios interiores introducen silencio en el corazón del hogar, y los ventanales crean distancia sin perder la ciudad.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "The threshold",
+        "After dark"
+      ],
+      "spaceLinks": [
+        "Master suite",
+        "Interior patios",
+        "Private terrace"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the private core?",
+        "es": "¿Te gustaría explorar el núcleo privado?"
+      }
+    },
+    {
+      "id": "investment",
+      "keywords": [
+        "investment",
+        "inversion",
+        "rentability",
+        "rentabilidad",
+        "resale",
+        "reventa",
+        "value appreciation",
+        "revalorizacion",
+        "rental",
+        "alquiler",
+        "yield",
+        "rentamiento"
+      ],
+      "en": "The Barrio de Salamanca is one of Madrid's most sought-after addresses. For detailed market analysis and investment perspective, I recommend a private conversation with the property advisor.",
+      "es": "El Barrio de Salamanca es una de las direcciones más cotizadas de Madrid. Para un análisis de mercado detallado y perspectiva de inversión, recomiendo una conversación privada con el asesor.",
+      "confidence": "requires-advisor",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like me to prepare a private conversation with the advisor about investment?",
+        "es": "¿Te gustaría que prepare una conversación privada con el asesor sobre inversión?"
+      }
+    },
+    {
+      "id": "kitchen",
+      "keywords": [
+        "kitchen",
+        "cocina",
+        "cooking",
+        "cocinar",
+        "chef"
+      ],
+      "en": "The kitchen is connected to the living axis and designed as part of daily life — open to the spaces used throughout the day.",
+      "es": "La cocina está conectada al eje de vida y diseñada como parte de la vida cotidiana — abierta a los espacios que se utilizan durante el día.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "The threshold"
+      ],
+      "spaceLinks": [
+        "Kitchen",
+        "Living room"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to see how the living axis connects all the daily spaces?",
+        "es": "¿Te gustaría ver cómo el eje de vida conecta todos los espacios cotidianos?"
+      }
+    },
+    {
+      "id": "transport",
+      "keywords": [
+        "transport",
+        "transporte",
+        "metro",
+        "bus",
+        "airport",
+        "aeropuerto",
+        "barajas",
+        "atocha",
+        "train",
+        "tren",
+        "station",
+        "estacion"
+      ],
+      "en": "The location offers excellent connectivity: multiple metro lines, bus routes on Serrano and Goya, Atocha station about 2.5 km and Barajas Airport approximately 15 km.",
+      "es": "La ubicación ofrece excelente conectividad: varias líneas de metro, autobuses por Serrano y Goya, la estación de Atocha a unos 2,5 km y el aeropuerto de Barajas a aproximadamente 15 km.",
+      "confidence": "confirmed",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to know more about the neighbourhood?",
+        "es": "¿Te gustaría saber más sobre el barrio?"
+      }
+    },
+    {
+      "id": "shopping",
+      "keywords": [
+        "shopping",
+        "tiendas",
+        "shops",
+        "compras",
+        "luxury",
+        "lujo",
+        "serrano",
+        "fashion",
+        "moda"
+      ],
+      "en": "Serrano, Ortega y Gasset and Velázquez form Madrid's luxury shopping axis, all within walking distance of the residence.",
+      "es": "Serrano, Ortega y Gasset y Velázquez forman el eje de compras de lujo de Madrid, todo a distancia a pie de la residencia.",
+      "confidence": "confirmed",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the neighbourhood?",
+        "es": "¿Te gustaría explorar el barrio?"
+      }
+    },
+    {
+      "id": "family",
+      "keywords": [
+        "family",
+        "familia",
+        "children",
+        "hijos",
+        "kids",
+        "niños",
+        "school",
+        "colegio"
+      ],
+      "en": "The Barrio de Salamanca is a traditional family neighbourhood with several international schools within 15–20 minutes. The residence offers three bedrooms and four bathrooms. The advisor can provide specific details about school options.",
+      "es": "El Barrio de Salamanca es un barrio familiar tradicional con varios colegios internacionales a 15–20 minutos. La residencia ofrece tres dormitorios y cuatro baños. El asesor puede proporcionar detalles específicos sobre opciones escolares.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "Morning light",
+        "After dark"
+      ],
+      "spaceLinks": [
+        "Master suite",
+        "Bedrooms"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the private spaces?",
+        "es": "¿Te gustaría explorar los espacios privados?"
+      }
+    }
+  ],
+  "interestSignals": {
+    "privacy": [
+      "privacy",
+      "calm",
+      "quiet",
+      "silence",
+      "private",
+      "retreat",
+      "noise",
+      "ruido"
+    ],
+    "family": [
+      "family",
+      "children",
+      "kids",
+      "bedrooms",
+      "school",
+      "familia",
+      "hijos",
+      "colegio"
+    ],
+    "architecture": [
+      "architecture",
+      "design",
+      "materials",
+      "light",
+      "patio",
+      "arquitectura",
+      "diseño"
+    ],
+    "city_life": [
+      "restaurant",
+      "culture",
+      "shopping",
+      "nightlife",
+      "museums",
+      "walk",
+      "restaurante",
+      "cultura",
+      "tiendas"
+    ],
+    "investment": [
+      "investment",
+      "rentability",
+      "resale",
+      "value",
+      "inversion",
+      "rentabilidad"
+    ],
+    "technology": [
+      "technology",
+      "smart",
+      "automation",
+      "efficient",
+      "domotic",
+      "tecnologia",
+      "domotica"
+    ]
+  },
+  "qualification": [
+    {
+      "trigger": "after_3_questions",
+      "en": "May I ask what draws you most to this kind of residence?",
+      "es": "¿Puedo preguntarte qué te atrae más de este tipo de residencia?"
+    },
+    {
+      "trigger": "interest_detected",
+      "en": "Would you like me to prepare a private summary with the spaces and information most relevant to you?",
+      "es": "¿Te gustaría que prepare un resumen privado con los espacios e información más relevantes para ti?"
+    },
+    {
+      "trigger": "high_intent",
+      "en": "If you would like, I can arrange a private conversation with the property advisor. Would that be useful?",
+      "es": "Si lo deseas, puedo organizar una conversación privada con el asesor de la propiedad. ¿Te resultaría útil?"
+    }
+  ]
+}

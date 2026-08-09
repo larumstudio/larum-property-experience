@@ -1,0 +1,28 @@
+{
+  "defaults": {
+    "resale": {"notary": 0.5, "registry": 0.3, "legal": 1.0, "agency": 0, "other": 0},
+    "new": {"vat": 10, "ajd": 1.5, "notary": 0.5, "registry": 0.3, "legal": 1.0, "agency": 0, "other": 0}
+  },
+  "regions": {
+    "Andalucía": {"itp": 7, "ajd": 1.5},
+    "Aragón": {"itp": null, "ajd": null},
+    "Asturias": {"itp": null, "ajd": null},
+    "Illes Balears": {"itp": null, "ajd": null},
+    "Canarias": {"itp": null, "ajd": null},
+    "Cantabria": {"itp": null, "ajd": null},
+    "Castilla-La Mancha": {"itp": null, "ajd": null},
+    "Castilla y León": {"itp": null, "ajd": null},
+    "Cataluña": {"itp": 10, "ajd": 1.5},
+    "Comunidad Valenciana": {"itp": 10, "ajd": 1.5},
+    "Extremadura": {"itp": null, "ajd": null},
+    "Galicia": {"itp": null, "ajd": null},
+    "La Rioja": {"itp": null, "ajd": null},
+    "Comunidad de Madrid": {"itp": 6, "ajd": 1.5},
+    "Región de Murcia": {"itp": null, "ajd": null},
+    "Navarra": {"itp": null, "ajd": null},
+    "País Vasco": {"itp": null, "ajd": null},
+    "Ceuta": {"itp": null, "ajd": null},
+    "Melilla": {"itp": null, "ajd": null}
+  },
+  "note": "Rates are editable planning values only. Confirm current brackets, reductions, surcharges and buyer circumstances with a Spanish tax professional before relying on an estimate."
+}

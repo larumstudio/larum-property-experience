@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3d3529;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#5a4e3c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2c2620;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="warmLight" x1="60%" y1="0%" x2="20%" y2="100%">
+      <stop offset="0%" style="stop-color:#c5a86a;stop-opacity:0.35" />
+      <stop offset="100%" style="stop-color:#c5a86a;stop-opacity:0" />
+    </linearGradient>
+    <linearGradient id="floorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a4035;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2a2420;stop-opacity:1" />
+    </linearGradient>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="40" />
+    </filter>
+    <clipPath id="windowClip">
+      <rect x="580" y="120" width="320" height="520" rx="4"/>
+      <rect x="940" y="120" width="320" height="520" rx="4"/>
+      <rect x="1300" y="120" width="280" height="520" rx="4"/>
+    </clipPath>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <ellipse cx="960" cy="400" rx="800" ry="500" fill="url(#warmLight)" filter="url(#softGlow)"/>
+  <rect x="0" y="0" width="1920" height="1080" fill="#3a322a" opacity="0.4"/>
+  <rect x="560" y="100" width="360" height="560" fill="none" stroke="#6b5f50" stroke-width="2" rx="2"/>
+  <rect x="920" y="100" width="360" height="560" fill="none" stroke="#6b5f50" stroke-width="2" rx="2"/>
+  <rect x="1280" y="100" width="320" height="560" fill="none" stroke="#6b5f50" stroke-width="2" rx="2"/>
+  <g clip-path="url(#windowClip)">
+    <linearGradient id="windowSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b8a07a;stop-opacity:0.6" />
+      <stop offset="60%" style="stop-color:#d4c4a0;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#a08d6e;stop-opacity:0.3" />
+    </linearGradient>
+    <rect x="560" y="100" width="1060" height="560" fill="url(#windowSky)"/>
+    <rect x="620" y="380" width="40" height="260" fill="#5a5040" opacity="0.5" rx="1"/>
+    <rect x="670" y="340" width="30" height="300" fill="#5a5040" opacity="0.4" rx="1"/>
+    <rect x="720" y="400" width="50" height="240" fill="#5a5040" opacity="0.45" rx="1"/>
+    <rect x="800" y="360" width="35" height="280" fill="#5a5040" opacity="0.35" rx="1"/>
+    <rect x="980" y="350" width="45" height="290" fill="#5a5040" opacity="0.4" rx="1"/>
+    <rect x="1040" y="320" width="30" height="320" fill="#5a5040" opacity="0.45" rx="1"/>
+    <rect x="1100" y="380" width="55" height="260" fill="#5a5040" opacity="0.35" rx="1"/>
+    <rect x="1320" y="370" width="40" height="270" fill="#5a5040" opacity="0.4" rx="1"/>
+    <rect x="1380" y="340" width="35" height="300" fill="#5a5040" opacity="0.35" rx="1"/>
+    <rect x="1440" y="390" width="50" height="250" fill="#5a5040" opacity="0.3" rx="1"/>
+  </g>
+  <line x1="740" y1="100" x2="740" y2="660" stroke="#5a5040" stroke-width="1.5"/>
+  <line x1="1100" y1="100" x2="1100" y2="660" stroke="#5a5040" stroke-width="1.5"/>
+  <line x1="1440" y1="100" x2="1440" y2="660" stroke="#5a5040" stroke-width="1.5"/>
+  <rect x="0" y="660" width="1920" height="420" fill="url(#floorGrad)"/>
+  <ellipse cx="920" cy="700" rx="600" ry="80" fill="#c5a86a" opacity="0.06"/>
+  <rect x="0" y="0" width="540" height="1080" fill="#322c24" opacity="0.7"/>
+  <line x1="540" y1="0" x2="540" y2="1080" stroke="#6b5f50" stroke-width="1" opacity="0.4"/>
+  <rect x="180" y="240" width="200" height="280" fill="none" stroke="#6b5f50" stroke-width="1" opacity="0.3" rx="1"/>
+  <rect x="195" y="255" width="170" height="250" fill="#3a3228" opacity="0.5"/>
+  <rect x="200" y="700" width="380" height="60" rx="8" fill="#2a2420" opacity="0.6"/>
+  <rect x="180" y="690" width="60" height="80" rx="6" fill="#2a2420" opacity="0.5"/>
+  <rect x="1640" y="580" width="80" height="100" rx="2" fill="#3a3228" opacity="0.5"/>
+  <ellipse cx="1680" cy="575" rx="30" ry="8" fill="#4a4035" opacity="0.5"/>
+  <circle cx="780" cy="350" r="1.5" fill="#d4c4a0" opacity="0.3"/>
+  <circle cx="1050" cy="280" r="1" fill="#d4c4a0" opacity="0.25"/>
+  <circle cx="900" cy="420" r="1.2" fill="#d4c4a0" opacity="0.2"/>
+  <circle cx="1200" cy="380" r="1" fill="#d4c4a0" opacity="0.15"/>
+  <rect x="0" y="800" width="1920" height="280" fill="url(#sky)" opacity="0.7"/>
+  <text x="1860" y="1050" font-family="Georgia, serif" font-size="11" fill="#6b5f50" text-anchor="end" opacity="0.25" letter-spacing="0.15em">LARUM · M1558</text>
+</svg>

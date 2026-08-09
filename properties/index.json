@@ -1,0 +1,14 @@
+{
+  "default": "madrid",
+  "order": [
+    "madrid",
+    "marbella"
+  ],
+  "rules": {
+    "publicUse": false,
+    "noIndex": true,
+    "replacePublicReferencesBeforePublication": true,
+    "videoNeedsPoster": true,
+    "fallbackToImage": true
+  }
+}

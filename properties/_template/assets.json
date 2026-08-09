@@ -1,0 +1,18 @@
+{
+  "propertyId": "REPLACE-REF",
+  "status": "prototype-reference",
+
+  "comment": "Paths are relative to the prototype root. Only publish assets the agency has authorised in writing.",
+
+  "hero": {
+    "video": null,
+    "poster": null,
+    "fallbackImage": "assets/placeholder-REPLACE.svg"
+  },
+
+  "bandImage": "assets/band-REPLACE.svg",
+  "propertyFilm": null,
+
+  "comment_spaces": "Optional per-space media, keyed by the space names used in content.sceneSpaces.",
+  "spaces": {}
+}

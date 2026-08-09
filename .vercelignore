@@ -1,0 +1,15 @@
+# Working files that must not reach a public URL
+docs/
+.claude/
+CLAUDE_CODE_PROMPT.md
+*.md
+!README.md
+
+# admin.html now ships: it reads Supabase behind Supabase Auth, and the
+# read policies are scoped to the authenticated role, so the page is inert
+# to anyone who is not signed in. It is noindex,nofollow.
+
+# Local-only: the JPGs are superseded by the CDN URLs in
+# properties/*/assets.json. property-pack.js stays — index.html loads it,
+# and omitting it would 404 in the console on every visit.
+assets/*.jpg

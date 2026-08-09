@@ -1,0 +1,116 @@
+{
+  "fallback": {
+    "en": "I don't want to speculate about that detail. The property advisor can confirm it precisely. I can, however, show you the areas of the residence that are most relevant to your question.",
+    "es": "No quiero especular sobre ese detalle. El asesor puede confirmarlo con precisión. Sin embargo, puedo mostrarte las zonas de la residencia más relevantes para tu pregunta."
+  },
+
+  "property": {
+    "comment": "Every fact carries its status. 'confirmed' = the agency verified it. 'pending' = supplied but unverified. 'requires-advisor' = the concierge must defer instead of answering.",
+    "facts": {
+      "bedrooms":       { "value": 0,  "status": "pending", "source": "Agency listing" },
+      "bathrooms":      { "value": 0,  "status": "pending", "source": "Agency listing" },
+      "totalArea":      { "value": "0 m²", "status": "pending", "source": "Agency listing" },
+      "referencePrice": { "value": "€0", "status": "pending", "source": "Agency listing — subject to availability" },
+      "communityFees":  { "value": null, "status": "requires-advisor", "source": null },
+      "propertyTax":    { "value": null, "status": "requires-advisor", "source": null }
+    },
+
+    "systems": {
+      "climate": {
+        "description": "How the property is heated and cooled.",
+        "status": "pending",
+        "sceneLink": "spatial",
+        "note": "Optional line the concierge can add."
+      }
+    },
+
+    "comment_spaces": "One entry per space named in content.sceneSpaces. descriptionEs is required for the Spanish experience.",
+    "spaces": {
+      "Space A": {
+        "description": "What this space is, and what it makes possible.",
+        "descriptionEs": "Qué es este espacio y qué hace posible.",
+        "type": "private",
+        "sequence": "Moment one",
+        "zone": "First zone"
+      },
+      "Space B": {
+        "description": "What this space is, and what it makes possible.",
+        "descriptionEs": "Qué es este espacio y qué hace posible.",
+        "type": "social",
+        "sequence": "Moment two",
+        "zone": "Second zone"
+      },
+      "Space C": {
+        "description": "What this space is, and what it makes possible.",
+        "descriptionEs": "Qué es este espacio y qué hace posible.",
+        "type": "outdoor",
+        "sequence": "Moment three",
+        "zone": "Third zone"
+      }
+    }
+  },
+
+  "surroundings": {
+    "neighborhood": { "en": "", "es": "" },
+    "distances": {},
+    "lifestyle": { "en": "", "es": "" },
+    "schools": { "en": "", "es": "" },
+    "restaurants": { "en": "", "es": "" },
+    "transport": { "en": "", "es": "" },
+    "culture": { "en": "", "es": "" },
+    "shopping": { "en": "", "es": "" },
+    "parks": { "en": "", "es": "" }
+  },
+
+  "comment_intents": "At least 6. Keywords are matched in both languages. sceneLinks/spaceLinks/docLinks render as clickable follow-ups in the chat.",
+  "intents": [
+    {
+      "id": "light",
+      "keywords": ["light", "luz", "window", "ventana", "sun", "sol"],
+      "en": "Answer about light, in the voice of the property.",
+      "es": "Respuesta sobre la luz, con la voz de la propiedad.",
+      "confidence": "confirmed",
+      "sceneLinks": ["Moment one"],
+      "spaceLinks": ["Space A"],
+      "docLinks": [],
+      "followUp": { "en": "Would you like to see it at another hour?", "es": "¿Quieres verla a otra hora?" }
+    },
+    {
+      "id": "price",
+      "keywords": ["price", "precio", "cost", "coste", "cuánto", "how much"],
+      "en": "The published reference price is €0. Taxes and costs sit on top — the calculator gives an estimate.",
+      "es": "El precio de referencia publicado es de €0. Los impuestos y gastos van por encima — la calculadora da una estimación.",
+      "confidence": "confirmed",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": ["calculator"],
+      "followUp": { "en": "Would you like to estimate the full acquisition?", "es": "¿Quieres estimar la adquisición completa?" }
+    }
+  ],
+
+  "comment_interestSignals": "Maps an interest to the words that reveal it. Drives the advisor summary.",
+  "interestSignals": {
+    "privacy":      ["privacy", "privacidad", "quiet", "silencio", "discreet", "discreto"],
+    "family":       ["family", "familia", "children", "niños", "school", "colegio"],
+    "architecture": ["architecture", "arquitectura", "design", "diseño", "materials", "materiales"],
+    "investment":   ["investment", "inversión", "rental", "alquiler", "yield", "rentabilidad"]
+  },
+
+  "qualification": [
+    {
+      "trigger": "after_3_questions",
+      "en": "May I ask what draws you most to this kind of residence?",
+      "es": "¿Puedo preguntarte qué te atrae más de este tipo de residencia?"
+    },
+    {
+      "trigger": "interest_detected",
+      "en": "Would you like me to prepare a private summary with the spaces and information most relevant to you?",
+      "es": "¿Te gustaría que prepare un resumen privado con los espacios e información más relevantes para ti?"
+    },
+    {
+      "trigger": "high_intent",
+      "en": "Would you prefer to continue this conversation privately with the property advisor?",
+      "es": "¿Prefieres continuar esta conversación en privado con el asesor?"
+    }
+  ]
+}

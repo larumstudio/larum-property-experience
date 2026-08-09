@@ -1,0 +1,17 @@
+{
+  "name": "larum-property-experience",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Larum Property Experience \u2014 private prototype. Static experience plus a grounded property concierge.",
+  "scripts": {
+    "build": "node build-pack.js",
+    "validate": "node validate-content.js",
+    "check": "node build-pack.js && node validate-content.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

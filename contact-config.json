@@ -1,0 +1,10 @@
+{
+  "defaultEmail": "contactolarum@gmail.com",
+  "properties": {
+    "madrid": { "email": null, "advisorName": "Property Advisor" },
+    "marbella": { "email": null, "advisorName": "Property Advisor" }
+  },
+  "mode": "mailto",
+  "endpoint": null,
+  "note": "Leads reach Larum while the pilot runs. Once an agency authorises the property, set its own email here and the enquiry goes straight to them. `endpoint` takes priority over mailto when set; Supabase storage runs regardless."
+}

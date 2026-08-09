@@ -1,0 +1,751 @@
+{
+  "fallback": {
+    "en": "I don't want to speculate about that detail. The property advisor can confirm it precisely. I can, however, show you the areas of the residence that are most relevant to your question.",
+    "es": "No quiero especular sobre ese detalle. El asesor puede confirmarlo con precisión. Sin embargo, puedo mostrarte las zonas de la residencia más relevantes para tu pregunta."
+  },
+  "property": {
+    "facts": {
+      "bedrooms": {
+        "value": 4,
+        "status": "confirmed",
+        "source": "NVOGA own listing NVG-H11 (nvoga.com) — checked 9 Aug 2026"
+      },
+      "bathrooms": {
+        "value": 5,
+        "status": "confirmed",
+        "source": "NVOGA own listing NVG-H11 (nvoga.com) — checked 9 Aug 2026"
+      },
+      "photos": {
+        "value": 34,
+        "status": "confirmed"
+      },
+      "propertyFilm": {
+        "value": "1 film",
+        "status": "confirmed"
+      },
+      "plot": {
+        "value": "980 m²",
+        "status": "confirmed",
+        "source": "NVOGA own listing NVG-H11 (nvoga.com) — checked 9 Aug 2026"
+      },
+      "builtArea": {
+        "value": "710 m²",
+        "status": "confirmed",
+        "source": "NVOGA own listing NVG-H11 (nvoga.com) — checked 9 Aug 2026"
+      },
+      "orientation": {
+        "value": "South-facing garden and pool",
+        "status": "pending",
+        "source": "Narrative claim — to be confirmed by the advisor"
+      },
+      "referencePrice": {
+        "value": "€3,990,000",
+        "status": "confirmed",
+        "source": "NVOGA listing — subject to availability"
+      },
+      "communityFees": {
+        "value": null,
+        "status": "requires-advisor"
+      },
+      "propertyTax": {
+        "value": null,
+        "status": "requires-advisor"
+      },
+      "terraceArea": {
+        "value": "151 m²",
+        "status": "confirmed",
+        "source": "NVOGA own listing NVG-H11 (nvoga.com) — checked 9 Aug 2026"
+      },
+      "yearBuilt": {
+        "value": "2025 — new build, ready to move in, fully furnished",
+        "status": "confirmed",
+        "source": "NVOGA own listing NVG-H11 (nvoga.com) — checked 9 Aug 2026"
+      }
+    },
+    "systems": {
+      "pool": {
+        "description": "A central water experience — infinity edge that visually extends the property toward the landscape.",
+        "status": "confirmed",
+        "sceneLink": "Golden hour"
+      },
+      "garden": {
+        "description": "Established Mediterranean garden with shade, planting and multiple outdoor rooms.",
+        "status": "confirmed",
+        "sceneLink": "First light"
+      },
+      "wellness": {
+        "description": "Dedicated wellness area within the villa for pause and recovery.",
+        "status": "confirmed",
+        "sceneLink": "Night garden"
+      },
+      "entertainment": {
+        "description": "Cinema room and social spaces designed for after-dark use.",
+        "status": "confirmed",
+        "sceneLink": "Night garden"
+      }
+    },
+    "spaces": {
+      "Garden": {
+        "description": "The first room at Villa Casia is outside: shade, vegetation and distance from the world.",
+        "type": "outdoor",
+        "sequence": "First light",
+        "zone": "Open landscape",
+        "descriptionEs": "El primer espacio de Villa Casia es exterior: sombra, vegetación y distancia."
+      },
+      "Pool terrace": {
+        "description": "Water sets the rhythm of the house and turns the outdoors into another room.",
+        "type": "outdoor",
+        "sequence": "First light",
+        "zone": "Open landscape",
+        "descriptionEs": "El agua organiza el ritmo de la casa y convierte el exterior en una habitación más."
+      },
+      "Master suite": {
+        "description": "A private retreat separated from the movement of the social areas.",
+        "type": "private",
+        "sequence": "First light",
+        "zone": "Private retreat",
+        "descriptionEs": "Un retiro privado separado del movimiento de las zonas sociales."
+      },
+      "Kitchen": {
+        "description": "Where social life begins and connects naturally with the exterior.",
+        "type": "social",
+        "sequence": "Gather",
+        "zone": "Social heart",
+        "descriptionEs": "El lugar donde la vida social comienza y se conecta con el exterior."
+      },
+      "Dining room": {
+        "description": "Designed for gathering, long conversations and an open relationship with the landscape.",
+        "type": "social",
+        "sequence": "Gather",
+        "zone": "Social heart",
+        "descriptionEs": "Una estancia pensada para reunir, prolongar las conversaciones y abrirse al paisaje."
+      },
+      "Outdoor lounge": {
+        "description": "The centre of outdoor life: shade, water and a natural transition into the garden.",
+        "type": "outdoor",
+        "sequence": "Gather",
+        "zone": "Social heart",
+        "descriptionEs": "El centro de la vida exterior: sombra, agua y una transición natural hacia el jardín."
+      },
+      "Infinity pool": {
+        "description": "A line of water that visually extends the property toward the horizon.",
+        "type": "outdoor",
+        "sequence": "Golden hour",
+        "zone": "Open landscape",
+        "descriptionEs": "Una línea de agua que extiende visualmente la propiedad hacia el horizonte."
+      },
+      "Terrace": {
+        "description": "The house becomes open, slow and luminous as the day comes to an end.",
+        "type": "outdoor",
+        "sequence": "Golden hour",
+        "zone": "Open landscape",
+        "descriptionEs": "La casa se vuelve abierta, lenta y luminosa durante las últimas horas del día."
+      },
+      "Living room": {
+        "description": "A gathering space with a continuous relationship to the garden.",
+        "type": "social",
+        "sequence": "Golden hour",
+        "zone": "Social heart",
+        "descriptionEs": "Un espacio de encuentro que mantiene una relación continua con el jardín."
+      },
+      "Spa": {
+        "description": "A pause within a residence designed for escape.",
+        "type": "wellness",
+        "sequence": "Night garden",
+        "zone": "Private retreat",
+        "descriptionEs": "Un momento de pausa dentro de una propiedad concebida para desconectar."
+      },
+      "Cinema": {
+        "description": "The villa continues to reveal its interior life after dark.",
+        "type": "entertainment",
+        "sequence": "Night garden",
+        "zone": "Private retreat",
+        "descriptionEs": "La experiencia interior de la villa continúa cuando cae la noche."
+      },
+      "Private rooms": {
+        "description": "The quietest part of the residence, away from the social rhythm.",
+        "type": "private",
+        "sequence": "Night garden",
+        "zone": "Private retreat",
+        "descriptionEs": "La parte más silenciosa de la residencia, alejada del ritmo social."
+      }
+    }
+  },
+  "surroundings": {
+    "neighborhood": {
+      "name": "Nueva Andalucía / Golf Valley",
+      "character": "A residential world between the golf courses, the coast and the mountain — private, green and close to the life of Marbella.",
+      "status": "confirmed"
+    },
+    "distances": [
+      {
+        "place": "Puerto Banús",
+        "distance": "~5 km",
+        "status": "pending"
+      },
+      {
+        "place": "Marbella old town",
+        "distance": "~8 km",
+        "status": "pending"
+      },
+      {
+        "place": "Nearest beach",
+        "distance": "~3 km",
+        "status": "pending"
+      },
+      {
+        "place": "Golf (nearest course)",
+        "distance": "~2 km",
+        "status": "pending"
+      },
+      {
+        "place": "Málaga Airport",
+        "distance": "~45 km",
+        "status": "pending"
+      },
+      {
+        "place": "International school",
+        "distance": "~10 min",
+        "status": "requires-advisor"
+      }
+    ],
+    "lifestyle": {
+      "morning": {
+        "en": "Outdoor life in the Golf Valley",
+        "es": "Vida exterior en el Golf Valley",
+        "status": "confirmed"
+      },
+      "afternoon": {
+        "en": "Water, shade and the rhythm of the garden",
+        "es": "Agua, sombra y el ritmo del jardín",
+        "status": "confirmed"
+      },
+      "evening": {
+        "en": "Marbella, the coast and private return",
+        "es": "Marbella, la costa y el regreso privado",
+        "status": "confirmed"
+      }
+    },
+    "schools": {
+      "status": "requires-advisor",
+      "note": "Several international schools within 10–20 min: SVR, AIS, Sotogrande International within 30–40 min"
+    },
+    "golf": {
+      "en": "Nueva Andalucía is known as the Golf Valley — at least five courses within a few kilometres, including Los Naranjos, Las Brisas and Dama de Noche.",
+      "es": "Nueva Andalucía es conocida como el Golf Valley — al menos cinco campos a pocos kilómetros, incluyendo Los Naranjos, Las Brisas y Dama de Noche.",
+      "status": "confirmed"
+    },
+    "beaches": {
+      "en": "The coast is a short drive away, with both beach clubs and quieter coves.",
+      "es": "La costa está a un corto trayecto, con chiringuitos y calas más tranquilas.",
+      "status": "confirmed"
+    },
+    "hospitals": {
+      "status": "requires-advisor"
+    },
+    "restaurants": {
+      "en": "Puerto Banús and Marbella centre offer a wide range of restaurants.",
+      "es": "Puerto Banús y el centro de Marbella ofrecen una amplia oferta gastronómica.",
+      "status": "confirmed"
+    },
+    "transport": {
+      "en": "The villa is accessible by car from Málaga Airport in approximately 45 minutes. Taxis and car rental are readily available.",
+      "es": "La villa es accesible en coche desde el aeropuerto de Málaga en aproximadamente 45 minutos. Taxis y alquiler de coches disponibles.",
+      "status": "confirmed"
+    },
+    "shopping": {
+      "en": "Puerto Banús offers luxury shopping 5 km away. Marbella centre has a wider range of boutiques and daily services.",
+      "es": "Puerto Banús ofrece compras de lujo a 5 km. El centro de Marbella tiene una gama más amplia de tiendas y servicios diarios.",
+      "status": "confirmed"
+    },
+    "parks": {
+      "en": "The villa's own garden and the surrounding landscape become the primary outdoor experience. Alameda Park in Marbella centre offers a public green space.",
+      "es": "El jardín de la villa y el paisaje circundante son la experiencia exterior principal. La Alameda en el centro de Marbella ofrece un espacio verde público.",
+      "status": "confirmed"
+    },
+    "seasons": {
+      "en": "The property is designed for year-round living. Summer is social and outdoor; winter remains mild with the garden and wellness areas in daily use.",
+      "es": "La propiedad está diseñada para vivir todo el año. El verano es social y exterior; el invierno sigue siendo suave con el jardín y las zonas de wellness en uso diario.",
+      "status": "pending"
+    }
+  },
+  "intents": [
+    {
+      "id": "water",
+      "keywords": [
+        "pool",
+        "piscina",
+        "water",
+        "agua",
+        "swim",
+        "nadar",
+        "infinity"
+      ],
+      "en": "Water is one of the central experiences of Villa Casia. The pool terrace begins the day, the infinity pool becomes the most memorable image at golden hour, and the entire residence is organised around the relationship with water.",
+      "es": "El agua es una de las experiencias centrales de Villa Casia. La terraza de la piscina comienza el día, la piscina infinity se convierte en la imagen más memorable en la hora dorada, y toda la residencia se organiza alrededor de la relación con el agua.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "First light",
+        "Golden hour"
+      ],
+      "spaceLinks": [
+        "Pool terrace",
+        "Infinity pool"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore how the water shapes the day?",
+        "es": "¿Te gustaría explorar cómo el agua forma el día?"
+      }
+    },
+    {
+      "id": "price",
+      "keywords": [
+        "price",
+        "precio",
+        "cost",
+        "cuesta",
+        "value",
+        "valor",
+        "budget",
+        "presupuesto",
+        "mortgage",
+        "hipoteca",
+        "financing",
+        "financiacion"
+      ],
+      "en": "The published reference price is €3,990,000. The acquisition calculator on this page can help estimate the total envelope. Price and availability must be confirmed by the property advisor.",
+      "es": "El precio publicado de referencia es 3.990.000 €. La calculadora de adquisición puede ayudarte a estimar el envolvente total. El asesor debe confirmar precio y disponibilidad.",
+      "confidence": "confirmed",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": [
+        "calculator"
+      ],
+      "followUp": {
+        "en": "Would you like to use the acquisition calculator, or shall I connect you with the advisor?",
+        "es": "¿Te gustaría usar la calculadora de adquisición, o prefieres que te conecte con el asesor?"
+      }
+    },
+    {
+      "id": "entertain",
+      "keywords": [
+        "entertain",
+        "invitados",
+        "friends",
+        "amigos",
+        "social",
+        "reunir",
+        "gathering",
+        "party",
+        "dinner",
+        "cena",
+        "celebrar"
+      ],
+      "en": "Villa Casia is particularly suited to outdoor gathering. Kitchen, dining, lounge and water create a continuous social sequence — from the outdoor lounge at sunset to the cinema and spa after dark.",
+      "es": "Villa Casia está especialmente preparada para reunirse en el exterior. Cocina, comedor, lounge y agua crean una secuencia social continua — desde el lounge exterior al atardecer hasta el cine y spa después de la noche.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "Gather",
+        "Golden hour",
+        "Night garden"
+      ],
+      "spaceLinks": [
+        "Kitchen",
+        "Dining room",
+        "Outdoor lounge"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to see how the social heart connects with the outdoor spaces?",
+        "es": "¿Te gustaría ver cómo el corazón social se conecta con los espacios exteriores?"
+      }
+    },
+    {
+      "id": "wellness",
+      "keywords": [
+        "wellness",
+        "spa",
+        "cinema",
+        "cine",
+        "retreat",
+        "retiro",
+        "relax",
+        "relax",
+        "masaje",
+        "massage",
+        "yoga"
+      ],
+      "en": "The residence combines social and retreat spaces. The wellness area and cinema room create a private world for the evening — separate from the social heart but connected within the villa.",
+      "es": "La residencia combina espacios sociales y de retiro. La zona de wellness y la sala de cine crean un mundo privado para la noche — separados del corazón social pero conectados dentro de la villa.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "Night garden"
+      ],
+      "spaceLinks": [
+        "Spa",
+        "Cinema",
+        "Private rooms"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the private retreat areas?",
+        "es": "¿Te gustaría explorar las zonas de retiro privado?"
+      }
+    },
+    {
+      "id": "garden",
+      "keywords": [
+        "garden",
+        "jardin",
+        "landscape",
+        "paisaje",
+        "plants",
+        "vegetacion",
+        "outdoor",
+        "exterior",
+        "nature",
+        "naturaleza",
+        "green",
+        "verde"
+      ],
+      "en": "The garden is the first room of Villa Casia. Mediterranean planting, shade and distance from the world set the tone before you even enter the house. The landscape is not a background — it is the largest room.",
+      "es": "El jardín es la primera estancia de Villa Casia. Vegetación mediterránea, sombra y distancia del mundo marcan el tono antes de entrar en la casa. El paisaje no es un fondo: es la estancia más grande.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "First light"
+      ],
+      "spaceLinks": [
+        "Garden",
+        "Pool terrace"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to begin with the first light sequence?",
+        "es": "¿Te gustaría comenzar con la secuencia de primera luz?"
+      }
+    },
+    {
+      "id": "location",
+      "keywords": [
+        "location",
+        "ubicacion",
+        "neighborhood",
+        "zona",
+        "area",
+        "nueva andalucia",
+        "golf valley",
+        "marbella",
+        "nearby",
+        "cerca",
+        "surroundings",
+        "entorno",
+        "where",
+        "donde"
+      ],
+      "en": "Villa Casia is in Nueva Andalucía, known as the Golf Valley. Puerto Banús is about 5 km away, Marbella centre about 8 km. The coast is a short drive, and at least five golf courses are within a few kilometres.",
+      "es": "Villa Casia está en Nueva Andalucía, conocido como el Golf Valley. Puerto Banús está a unos 5 km, el centro de Marbella a unos 8 km. La costa está a un corto trayecto y al menos cinco campos de golf a pocos kilómetros.",
+      "confidence": "confirmed",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to know about daily life in the Golf Valley?",
+        "es": "¿Te gustaría saber sobre la vida cotidiana en el Golf Valley?"
+      }
+    },
+    {
+      "id": "privacy",
+      "keywords": [
+        "privacy",
+        "privacidad",
+        "quiet",
+        "silence",
+        "silencio",
+        "calm",
+        "calma",
+        "peaceful",
+        "tranquilo",
+        "private",
+        "secluded"
+      ],
+      "en": "Privacy is a defining quality of Villa Casia. The private retreat is protected from the social rhythm, the garden creates natural distance, and the entire property can feel like a world of its own.",
+      "es": "La privacidad es una cualidad definitoria de Villa Casia. El retiro privado está protegido del ritmo social, el jardín crea distancia natural, y toda la propiedad puede sentirse como un mundo propio.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "Night garden"
+      ],
+      "spaceLinks": [
+        "Master suite",
+        "Spa",
+        "Private rooms"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the private retreat areas?",
+        "es": "¿Te gustaría explorar las zonas de retiro privado?"
+      }
+    },
+    {
+      "id": "investment",
+      "keywords": [
+        "investment",
+        "inversion",
+        "rentability",
+        "rentabilidad",
+        "resale",
+        "reventa",
+        "rental",
+        "alquiler",
+        "holiday",
+        "vacation"
+      ],
+      "en": "Marbella and Nueva Andalucía remain among the most sought-after locations on the Costa del Sol. For detailed market analysis, rental potential or investment perspective, I recommend a private conversation with the property advisor.",
+      "es": "Marbella y Nueva Andalucía siguen siendo de las ubicaciones más cotizadas de la Costa del Sol. Para un análisis de mercado detallado, potencial de alquiler o perspectiva de inversión, recomiendo una conversación privada con el asesor.",
+      "confidence": "requires-advisor",
+      "sceneLinks": [],
+      "spaceLinks": [],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like me to arrange a private conversation about investment with the advisor?",
+        "es": "¿Te gustaría que organice una conversación privada sobre inversión con el asesor?"
+      }
+    },
+    {
+      "id": "bedrooms",
+      "keywords": [
+        "bedroom",
+        "dormitorio",
+        "habitacion",
+        "bathroom",
+        "baño",
+        "suite",
+        "room",
+        "master",
+        "principal"
+      ],
+      "en": "Villa Casia has four bedrooms and five bathrooms. The master suite is a private retreat, separated from the social areas. The advisor can confirm the full bedroom configuration and en-suite details.",
+      "es": "Villa Casia tiene cuatro dormitorios y cinco baños. La suite principal es un retiro privado, separado de las zonas sociales. El asesor puede confirmar la configuración completa de dormitorios y detalles en suite.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "First light",
+        "Night garden"
+      ],
+      "spaceLinks": [
+        "Master suite",
+        "Private rooms"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the private rooms?",
+        "es": "¿Te gustaría explorar las habitaciones privadas?"
+      }
+    },
+    {
+      "id": "beach",
+      "keywords": [
+        "beach",
+        "playa",
+        "coast",
+        "costa",
+        "sea",
+        "mar",
+        "ocean",
+        "oceano",
+        "sand",
+        "arena"
+      ],
+      "en": "The coast is a short drive away — approximately 3 km to the nearest beach. Puerto Banús marina and Marbella's beach clubs are easily accessible, as are quieter coves along the coast.",
+      "es": "La costa está a un corto trayecto — aproximadamente 3 km a la playa más cercana. El puerto deportivo de Banús y los beach clubs de Marbella son fácilmente accesibles, así como calas más tranquilas a lo largo de la costa.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "Golden hour"
+      ],
+      "spaceLinks": [
+        "Terrace",
+        "Infinity pool"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the outdoor spaces that connect the villa to the landscape?",
+        "es": "¿Te gustaría explorar los espacios exteriores que conectan la villa con el paisaje?"
+      }
+    },
+    {
+      "id": "golf",
+      "keywords": [
+        "golf",
+        "course",
+        "campo",
+        "naranjos",
+        "brisas"
+      ],
+      "en": "Nueva Andalucía is known as the Golf Valley — at least five courses within a few kilometres, including Los Naranjos, Las Brisas and Dama de Noche. The nearest is approximately 2 km from the villa.",
+      "es": "Nueva Andalucía es conocida como el Golf Valley — al menos cinco campos a pocos kilómetros, incluyendo Los Naranjos, Las Brisas y Dama de Noche. El más cercano está a aproximadamente 2 km de la villa.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "First light"
+      ],
+      "spaceLinks": [
+        "Garden"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the outdoor life of the property?",
+        "es": "¿Te gustaría explorar la vida exterior de la propiedad?"
+      }
+    },
+    {
+      "id": "family",
+      "keywords": [
+        "family",
+        "familia",
+        "children",
+        "hijos",
+        "kids",
+        "niños",
+        "school",
+        "colegio"
+      ],
+      "en": "Villa Casia offers four bedrooms and five bathrooms — generous for a family. Several international schools are within 10–20 minutes by car. The advisor can recommend specific options.",
+      "es": "Villa Casia ofrece cuatro dormitorios y cinco baños — generosa para una familia. Varios colegios internacionales están a 10–20 minutos en coche. El asesor puede recomendar opciones específicas.",
+      "confidence": "confirmed",
+      "sceneLinks": [
+        "First light",
+        "Gather"
+      ],
+      "spaceLinks": [
+        "Master suite",
+        "Garden",
+        "Pool terrace"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to explore the spaces most relevant to family life?",
+        "es": "¿Te gustaría explorar los espacios más relevantes para la vida en familia?"
+      }
+    },
+    {
+      "id": "seasonal",
+      "keywords": [
+        "summer",
+        "verano",
+        "winter",
+        "invierno",
+        "year round",
+        "todo el año",
+        "season",
+        "estacion",
+        "climate",
+        "clima",
+        "weather",
+        "tiempo"
+      ],
+      "en": "The property is designed for year-round living. Summer is social and outdoor; winter remains mild on the Costa del Sol, with the garden and wellness areas in daily use.",
+      "es": "La propiedad está diseñada para vivir todo el año. El verano es social y exterior; el invierno sigue siendo suave en la Costa del Sol, con el jardín y las zonas de wellness en uso diario.",
+      "confidence": "pending",
+      "sceneLinks": [
+        "First light",
+        "Night garden"
+      ],
+      "spaceLinks": [
+        "Garden",
+        "Spa"
+      ],
+      "docLinks": [],
+      "followUp": {
+        "en": "Would you like to see how the villa changes from morning to evening?",
+        "es": "¿Te gustaría ver cómo cambia la villa de la mañana a la noche?"
+      }
+    }
+  ],
+  "interestSignals": {
+    "outdoor_living": [
+      "garden",
+      "pool",
+      "outdoor",
+      "landscape",
+      "water",
+      "exterior",
+      "jardin",
+      "piscina",
+      "beach",
+      "playa"
+    ],
+    "entertaining": [
+      "entertain",
+      "friends",
+      "dinner",
+      "gathering",
+      "party",
+      "social",
+      "invitados",
+      "celebrar"
+    ],
+    "wellness": [
+      "spa",
+      "wellness",
+      "retreat",
+      "relax",
+      "cinema",
+      "private",
+      "yoga"
+    ],
+    "privacy": [
+      "privacy",
+      "calm",
+      "quiet",
+      "silence",
+      "private",
+      "secluded"
+    ],
+    "family": [
+      "family",
+      "children",
+      "kids",
+      "bedrooms",
+      "school",
+      "familia",
+      "hijos",
+      "colegio"
+    ],
+    "investment": [
+      "investment",
+      "rentability",
+      "resale",
+      "rental",
+      "value",
+      "inversion",
+      "alquiler"
+    ],
+    "golf": [
+      "golf",
+      "course",
+      "campo"
+    ],
+    "architecture": [
+      "architecture",
+      "design",
+      "materials",
+      "arquitectura",
+      "diseño"
+    ]
+  },
+  "qualification": [
+    {
+      "trigger": "after_3_questions",
+      "en": "May I ask what draws you most to this kind of residence?",
+      "es": "¿Puedo preguntarte qué te atrae más de este tipo de residencia?"
+    },
+    {
+      "trigger": "interest_detected",
+      "en": "Would you like me to prepare a private summary with the spaces most relevant to what you are looking for?",
+      "es": "¿Te gustaría que prepare un resumen privado con los espacios más relevantes para lo que buscas?"
+    },
+    {
+      "trigger": "high_intent",
+      "en": "If you would like, I can arrange a private conversation with the property advisor. Would that be useful?",
+      "es": "Si lo deseas, puedo organizar una conversación privada con el asesor de la propiedad. ¿Te resultaría útil?"
+    }
+  ]
+}
