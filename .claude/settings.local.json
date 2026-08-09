@@ -10,7 +10,14 @@
       "Bash(curl -s --max-time 20 -X POST https://larum-property-experience.vercel.app/api/concierge -H \"Content-Type: application/json\" -d '{\"property\":\"madrid\",\"lang\":\"en\",\"question\":\"test\"}')",
       "Bash(vercel redeploy *)",
       "Bash(curl -s --max-time 60 -X POST https://larum-property-experience.vercel.app/api/concierge -H \"Content-Type: application/json\" -d '{\"property\":\"marbella\",\"lang\":\"es\",\"question\":\"Podria desayunar fuera en noviembre? Que tal el clima esos meses?\"}')",
-      "Bash(vercel env *)"
+      "Bash(vercel env *)",
+      "PowerShell(foreach\\($f in @\\(\"larum-editorial-roadmap.csv\",\"larum-cluster-architecture.csv\",\"keyword-universe.csv\"\\)\\){ $p=\"C:\\\\Users\\\\Simon\\\\Downloads\\\\$f\"; Write-Output \"===== $f =====\"; if\\(Test-Path $p\\){ $c=Get-Content $p; Write-Output \"Lineas totales: $\\($c.Count\\)\"; Write-Output \"--- CABECERA ---\"; $c[0]; Write-Output \"--- PRIMERAS 3 FILAS ---\"; $c[1..3] } else { Write-Output \"NO ENCONTRADO\" } })",
+      "PowerShell($p=\"C:\\\\Users\\\\Simon\\\\Downloads\\\\keyword-universe.csv\"; $b=[System.IO.File]::ReadAllBytes\\($p\\)[0..3]; Write-Output \"Primeros bytes: $\\($b -join ','\\)\"; Write-Output \"=== Leido como UTF8 ===\"; $u=[System.IO.File]::ReadAllText\\($p,[System.Text.Encoding]::UTF8\\); \\($u -split \"`n\"\\)[1]; Write-Output \"=== python disponible? ===\"; \\(Get-Command python -ErrorAction SilentlyContinue\\).Source)",
+      "Bash(gh auth *)",
+      "Bash(node build-pack.js)",
+      "Bash(node validate-content.js)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

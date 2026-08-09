@@ -40,7 +40,9 @@ vercel deploy --prod --yes                       # publica el código local
 
 Para desarrollo local: `python -m http.server 4173`. El concierge LLM no existe en local (no hay `/api`), así que cae al motor de palabras clave — que es el comportamiento correcto y conviene probarlo.
 
-Al tocar `index.html`, `app.js`, `analytics.js`, `styles.css` o `admin.html`: subir el `?v=` de los `<script>`/`<link>`, o el navegador servirá la versión anterior en la demo. Van por `v=6`.
+Al tocar `index.html`, `app.js`, `analytics.js`, `styles.css` o `admin.html`: subir el `?v=` de los `<script>`/`<link>`, o el navegador servirá la versión anterior en la demo. Van por `v=8`. **Una segunda edición dentro de la misma versión también se queda cacheada** — comprobado en vivo: hay que volver a subirla.
+
+Las propiedades se leen de Supabase (`db → files → pack`). Para trabajar contra los JSON locales sin que gane la fila publicada: `?source=files`. Detalle en `docs/DATABASE.md`.
 
 ### Qué está hecho
 

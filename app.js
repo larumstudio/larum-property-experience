@@ -1059,8 +1059,12 @@ function syncUrl(){
   /* `chapter` is an arrival instruction, not state: once the visitor is in,
      it must not travel on into a link they copy for someone else. */
   q.delete('chapter');
-  /* Never persist the diagnostic flag into a shared link either. */
+  /* Never persist the diagnostic flags into a shared link either. `source`
+     forces the loader to read files or the offline pack: useful while
+     authoring, wrong in a link an agent sends to a client, who would then
+     be served whatever that source happened to contain. */
   q.delete('debug');
+  q.delete('source');
   history.replaceState(null,'',location.pathname+'?'+q.toString());
 }
 

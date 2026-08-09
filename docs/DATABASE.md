@@ -89,6 +89,24 @@ Se genera SQL en vez de escribir directamente porque sembrar `properties` exige 
 
 ---
 
+## Cómo la lee la experiencia
+
+`property-loader.js` prueba tres fuentes en orden y se queda con la primera que responda:
+
+```
+db  ──►  files  ──►  pack
+```
+
+- **db** — Supabase. Canónica desde la Fase 1. El filtrado lo hace la RLS, no el código: un visitante anónimo recibe solo `published`; un operador con sesión iniciada recibe también los borradores, y eso es lo que hace funcionar la vista previa con la experiencia real.
+- **files** — `properties/*.json` sobre http. Redacción y desarrollo local.
+- **pack** — `property-pack.js`. Offline (`file://`) y última línea de defensa.
+
+Una fila sin `content` (un borrador recién creado en el panel) se descarta: nunca debe llegar a un visitante como una cáscara vacía.
+
+**Override:** `?source=db|files|pack`. Editar un JSON en local no puede perder silenciosamente contra una fila publicada en la base. El parámetro se elimina de la URL compartible, igual que `debug` y `chapter` — es una instrucción de desarrollo, no estado que deba viajar a un cliente.
+
+---
+
 ## Cómo aplicar
 
 1. Supabase → SQL Editor → pegar `001_phase1_schema.sql` → Run.
