@@ -17,7 +17,11 @@
       "Bash(node build-pack.js)",
       "Bash(node validate-content.js)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(vercel deploy *)",
+      "Bash(curl -s \"https://larum-property-experience.vercel.app/index.html\")",
+      "Bash(curl -s \"https://larum-property-experience.vercel.app/property-loader.js\")",
+      "PowerShell($m=\"C:\\\\Users\\\\Simon\\\\.claude\\\\projects\\\\C--Users-Simon-Downloads-larum-prototype-v2-prototype\\\\memory\"; Get-ChildItem $m -ErrorAction SilentlyContinue | Select-Object Name; Write-Output \"--- MEMORY.md ---\"; if\\(Test-Path \"$m\\\\MEMORY.md\"\\){Get-Content \"$m\\\\MEMORY.md\" -Raw}else{\"\\(no existe\\)\"})"
     ]
   }
 }

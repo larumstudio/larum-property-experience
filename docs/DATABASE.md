@@ -103,6 +103,14 @@ db  ──►  files  ──►  pack
 
 Una fila sin `content` (un borrador recién creado en el panel) se descarta: nunca debe llegar a un visitante como una cáscara vacía.
 
+### Deuda conocida: el catálogo entero viaja en cada visita
+
+`loadFromDb` pide **todas** las propiedades. Medido en producción el 9 ago 2026 con dos propiedades: **61 KB, entre 425 y 1.154 ms**, y bloquea el primer render. Antes eran siete JSON locales, más rápidos.
+
+Con dos propiedades se aguanta. Crece de forma lineal: cincuenta propiedades serían ~1,5 MB en cada visita.
+
+**Arreglo pendiente (primero del M5):** un índice ligero (`slug, status, display_order, is_default` + etiqueta para el conmutador) y la fila completa solo de la propiedad que se está viendo, con carga bajo demanda al cambiar. Implica volver `setProperty` asíncrono en `app.js`, por eso no se hizo dentro del M3.
+
 **Override:** `?source=db|files|pack`. Editar un JSON en local no puede perder silenciosamente contra una fila publicada en la base. El parámetro se elimina de la URL compartible, igual que `debug` y `chapter` — es una instrucción de desarrollo, no estado que deba viajar a un cliente.
 
 ---
