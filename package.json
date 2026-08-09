@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node build-pack.js",
     "validate": "node validate-content.js",
+    "seed": "node tools/generate-seed.js",
     "check": "node build-pack.js && node validate-content.js"
   },
   "dependencies": {
