@@ -867,13 +867,21 @@ async function askConcierge(question){
     const r=await fetch('/api/concierge',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({property:current,lang,question,history:conciergeHistory}),
+      body:JSON.stringify({
+        property:current, lang, question,
+        history:conciergeHistory,
+        /* Ties this turn to the visit in analytics and to any conversation
+           row already opened by an earlier question on the same tab. */
+        sessionId: (window.LarumAnalytics && LarumAnalytics.getSessionId()) || null
+      }),
       signal:controller.signal
     });
     /* The endpoint is absent (404), unimplemented by a plain static server
        (501), or has no API key (503) — none of these fix themselves, so stop
-       asking. A 400 is about this one question and must not mark it down. */
-    if(r.status===404||r.status===501||r.status===503){conciergeEndpointDown=true;return null}
+       asking. 429 = rate limited: the visitor has exhausted their budget for
+       this session, so hand off to the keyword engine for what remains of it.
+       A 400 is about this one question and must not mark it down. */
+    if(r.status===404||r.status===501||r.status===503||r.status===429){conciergeEndpointDown=true;return null}
     if(!r.ok)return null;
     const d=await r.json();
     if(d.error||!d.answer)return null;

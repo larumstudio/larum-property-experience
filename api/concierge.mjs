@@ -10,7 +10,8 @@
    ─────────────────────────────────────────────────────────────────── */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { PACK } from './_pack.mjs';
+import { getDossier, propertyKnown, persistTurn } from './_data.mjs';
+import { check as rateCheck } from './_rate.mjs';
 
 /* Sonnet 5 by decision: the concierge answers from a dossier it already has
    in front of it, so the work is comprehension and phrasing rather than
@@ -99,10 +100,9 @@ function buildLanguagePrompt(lang) {
     : 'Answer in English.';
 }
 
-function buildDossierPrompt(slug) {
-  const prop = PACK.properties[slug];
-  const content = prop.content;
-  const knowledge = prop.knowledge;
+function buildDossierPrompt(slug, dossier) {
+  const content = dossier.content;
+  const knowledge = dossier.knowledge;
 
   const spaceNames = Object.keys(knowledge.property?.spaces || {});
   const sceneNames = (content.sequences || []).map(s => s[0]);
@@ -154,16 +154,33 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'concierge_unconfigured' });
   }
 
-  const { property, lang = 'en', question, history = [] } = req.body || {};
+  const { property, lang = 'en', question, history = [], sessionId } = req.body || {};
 
-  if (!property || !PACK.properties[property]) {
-    return res.status(400).json({ error: 'unknown_property' });
+  /* Rate limit before any work. Cheap check, saves an Anthropic call
+     and a database roundtrip on abuse. Rejected requests never touch
+     the model and never leave a row behind. */
+  const gate = rateCheck(req, sessionId);
+  if (!gate.ok) {
+    if (gate.retryAfter) res.setHeader('Retry-After', String(gate.retryAfter));
+    return res.status(429).json({ error: 'rate_limited', scope: gate.scope });
   }
+
   if (typeof question !== 'string' || !question.trim()) {
     return res.status(400).json({ error: 'empty_question' });
   }
   if (question.length > MAX_QUESTION_CHARS) {
     return res.status(400).json({ error: 'question_too_long' });
+  }
+  if (!property || !(await propertyKnown(property))) {
+    return res.status(400).json({ error: 'unknown_property' });
+  }
+
+  /* The dossier is fetched once per turn: from the database with a warm
+     in-memory cache, falling back to the bundled pack if the database
+     is unreachable. The concierge never goes mute for a data problem. */
+  const dossier = await getDossier(property);
+  if (!dossier) {
+    return res.status(200).json({ error: 'no_dossier', fallback: true });
   }
 
   const language = lang === 'es' ? 'es' : 'en';
@@ -190,7 +207,7 @@ export default async function handler(req, res) {
         {
           /* Stable per property. Cached, and now shared across languages. */
           type: 'text',
-          text: buildDossierPrompt(property),
+          text: buildDossierPrompt(property, dossier),
           cache_control: { type: 'ephemeral' }
         },
         {
@@ -217,6 +234,32 @@ export default async function handler(req, res) {
 
     const parsed = JSON.parse(text);
 
+    const usage = {
+      model: MODEL,
+      uncachedInput: message.usage.input_tokens || 0,
+      cacheWritten: message.usage.cache_creation_input_tokens || 0,
+      cacheRead: message.usage.cache_read_input_tokens || 0,
+      output: message.usage.output_tokens || 0,
+      /* The cache-write tokens were missing here before, which made a turn
+         that cost four cents look like it cost a fraction of one. */
+      costUSD: estimateCostUSD(MODEL, message.usage)
+    };
+
+    /* Persist AFTER responding to the visitor would leak the process on
+       serverless runtimes. Awaiting is safe because persistTurn swallows
+       every error internally and stays well under the 30 s budget. */
+    await persistTurn({
+      sessionId, slug: property, lang: language,
+      question,
+      answer: {
+        text: parsed.answer,
+        confidence: parsed.confidence,
+        interests: parsed.interests || [],
+        source: 'llm',
+        usage
+      }
+    });
+
     return res.status(200).json({
       answer: parsed.answer,
       confidence: parsed.confidence,
@@ -225,16 +268,7 @@ export default async function handler(req, res) {
       documents: parsed.documents || [],
       interests: parsed.interests || [],
       followUp: parsed.followUp || '',
-      /* The cache-write tokens were missing here before, which made a turn
-         that cost four cents look like it cost a fraction of one. */
-      usage: {
-        model: MODEL,
-        uncachedInput: message.usage.input_tokens || 0,
-        cacheWritten: message.usage.cache_creation_input_tokens || 0,
-        cacheRead: message.usage.cache_read_input_tokens || 0,
-        output: message.usage.output_tokens || 0,
-        costUSD: estimateCostUSD(MODEL, message.usage)
-      }
+      usage
     });
   } catch (e) {
     console.error('concierge error:', e?.status, e?.message);
