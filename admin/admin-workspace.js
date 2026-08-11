@@ -7,6 +7,7 @@
 import { esc } from './admin-core.js';
 import { tabs, emptyState, badge, toast } from './admin-ui.js';
 import { loadProperty, getCached, getPropertyLabel } from './admin-property-store.js';
+import * as contentEditor from './admin-content-editor.js';
 
 export const title = 'Property';
 
@@ -85,6 +86,11 @@ function draw() {
     '</div>';
 
   window.__workspaceTab = switchTab;
+
+  if (activeTab === 'content' && currentProperty) {
+    const mount = document.getElementById('contentEditorMount');
+    if (mount) contentEditor.render(mount, currentProperty);
+  }
 }
 
 function switchTab(tabId) {
@@ -100,8 +106,7 @@ function renderTab(id) {
       return emptyState('Audit & Readiness',
         'Strategic evaluation, completeness check, and audit history. Coming in M5.6.');
     case 'content':
-      return emptyState('Content',
-        'Core and advanced property data, managed through the operational editor. Coming in M5.3.');
+      return '<div id="contentEditorMount"></div>';
     case 'assets':
       return emptyState('Assets',
         'Media management: photos, videos, plans, documents. Coming in M5.4.');
@@ -183,6 +188,7 @@ function formatPrice(amount) {
 }
 
 export function teardown() {
+  contentEditor.teardown();
   delete window.__workspaceTab;
   containerRef = null;
 }

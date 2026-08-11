@@ -1,0 +1,593 @@
+/* ── Larum Admin · Content Editor ─────────────────────────────
+   Section-based editor for properties.content JSONB.
+   Renders inside the workspace Content tab. Each section maps
+   to a conceptual area of the property experience.
+
+   Edits the content object in memory; saveContent() writes the
+   entire column back to Supabase. Never touches knowledge or
+   assets.
+   ───────────────────────────────────────────────────────────── */
+
+import { esc } from './admin-core.js';
+import { toast } from './admin-ui.js';
+import { saveContent } from './admin-property-store.js';
+
+let draft = null;
+let slug = null;
+let containerRef = null;
+let openSections = { identity: true };
+let saving = false;
+
+const SECTIONS = [
+  { id: 'identity',     label: 'Identity' },
+  { id: 'narrative',    label: 'Narrative' },
+  { id: 'spaces',       label: 'Spaces' },
+  { id: 'dna',          label: 'DNA' },
+  { id: 'information',  label: 'Information' },
+  { id: 'surroundings', label: 'Surroundings' },
+  { id: 'arrival',      label: 'Arrival' }
+];
+
+const PROPERTY_TYPES = ['resale', 'new'];
+
+const COPY_KEYS = [
+  'identityNote', 'bandLabel', 'sequenceTitle', 'sequenceIntro', 'filmLabel',
+  'spatialTitle', 'spatialIntro', 'spatialDetail', 'detailsTitle', 'detailsIntro'
+];
+
+export function render(container, property) {
+  containerRef = container;
+  slug = property.slug;
+  draft = JSON.parse(JSON.stringify(property.content || {}));
+  openSections = { identity: true };
+  draw();
+}
+
+export function teardown() {
+  containerRef = null;
+  draft = null;
+  slug = null;
+  delete window.__ceToggle;
+  delete window.__ceInput;
+  delete window.__ceSave;
+  delete window.__ceAddRepeat;
+  delete window.__ceRemoveRepeat;
+  delete window.__ceMoveRepeat;
+}
+
+function draw() {
+  if (!containerRef || !draft) return;
+
+  let html = '<div class="ce">';
+  html += '<div class="ce-toolbar">' +
+    '<button class="btn btn-primary" onclick="__ceSave()" id="ceSaveBtn"' +
+    (saving ? ' disabled' : '') + '>' +
+    (saving ? 'Saving...' : 'Save content') + '</button>' +
+    '<span class="ce-status mono" id="ceStatus"></span>' +
+  '</div>';
+
+  for (const sec of SECTIONS) {
+    const open = !!openSections[sec.id];
+    html += '<div class="ce-section' + (open ? ' ce-open' : '') + '">' +
+      '<button class="ce-section-head" onclick="__ceToggle(\'' + sec.id + '\')">' +
+        '<span class="ce-section-arrow">' + (open ? '▾' : '▸') + '</span>' +
+        '<span>' + esc(sec.label) + '</span>' +
+      '</button>';
+    if (open) {
+      html += '<div class="ce-section-body">' + renderSection(sec.id) + '</div>';
+    }
+    html += '</div>';
+  }
+
+  html += '</div>';
+  containerRef.innerHTML = html;
+
+  window.__ceToggle = toggleSection;
+  window.__ceInput = handleInput;
+  window.__ceSave = handleSave;
+  window.__ceAddRepeat = addRepeaterItem;
+  window.__ceRemoveRepeat = removeRepeaterItem;
+  window.__ceMoveRepeat = moveRepeaterItem;
+}
+
+function toggleSection(id) {
+  openSections[id] = !openSections[id];
+  draw();
+}
+
+function handleInput(path, value) {
+  setPath(draft, path, value);
+}
+
+async function handleSave() {
+  if (saving || !slug || !draft) return;
+  saving = true;
+  const btn = document.getElementById('ceSaveBtn');
+  const status = document.getElementById('ceStatus');
+  if (btn) btn.disabled = true;
+  if (btn) btn.textContent = 'Saving...';
+  if (status) status.textContent = '';
+
+  try {
+    await saveContent(slug, draft);
+    toast('Content saved', 'success');
+    if (status) status.textContent = 'Saved';
+  } catch (e) {
+    toast('Save failed: ' + e.message, 'error');
+    if (status) status.textContent = 'Error';
+  } finally {
+    saving = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Save content'; }
+  }
+}
+
+/* ── Section renderers ────────────────────────────────────── */
+
+function renderSection(id) {
+  switch (id) {
+    case 'identity':     return renderIdentity();
+    case 'narrative':    return renderNarrative();
+    case 'spaces':       return renderSpaces();
+    case 'dna':          return renderDna();
+    case 'information':  return renderInformation();
+    case 'surroundings': return renderSurroundings();
+    case 'arrival':      return renderArrival();
+    default:             return '';
+  }
+}
+
+/* ── Identity ────────────────────────────────────────────── */
+
+function renderIdentity() {
+  let h = '';
+  h += fieldReadOnly('Slug', draft.slug || '');
+  h += fieldText('label', 'Location label', draft.label || '', 'Madrid · Goya');
+  h += fieldText('brand', 'Brand / Agency', draft.brand || '', "Christie's");
+  h += fieldTextarea('title', 'Title', draft.title || '', 'The Light\nof Goya');
+  h += fieldText('subtitle', 'Subtitle', draft.subtitle || '');
+  h += fieldTextarea('intro', 'Introduction', draft.intro || '');
+  h += fieldText('shortRef', 'Short reference', draft.shortRef || '', 'M1558 · Goya');
+  h += fieldNumber('referencePrice', 'Reference price (€)', draft.referencePrice || 0);
+  h += fieldText('defaultRegion', 'Default region', draft.defaultRegion || '', 'Comunidad de Madrid');
+  h += fieldSelect('defaultPropertyType', 'Property type', draft.defaultPropertyType || 'resale', PROPERTY_TYPES);
+  h += fieldTextarea('conciergeIntro', 'Concierge intro', draft.conciergeIntro || '');
+
+  h += '<div class="ce-subsec"><div class="ce-subsec-label mono">Bilingual copy</div></div>';
+  for (const key of COPY_KEYS) {
+    h += fieldBilingual('copy.' + key, copyLabel(key), getPath(draft, 'copy.' + key) || {});
+  }
+
+  return h;
+}
+
+/* ── Narrative ───────────────────────────────────────────── */
+
+function renderNarrative() {
+  let h = '';
+  h += fieldBilingual('copy.sequenceTitle', 'Section title', getPath(draft, 'copy.sequenceTitle') || {});
+  h += fieldBilingual('copy.sequenceIntro', 'Section intro', getPath(draft, 'copy.sequenceIntro') || {});
+  h += fieldBilingual('copy.filmLabel', 'Film label', getPath(draft, 'copy.filmLabel') || {});
+
+  const seqs = draft.sequences || [];
+  const scenes = draft.sceneSpaces || [];
+
+  h += '<div class="ce-subsec">' +
+    '<div class="ce-subsec-label mono">Sequences + Scene spaces</div>' +
+    '<button class="btn btn-outline ce-add-btn" onclick="__ceAddRepeat(\'sequence\')">+ Add sequence</button>' +
+  '</div>';
+
+  for (let i = 0; i < seqs.length; i++) {
+    const s = seqs[i] || [];
+    const sc = scenes[i] || [];
+    const scSpaces = (sc[1] || []).join(', ');
+
+    h += '<div class="ce-repeat-item">' +
+      '<div class="ce-repeat-head">' +
+        '<span class="ce-repeat-num">' + String(i + 1).padStart(2, '0') + '</span>' +
+        '<div class="ce-repeat-actions">' +
+          (i > 0 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'sequence\',' + i + ',-1)" title="Move up">↑</button>' : '') +
+          (i < seqs.length - 1 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'sequence\',' + i + ',1)" title="Move down">↓</button>' : '') +
+          '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'sequence\',' + i + ')" title="Remove">×</button>' +
+        '</div>' +
+      '</div>' +
+      fieldText('sequences.' + i + '.0', 'Title', s[0] || '') +
+      fieldText('sequences.' + i + '.1', 'Time', s[1] || '', '09:12') +
+      fieldTextarea('sequences.' + i + '.2', 'Description', s[2] || '') +
+      fieldText('sceneSpaces.' + i + '.1', 'Spaces (comma-separated)', scSpaces, 'Master suite, Interior patios, Living room') +
+    '</div>';
+  }
+
+  return h;
+}
+
+/* ── Spaces ──────────────────────────────────────────────── */
+
+function renderSpaces() {
+  let h = '';
+  h += fieldBilingual('copy.spatialTitle', 'Section title', getPath(draft, 'copy.spatialTitle') || {});
+  h += fieldBilingual('copy.spatialIntro', 'Section intro', getPath(draft, 'copy.spatialIntro') || {});
+  h += fieldBilingual('copy.spatialDetail', 'Spatial detail', getPath(draft, 'copy.spatialDetail') || {});
+
+  const zones = draft.spatial || [];
+  const details = draft.spatialNodeDetails || { en: [], es: [] };
+
+  h += '<div class="ce-subsec">' +
+    '<div class="ce-subsec-label mono">Spatial zones</div>' +
+    '<button class="btn btn-outline ce-add-btn" onclick="__ceAddRepeat(\'spatial\')">+ Add zone</button>' +
+  '</div>';
+
+  for (let i = 0; i < zones.length; i++) {
+    const z = zones[i] || [];
+    h += '<div class="ce-repeat-item">' +
+      '<div class="ce-repeat-head">' +
+        '<span class="ce-repeat-num">' + esc(z[0] || String(i + 1).padStart(2, '0')) + '</span>' +
+        '<div class="ce-repeat-actions">' +
+          (i > 0 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'spatial\',' + i + ',-1)" title="Move up">↑</button>' : '') +
+          (i < zones.length - 1 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'spatial\',' + i + ',1)" title="Move down">↓</button>' : '') +
+          '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'spatial\',' + i + ')" title="Remove">×</button>' +
+        '</div>' +
+      '</div>' +
+      fieldText('spatial.' + i + '.0', 'Number', z[0] || '') +
+      fieldText('spatial.' + i + '.1', 'Zone name', z[1] || '') +
+      fieldText('spatial.' + i + '.2', 'Spaces', z[2] || '') +
+      fieldTextarea('spatialNodeDetails.en.' + i, 'Detail (EN)', (details.en || [])[i] || '') +
+      fieldTextarea('spatialNodeDetails.es.' + i, 'Detail (ES)', (details.es || [])[i] || '') +
+    '</div>';
+  }
+
+  return h;
+}
+
+/* ── DNA ─────────────────────────────────────────────────── */
+
+function renderDna() {
+  const dna = draft.dna || {};
+  let h = '';
+  h += fieldText('dna.title', 'DNA title', dna.title || '');
+  h += fieldTextarea('dna.intro', 'DNA intro', dna.intro || '');
+
+  const dims = dna.dimensions || [];
+
+  h += '<div class="ce-subsec">' +
+    '<div class="ce-subsec-label mono">Dimensions</div>' +
+    '<button class="btn btn-outline ce-add-btn" onclick="__ceAddRepeat(\'dna\')">+ Add dimension</button>' +
+  '</div>';
+
+  for (let i = 0; i < dims.length; i++) {
+    const d = dims[i] || {};
+    h += '<div class="ce-repeat-item">' +
+      '<div class="ce-repeat-head">' +
+        '<span class="ce-repeat-num">' + esc(d.label || '?') + '</span>' +
+        '<div class="ce-repeat-actions">' +
+          (i > 0 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'dna\',' + i + ',-1)" title="Move up">↑</button>' : '') +
+          (i < dims.length - 1 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'dna\',' + i + ',1)" title="Move down">↓</button>' : '') +
+          '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'dna\',' + i + ')" title="Remove">×</button>' +
+        '</div>' +
+      '</div>' +
+      fieldText('dna.dimensions.' + i + '.label', 'Label', d.label || '') +
+      fieldText('dna.dimensions.' + i + '.score', 'Score', d.score || '') +
+      fieldTextarea('dna.dimensions.' + i + '.note.en', 'Note (EN)', (d.note || {}).en || '') +
+      fieldTextarea('dna.dimensions.' + i + '.note.es', 'Note (ES)', (d.note || {}).es || '') +
+    '</div>';
+  }
+
+  return h;
+}
+
+/* ── Information ─────────────────────────────────────────── */
+
+function renderInformation() {
+  let h = '';
+  h += fieldBilingual('copy.detailsTitle', 'Section title', getPath(draft, 'copy.detailsTitle') || {});
+  h += fieldBilingual('copy.detailsIntro', 'Section intro', getPath(draft, 'copy.detailsIntro') || {});
+  h += fieldBilingual('copy.identityNote', 'Identity note', getPath(draft, 'copy.identityNote') || {});
+  h += fieldBilingual('copy.bandLabel', 'Band label', getPath(draft, 'copy.bandLabel') || {});
+
+  const facts = draft.facts || [];
+  h += '<div class="ce-subsec">' +
+    '<div class="ce-subsec-label mono">Facts</div>' +
+    '<button class="btn btn-outline ce-add-btn" onclick="__ceAddRepeat(\'fact\')">+ Add fact</button>' +
+  '</div>';
+
+  for (let i = 0; i < facts.length; i++) {
+    const f = facts[i] || [];
+    h += '<div class="ce-repeat-item ce-repeat-inline">' +
+      fieldText('facts.' + i + '.0', 'Value', f[0] || '') +
+      fieldText('facts.' + i + '.1', 'Label', f[1] || '') +
+      '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'fact\',' + i + ')" title="Remove">×</button>' +
+    '</div>';
+  }
+
+  const exps = draft.experiences || [];
+  h += '<div class="ce-subsec">' +
+    '<div class="ce-subsec-label mono">Experiences</div>' +
+    '<button class="btn btn-outline ce-add-btn" onclick="__ceAddRepeat(\'experience\')">+ Add experience</button>' +
+  '</div>';
+
+  for (let i = 0; i < exps.length; i++) {
+    const e = exps[i] || [];
+    h += '<div class="ce-repeat-item">' +
+      '<div class="ce-repeat-head">' +
+        '<span class="ce-repeat-num">' + esc(e[0] || String(i + 1).padStart(2, '0')) + '</span>' +
+        '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'experience\',' + i + ')" title="Remove">×</button>' +
+      '</div>' +
+      fieldText('experiences.' + i + '.0', 'Number', e[0] || '') +
+      fieldText('experiences.' + i + '.1', 'Title', e[1] || '') +
+      fieldTextarea('experiences.' + i + '.2', 'Description', e[2] || '') +
+    '</div>';
+  }
+
+  return h;
+}
+
+/* ── Surroundings ────────────────────────────────────────── */
+
+function renderSurroundings() {
+  const setting = draft.setting || {};
+  let h = '';
+  h += fieldText('setting.title', 'Setting title', setting.title || '');
+  h += fieldTextarea('setting.intro', 'Setting intro', setting.intro || '');
+
+  const cards = setting.cards || [];
+  h += '<div class="ce-subsec">' +
+    '<div class="ce-subsec-label mono">Setting cards</div>' +
+    '<button class="btn btn-outline ce-add-btn" onclick="__ceAddRepeat(\'setting\')">+ Add card</button>' +
+  '</div>';
+
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i] || {};
+    h += '<div class="ce-repeat-item">' +
+      '<div class="ce-repeat-head">' +
+        '<span class="ce-repeat-num">' + esc(c.title || '?') + '</span>' +
+        '<div class="ce-repeat-actions">' +
+          (i > 0 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'setting\',' + i + ',-1)" title="Move up">↑</button>' : '') +
+          (i < cards.length - 1 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'setting\',' + i + ',1)" title="Move down">↓</button>' : '') +
+          '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'setting\',' + i + ')" title="Remove">×</button>' +
+        '</div>' +
+      '</div>' +
+      fieldText('setting.cards.' + i + '.title', 'Title', c.title || '') +
+      fieldText('setting.cards.' + i + '.line', 'Line', c.line || '') +
+      fieldText('setting.cards.' + i + '.source', 'Source key', c.source || '', 'parks, restaurants, distances...') +
+    '</div>';
+  }
+
+  return h;
+}
+
+/* ── Arrival ─────────────────────────────────────────────── */
+
+function renderArrival() {
+  const arrival = draft.arrival || { en: [], es: [] };
+  let h = '';
+
+  for (let i = 0; i < 3; i++) {
+    const en = (arrival.en || [])[i] || ['', '', ''];
+    const es = (arrival.es || [])[i] || ['', '', ''];
+
+    h += '<div class="ce-repeat-item">' +
+      '<div class="ce-repeat-head"><span class="ce-repeat-num">Chapter ' + (i + 1) + '</span></div>' +
+      '<div class="ce-bilingual-group">' +
+        '<div class="ce-bi-col">' +
+          '<div class="ce-bi-lang mono">EN</div>' +
+          fieldText('arrival.en.' + i + '.0', 'Eyebrow', en[0] || '') +
+          fieldText('arrival.en.' + i + '.1', 'Title', en[1] || '') +
+          fieldTextarea('arrival.en.' + i + '.2', 'Text', en[2] || '') +
+        '</div>' +
+        '<div class="ce-bi-col">' +
+          '<div class="ce-bi-lang mono">ES</div>' +
+          fieldText('arrival.es.' + i + '.0', 'Eyebrow', es[0] || '') +
+          fieldText('arrival.es.' + i + '.1', 'Title', es[1] || '') +
+          fieldTextarea('arrival.es.' + i + '.2', 'Text', es[2] || '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  return h;
+}
+
+/* ── Repeater actions ────────────────────────────────────── */
+
+function addRepeaterItem(type) {
+  switch (type) {
+    case 'sequence':
+      if (!draft.sequences) draft.sequences = [];
+      if (!draft.sceneSpaces) draft.sceneSpaces = [];
+      draft.sequences.push(['', '', '']);
+      draft.sceneSpaces.push(['', []]);
+      break;
+    case 'spatial':
+      if (!draft.spatial) draft.spatial = [];
+      if (!draft.spatialNodeDetails) draft.spatialNodeDetails = { en: [], es: [] };
+      const num = String(draft.spatial.length + 1).padStart(2, '0');
+      draft.spatial.push([num, '', '']);
+      draft.spatialNodeDetails.en.push('');
+      draft.spatialNodeDetails.es.push('');
+      break;
+    case 'dna':
+      if (!draft.dna) draft.dna = { title: '', intro: '', dimensions: [] };
+      if (!draft.dna.dimensions) draft.dna.dimensions = [];
+      draft.dna.dimensions.push({ label: '', score: '', note: { en: '', es: '' } });
+      break;
+    case 'fact':
+      if (!draft.facts) draft.facts = [];
+      draft.facts.push(['', '']);
+      break;
+    case 'experience':
+      if (!draft.experiences) draft.experiences = [];
+      const n = String(draft.experiences.length + 1).padStart(2, '0');
+      draft.experiences.push([n, '', '']);
+      break;
+    case 'setting':
+      if (!draft.setting) draft.setting = { title: '', intro: '', cards: [] };
+      if (!draft.setting.cards) draft.setting.cards = [];
+      draft.setting.cards.push({ title: '', line: '', source: '' });
+      break;
+  }
+  draw();
+}
+
+function removeRepeaterItem(type, index) {
+  switch (type) {
+    case 'sequence':
+      if (draft.sequences) draft.sequences.splice(index, 1);
+      if (draft.sceneSpaces) draft.sceneSpaces.splice(index, 1);
+      break;
+    case 'spatial':
+      if (draft.spatial) draft.spatial.splice(index, 1);
+      if (draft.spatialNodeDetails?.en) draft.spatialNodeDetails.en.splice(index, 1);
+      if (draft.spatialNodeDetails?.es) draft.spatialNodeDetails.es.splice(index, 1);
+      break;
+    case 'dna':
+      if (draft.dna?.dimensions) draft.dna.dimensions.splice(index, 1);
+      break;
+    case 'fact':
+      if (draft.facts) draft.facts.splice(index, 1);
+      break;
+    case 'experience':
+      if (draft.experiences) draft.experiences.splice(index, 1);
+      break;
+    case 'setting':
+      if (draft.setting?.cards) draft.setting.cards.splice(index, 1);
+      break;
+  }
+  draw();
+}
+
+function moveRepeaterItem(type, index, dir) {
+  const swap = index + dir;
+  switch (type) {
+    case 'sequence':
+      arrSwap(draft.sequences, index, swap);
+      arrSwap(draft.sceneSpaces, index, swap);
+      break;
+    case 'spatial':
+      arrSwap(draft.spatial, index, swap);
+      arrSwap(draft.spatialNodeDetails?.en, index, swap);
+      arrSwap(draft.spatialNodeDetails?.es, index, swap);
+      break;
+    case 'dna':
+      arrSwap(draft.dna?.dimensions, index, swap);
+      break;
+    case 'setting':
+      arrSwap(draft.setting?.cards, index, swap);
+      break;
+  }
+  draw();
+}
+
+function arrSwap(arr, a, b) {
+  if (!arr || a < 0 || b < 0 || a >= arr.length || b >= arr.length) return;
+  const tmp = arr[a];
+  arr[a] = arr[b];
+  arr[b] = tmp;
+}
+
+/* ── Field renderers ─────────────────────────────────────── */
+
+function fieldReadOnly(label, value) {
+  return '<div class="ce-field">' +
+    '<label class="ce-label">' + esc(label) + '</label>' +
+    '<div class="ce-readonly mono">' + esc(value) + '</div>' +
+  '</div>';
+}
+
+function fieldText(path, label, value, placeholder) {
+  const id = 'ce_' + path.replace(/\./g, '_');
+  return '<div class="ce-field">' +
+    '<label class="ce-label" for="' + id + '">' + esc(label) + '</label>' +
+    '<input type="text" class="ce-input" id="' + id + '" value="' + esc(value) + '"' +
+    (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') +
+    ' oninput="__ceInput(\'' + escAttr(path) + '\',this.value)" />' +
+  '</div>';
+}
+
+function fieldTextarea(path, label, value, placeholder) {
+  const id = 'ce_' + path.replace(/\./g, '_');
+  return '<div class="ce-field">' +
+    '<label class="ce-label" for="' + id + '">' + esc(label) + '</label>' +
+    '<textarea class="ce-textarea" id="' + id + '"' +
+    (placeholder ? ' placeholder="' + esc(placeholder) + '"' : '') +
+    ' oninput="__ceInput(\'' + escAttr(path) + '\',this.value)">' + esc(value) + '</textarea>' +
+  '</div>';
+}
+
+function fieldNumber(path, label, value) {
+  const id = 'ce_' + path.replace(/\./g, '_');
+  return '<div class="ce-field">' +
+    '<label class="ce-label" for="' + id + '">' + esc(label) + '</label>' +
+    '<input type="number" class="ce-input" id="' + id + '" value="' + esc(String(value)) + '"' +
+    ' oninput="__ceInput(\'' + escAttr(path) + '\',Number(this.value))" />' +
+  '</div>';
+}
+
+function fieldSelect(path, label, value, options) {
+  const id = 'ce_' + path.replace(/\./g, '_');
+  return '<div class="ce-field">' +
+    '<label class="ce-label" for="' + id + '">' + esc(label) + '</label>' +
+    '<select class="ce-input" id="' + id + '" onchange="__ceInput(\'' + escAttr(path) + '\',this.value)">' +
+    options.map(o =>
+      '<option value="' + esc(o) + '"' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>'
+    ).join('') +
+    '</select>' +
+  '</div>';
+}
+
+function fieldBilingual(path, label, obj) {
+  const en = (obj && obj.en) || '';
+  const es = (obj && obj.es) || '';
+  return '<div class="ce-field ce-field-bi">' +
+    '<label class="ce-label">' + esc(label) + '</label>' +
+    '<div class="ce-bilingual">' +
+      '<div class="ce-bi-col">' +
+        '<span class="ce-bi-tag mono">EN</span>' +
+        '<input type="text" class="ce-input" value="' + esc(en) + '"' +
+        ' oninput="__ceInput(\'' + escAttr(path + '.en') + '\',this.value)" />' +
+      '</div>' +
+      '<div class="ce-bi-col">' +
+        '<span class="ce-bi-tag mono">ES</span>' +
+        '<input type="text" class="ce-input" value="' + esc(es) + '"' +
+        ' oninput="__ceInput(\'' + escAttr(path + '.es') + '\',this.value)" />' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+/* ── Path helpers ────────────────────────────────────────── */
+
+function getPath(obj, path) {
+  return path.split('.').reduce((o, k) => (o && o[k] !== undefined) ? o[k] : undefined, obj);
+}
+
+function setPath(obj, path, value) {
+  const parts = path.split('.');
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const k = parts[i];
+    const nextKey = parts[i + 1];
+    if (cur[k] === undefined || cur[k] === null) {
+      cur[k] = isArrayIndex(nextKey) ? [] : {};
+    }
+    cur = cur[k];
+  }
+  const last = parts[parts.length - 1];
+
+  if (path.startsWith('sceneSpaces.') && last === '1') {
+    cur[last] = value.split(',').map(s => s.trim()).filter(Boolean);
+    return;
+  }
+
+  cur[last] = value;
+}
+
+function isArrayIndex(key) {
+  return /^\d+$/.test(key);
+}
+
+function escAttr(s) {
+  return s.replace(/'/g, "\\'");
+}
+
+function copyLabel(key) {
+  return key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+}

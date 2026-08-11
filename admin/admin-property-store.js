@@ -96,6 +96,20 @@ export function clearCache() {
   store.cache.clear();
 }
 
+export async function saveContent(slug, content) {
+  const { error } = await window.supabaseClient
+    .from('properties')
+    .update({ content })
+    .eq('slug', slug);
+
+  if (error) throw new Error(error.message);
+
+  const cached = store.cache.get(slug);
+  if (cached) {
+    cached.content = JSON.parse(JSON.stringify(content));
+  }
+}
+
 export function getPropertyLabel(row) {
   return row.name_es || row.name_en || row.slug;
 }
