@@ -8,6 +8,7 @@ import { esc } from './admin-core.js';
 import { tabs, emptyState, badge, toast } from './admin-ui.js';
 import { loadProperty, getCached, getPropertyLabel } from './admin-property-store.js';
 import * as contentEditor from './admin-content-editor.js';
+import * as assetsEditor from './admin-assets-editor.js';
 
 export const title = 'Property';
 
@@ -91,6 +92,11 @@ function draw() {
     const mount = document.getElementById('contentEditorMount');
     if (mount) contentEditor.render(mount, currentProperty);
   }
+
+  if (activeTab === 'assets' && currentProperty) {
+    const mount = document.getElementById('assetsEditorMount');
+    if (mount) assetsEditor.render(mount, currentProperty);
+  }
 }
 
 function switchTab(tabId) {
@@ -108,8 +114,7 @@ function renderTab(id) {
     case 'content':
       return '<div id="contentEditorMount"></div>';
     case 'assets':
-      return emptyState('Assets',
-        'Media management: photos, videos, plans, documents. Coming in M5.4.');
+      return '<div id="assetsEditorMount"></div>';
     case 'experience':
       return emptyState('Experience',
         'Preview and configure the visitor-facing property experience. Coming in M5.5.');
@@ -304,6 +309,7 @@ function formatDate(iso) {
 
 export function teardown() {
   contentEditor.teardown();
+  assetsEditor.teardown();
   delete window.__workspaceTab;
   containerRef = null;
 }

@@ -110,6 +110,20 @@ export async function saveContent(slug, content) {
   }
 }
 
+export async function saveAssets(slug, assets) {
+  const { error } = await window.supabaseClient
+    .from('properties')
+    .update({ assets })
+    .eq('slug', slug);
+
+  if (error) throw new Error(error.message);
+
+  const cached = store.cache.get(slug);
+  if (cached) {
+    cached.assets = JSON.parse(JSON.stringify(assets));
+  }
+}
+
 export function getPropertyLabel(row) {
   return row.name_es || row.name_en || row.slug;
 }
