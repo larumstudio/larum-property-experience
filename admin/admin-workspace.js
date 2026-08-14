@@ -9,6 +9,7 @@ import { tabs, emptyState, badge, toast } from './admin-ui.js';
 import { loadProperty, getCached, getPropertyLabel } from './admin-property-store.js';
 import * as contentEditor from './admin-content-editor.js';
 import * as assetsEditor from './admin-assets-editor.js';
+import * as experiencePreview from './admin-experience-preview.js';
 
 export const title = 'Property';
 
@@ -97,6 +98,11 @@ function draw() {
     const mount = document.getElementById('assetsEditorMount');
     if (mount) assetsEditor.render(mount, currentProperty);
   }
+
+  if (activeTab === 'experience' && currentProperty) {
+    const mount = document.getElementById('experiencePreviewMount');
+    if (mount) experiencePreview.render(mount, currentProperty);
+  }
 }
 
 function switchTab(tabId) {
@@ -116,8 +122,7 @@ function renderTab(id) {
     case 'assets':
       return '<div id="assetsEditorMount"></div>';
     case 'experience':
-      return emptyState('Experience',
-        'Preview and configure the visitor-facing property experience. Coming in M5.5.');
+      return '<div id="experiencePreviewMount"></div>';
     case 'concierge':
       return emptyState('Concierge',
         'AI concierge configuration and conversation history. Coming in M5.5.');
@@ -310,6 +315,7 @@ function formatDate(iso) {
 export function teardown() {
   contentEditor.teardown();
   assetsEditor.teardown();
+  experiencePreview.teardown();
   delete window.__workspaceTab;
   containerRef = null;
 }

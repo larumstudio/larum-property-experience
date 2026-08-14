@@ -280,6 +280,16 @@
     .ae-chip{padding:4px 10px;border-radius:12px;font-size:11px;border:1px solid var(--line);color:var(--muted);font-family:var(--font-mono)}
     .ae-chip-filled{color:var(--gold);border-color:var(--gold)}
 
+    /* ── Experience preview (M5.5a) ──────────────────────── */
+    .ex{display:flex;flex-direction:column;gap:12px}
+    .ex-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .ex-lang-toggle{display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden}
+    .ex-lang{background:none;border:none;color:var(--text);font-family:var(--font-mono);font-size:11px;padding:6px 14px;cursor:pointer;transition:background .15s,color .15s}
+    .ex-lang:hover{color:var(--ink)}
+    .ex-lang-active{background:var(--surface-2);color:var(--gold)}
+    .ex-frame{position:relative;width:100%;padding-top:56.25%;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+    .ex-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+
     /* ── Responsive ──────────────────────────────────────── */
     @media(max-width:1100px){
       .stats-grid{grid-template-columns:repeat(3,1fr)}
