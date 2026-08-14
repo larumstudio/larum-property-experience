@@ -11,14 +11,17 @@
    ───────────────────────────────────────────────────────────── */
 
 import { esc } from './admin-core.js';
+import * as knowledgeEditor from './admin-knowledge-editor.js';
 
 const PAGE_SIZE = 20;
 
 let containerRef = null;
 let currentSlug = null;
+let currentProperty = null;
 let clickHandler = null;
 
 const state = {
+  activeSubtab: 'history',
   loading: false,
   error: null,
   total: 0,
@@ -30,28 +33,38 @@ const state = {
 };
 
 export function render(container, property) {
+  const sameSlug = currentSlug === property.slug;
   if (containerRef && containerRef !== container) unbind(containerRef);
   containerRef = container;
   currentSlug = property.slug;
+  currentProperty = property;
 
-  state.loading = true;
-  state.error = null;
-  state.total = 0;
-  state.list = [];
-  state.expandedId = null;
-  state.messages = {};
-  state.msgLoading = {};
-  state.msgError = {};
+  if (!sameSlug) {
+    /* New property → fresh history state. Knowledge editor manages its
+       own per-slug reset internally when we call its render() below. */
+    state.activeSubtab = 'history';
+    state.loading = true;
+    state.error = null;
+    state.total = 0;
+    state.list = [];
+    state.expandedId = null;
+    state.messages = {};
+    state.msgLoading = {};
+    state.msgError = {};
+  }
 
   bind(container);
   draw();
-  loadFirstPage();
+  if (!sameSlug || state.list.length === 0) loadFirstPage();
 }
 
 export function teardown() {
   if (containerRef) unbind(containerRef);
+  knowledgeEditor.teardown();
   containerRef = null;
   currentSlug = null;
+  currentProperty = null;
+  state.activeSubtab = 'history';
   state.list = [];
   state.messages = {};
   state.msgLoading = {};
@@ -69,6 +82,8 @@ function bind(container) {
     const action = el.getAttribute('data-co-action');
     if (action === 'toggle') toggleExpand(el.getAttribute('data-co-id'));
     else if (action === 'load-more') loadMore();
+    else if (action === 'subtab-history') switchSubtab('history');
+    else if (action === 'subtab-knowledge') switchSubtab('knowledge');
   };
   container.addEventListener('click', clickHandler);
 }
@@ -196,20 +211,38 @@ function draw() {
   containerRef.innerHTML =
     '<div class="co">' +
       subtabsHtml() +
-      bodyHtml() +
+      (state.activeSubtab === 'knowledge'
+        ? '<div id="knowledgeEditorMount"></div>'
+        : bodyHtml()) +
     '</div>';
+  if (state.activeSubtab === 'knowledge' && currentProperty) {
+    const mount = containerRef.querySelector('#knowledgeEditorMount');
+    if (mount) knowledgeEditor.render(mount, currentProperty);
+  }
+}
+
+function switchSubtab(next) {
+  if (state.activeSubtab === next) return;
+  state.activeSubtab = next;
+  draw();
 }
 
 function subtabsHtml() {
   const count = state.total ? ' <span class="co-count">(' + state.total + ')</span>' : '';
+  const historyActive = state.activeSubtab === 'history';
+  const knowledgeActive = state.activeSubtab === 'knowledge';
   return (
     '<div class="co-subtabs" role="tablist" aria-label="Concierge subtabs">' +
-      '<button class="co-subtab co-subtab-active" role="tab" aria-selected="true">' +
+      '<button class="co-subtab' + (historyActive ? ' co-subtab-active' : '') + '"' +
+        ' role="tab" aria-selected="' + (historyActive ? 'true' : 'false') + '"' +
+        ' data-co-action="subtab-history">' +
         'History' + count +
       '</button>' +
-      '<span class="co-subtab co-subtab-disabled" role="tab" aria-selected="false" aria-disabled="true">' +
-        'Knowledge<span class="co-subtab-note">Coming in M5.5c</span>' +
-      '</span>' +
+      '<button class="co-subtab' + (knowledgeActive ? ' co-subtab-active' : '') + '"' +
+        ' role="tab" aria-selected="' + (knowledgeActive ? 'true' : 'false') + '"' +
+        ' data-co-action="subtab-knowledge">' +
+        'Knowledge' +
+      '</button>' +
     '</div>'
   );
 }

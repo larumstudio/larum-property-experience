@@ -124,6 +124,20 @@ export async function saveAssets(slug, assets) {
   }
 }
 
+export async function saveKnowledge(slug, knowledge) {
+  const { error } = await window.supabaseClient
+    .from('properties')
+    .update({ knowledge })
+    .eq('slug', slug);
+
+  if (error) throw new Error(error.message);
+
+  const cached = store.cache.get(slug);
+  if (cached) {
+    cached.knowledge = JSON.parse(JSON.stringify(knowledge));
+  }
+}
+
 export function getPropertyLabel(row) {
   return row.name_es || row.name_en || row.slug;
 }
