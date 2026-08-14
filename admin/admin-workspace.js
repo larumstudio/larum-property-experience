@@ -10,6 +10,7 @@ import { loadProperty, getCached, getPropertyLabel } from './admin-property-stor
 import * as contentEditor from './admin-content-editor.js';
 import * as assetsEditor from './admin-assets-editor.js';
 import * as experiencePreview from './admin-experience-preview.js';
+import * as conciergePanel from './admin-concierge-panel.js';
 
 export const title = 'Property';
 
@@ -103,6 +104,11 @@ function draw() {
     const mount = document.getElementById('experiencePreviewMount');
     if (mount) experiencePreview.render(mount, currentProperty);
   }
+
+  if (activeTab === 'concierge' && currentProperty) {
+    const mount = document.getElementById('conciergePanelMount');
+    if (mount) conciergePanel.render(mount, currentProperty);
+  }
 }
 
 function switchTab(tabId) {
@@ -124,8 +130,7 @@ function renderTab(id) {
     case 'experience':
       return '<div id="experiencePreviewMount"></div>';
     case 'concierge':
-      return emptyState('Concierge',
-        'AI concierge configuration and conversation history. Coming in M5.5.');
+      return '<div id="conciergePanelMount"></div>';
     case 'analytics':
       return emptyState('Analytics',
         'Property-specific metrics built from verified data sources. Coming in M5.7.');
@@ -316,6 +321,7 @@ export function teardown() {
   contentEditor.teardown();
   assetsEditor.teardown();
   experiencePreview.teardown();
+  conciergePanel.teardown();
   delete window.__workspaceTab;
   containerRef = null;
 }
