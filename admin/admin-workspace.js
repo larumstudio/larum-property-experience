@@ -12,6 +12,8 @@ import * as assetsEditor from './admin-assets-editor.js';
 import * as experiencePreview from './admin-experience-preview.js';
 import * as conciergePanel from './admin-concierge-panel.js';
 import * as auditPanel from './admin-audit-panel.js';
+import * as propertyAnalytics from './admin-property-analytics.js';
+import * as propertyLeads from './admin-property-leads.js';
 
 export const title = 'Property';
 
@@ -115,6 +117,16 @@ function draw() {
     const mount = document.getElementById('conciergePanelMount');
     if (mount) conciergePanel.render(mount, currentProperty);
   }
+
+  if (activeTab === 'analytics' && currentProperty) {
+    const mount = document.getElementById('propertyAnalyticsMount');
+    if (mount) propertyAnalytics.render(mount, currentProperty);
+  }
+
+  if (activeTab === 'leads' && currentProperty) {
+    const mount = document.getElementById('propertyLeadsMount');
+    if (mount) propertyLeads.render(mount, currentProperty);
+  }
 }
 
 function switchTab(tabId) {
@@ -137,11 +149,9 @@ function renderTab(id) {
     case 'concierge':
       return '<div id="conciergePanelMount"></div>';
     case 'analytics':
-      return emptyState('Analytics',
-        'Property-specific metrics built from verified data sources. Coming in M5.7.');
+      return '<div id="propertyAnalyticsMount"></div>';
     case 'leads':
-      return emptyState('Leads',
-        'Enquiries and visitor signals specific to this property. Coming in M5.7.');
+      return '<div id="propertyLeadsMount"></div>';
     default:
       return emptyState('Unknown tab', '');
   }
@@ -328,6 +338,8 @@ export function teardown() {
   experiencePreview.teardown();
   auditPanel.teardown();
   conciergePanel.teardown();
+  propertyAnalytics.teardown();
+  propertyLeads.teardown();
   delete window.__workspaceTab;
   containerRef = null;
 }

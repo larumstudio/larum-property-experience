@@ -466,6 +466,24 @@
     .aud-col-summary{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .aud-empty{padding:32px;font-size:12px;color:var(--muted);text-align:center}
 
+    /* ── Property Analytics (.pa-*) ─────────────────────── */
+    .pa-paths{display:flex;flex-direction:column;gap:6px}
+    .pa-path-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px}
+    .pa-path-row:last-child{border-bottom:none}
+    .pa-path-n{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+    .pa-signals{display:flex;flex-direction:column;gap:8px}
+    .pa-signal{display:flex;align-items:center;gap:10px;font-size:12px}
+    .pa-signal strong{font-family:var(--font-display);font-size:18px;font-weight:300}
+
+    /* ── Global Analytics (.ga-*) ───────────────────────── */
+    .ga-signals{display:flex;flex-direction:column;gap:8px}
+    .ga-signal{display:flex;align-items:center;gap:10px;font-size:12px}
+    .ga-signal strong{font-family:var(--font-display);font-size:18px;font-weight:300}
+    .ga-paths{display:flex;flex-direction:column;gap:6px}
+    .ga-path-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px}
+    .ga-path-row:last-child{border-bottom:none}
+    .ga-path-n{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+
     /* ── Responsive ──────────────────────────────────────── */
     @media(max-width:1100px){
       .stats-grid{grid-template-columns:repeat(3,1fr)}
@@ -582,6 +600,7 @@ import * as sessions from './admin/admin-sessions.js';
 import * as properties from './admin/admin-properties.js';
 import * as workspace from './admin/admin-workspace.js';
 import * as auditorias from './admin/admin-auditorias.js';
+import * as analytics from './admin/admin-analytics.js';
 
 register('dashboard', dashboard);
 register('clientes', null);
@@ -589,7 +608,7 @@ register('agentes', null);
 register('propiedades', properties);
 register('auditorias', auditorias);
 register('leads', leads);
-register('analytics', null);
+register('analytics', analytics);
 register('ajustes', null);
 register('sessions', sessions);
 register('workspace', workspace);
