@@ -138,6 +138,58 @@ export async function saveKnowledge(slug, knowledge) {
   }
 }
 
+/* ── Audits ───────────────────────────────────────────────── */
+
+export async function loadAudits(propertyId) {
+  const { data, error } = await window.supabaseClient
+    .from('audits')
+    .select('*')
+    .eq('property_id', propertyId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function loadAllAudits() {
+  const { data, error } = await window.supabaseClient
+    .from('audits')
+    .select('*, properties!inner(slug, name_en, name_es, cover_image)')
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function createAudit(audit) {
+  const { data, error } = await window.supabaseClient
+    .from('audits')
+    .insert(audit)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateAudit(id, patch) {
+  const { error } = await window.supabaseClient
+    .from('audits')
+    .update(patch)
+    .eq('id', id);
+
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteAudit(id) {
+  const { error } = await window.supabaseClient
+    .from('audits')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw new Error(error.message);
+}
+
 export function getPropertyLabel(row) {
   return row.name_es || row.name_en || row.slug;
 }

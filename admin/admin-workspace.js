@@ -11,6 +11,7 @@ import * as contentEditor from './admin-content-editor.js';
 import * as assetsEditor from './admin-assets-editor.js';
 import * as experiencePreview from './admin-experience-preview.js';
 import * as conciergePanel from './admin-concierge-panel.js';
+import * as auditPanel from './admin-audit-panel.js';
 
 export const title = 'Property';
 
@@ -105,6 +106,11 @@ function draw() {
     if (mount) experiencePreview.render(mount, currentProperty);
   }
 
+  if (activeTab === 'audit' && currentProperty) {
+    const mount = document.getElementById('auditPanelMount');
+    if (mount) auditPanel.render(mount, currentProperty);
+  }
+
   if (activeTab === 'concierge' && currentProperty) {
     const mount = document.getElementById('conciergePanelMount');
     if (mount) conciergePanel.render(mount, currentProperty);
@@ -121,8 +127,7 @@ function renderTab(id) {
     case 'overview':
       return renderOverview();
     case 'audit':
-      return emptyState('Audit & Readiness',
-        'Strategic evaluation, completeness check, and audit history. Coming in M5.6.');
+      return '<div id="auditPanelMount"></div>';
     case 'content':
       return '<div id="contentEditorMount"></div>';
     case 'assets':
@@ -321,6 +326,7 @@ export function teardown() {
   contentEditor.teardown();
   assetsEditor.teardown();
   experiencePreview.teardown();
+  auditPanel.teardown();
   conciergePanel.teardown();
   delete window.__workspaceTab;
   containerRef = null;
