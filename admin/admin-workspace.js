@@ -12,6 +12,7 @@ import * as assetsEditor from './admin-assets-editor.js';
 import * as experiencePreview from './admin-experience-preview.js';
 import * as conciergePanel from './admin-concierge-panel.js';
 import * as auditPanel from './admin-audit-panel.js';
+import * as readinessPanel from './admin-readiness-panel.js';
 import * as propertyAnalytics from './admin-property-analytics.js';
 import * as propertyLeads from './admin-property-leads.js';
 
@@ -20,6 +21,7 @@ export const title = 'Property';
 const TABS = [
   { id: 'overview',   label: 'Overview' },
   { id: 'audit',      label: 'Audit' },
+  { id: 'readiness',  label: 'Readiness' },
   { id: 'content',    label: 'Content' },
   { id: 'assets',     label: 'Assets' },
   { id: 'experience', label: 'Experience' },
@@ -113,6 +115,11 @@ function draw() {
     if (mount) auditPanel.render(mount, currentProperty);
   }
 
+  if (activeTab === 'readiness' && currentProperty) {
+    const mount = document.getElementById('readinessPanelMount');
+    if (mount) readinessPanel.render(mount, currentProperty);
+  }
+
   if (activeTab === 'concierge' && currentProperty) {
     const mount = document.getElementById('conciergePanelMount');
     if (mount) conciergePanel.render(mount, currentProperty);
@@ -140,6 +147,8 @@ function renderTab(id) {
       return renderOverview();
     case 'audit':
       return '<div id="auditPanelMount"></div>';
+    case 'readiness':
+      return '<div id="readinessPanelMount"></div>';
     case 'content':
       return '<div id="contentEditorMount"></div>';
     case 'assets':
@@ -337,6 +346,7 @@ export function teardown() {
   assetsEditor.teardown();
   experiencePreview.teardown();
   auditPanel.teardown();
+  readinessPanel.teardown();
   conciergePanel.teardown();
   propertyAnalytics.teardown();
   propertyLeads.teardown();

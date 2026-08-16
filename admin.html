@@ -590,6 +590,17 @@
 <div class="drawer-back" id="drawerBack"></div>
 <aside class="drawer" id="drawer" aria-hidden="true"></aside>
 
+<!-- LPE-07: Readiness model globals (load order matters).
+     module-registry.js is intentionally omitted: it redeclares MODULE_IDS
+     (already declared by adapters/index.js) which causes a SyntaxError in
+     the shared global scope. property-loader.js guards all its registry
+     calls with typeof checks and degrades safely without it. -->
+<script src="schemas/adapters/index.js"></script>
+<script src="schemas/asset-contracts.js"></script>
+<script src="schemas/asset-resolver.js"></script>
+<script src="property-loader.js"></script>
+<script src="schemas/readiness.js"></script>
+
 <script type="module">
 import { boot, enterApp, signOut, load, buildPropertyFilter, filteredLeads, filteredSessions } from './admin/admin-core.js';
 import { navigate, register, init as routerInit, current as currentRoute } from './admin/admin-router.js';

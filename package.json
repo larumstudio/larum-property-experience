@@ -14,6 +14,7 @@
     "test:lpe-04": "node tests/lpe-04-modules.test.js",
     "test:lpe-05": "node tests/lpe-05-families.test.js",
     "test:lpe-06": "node tests/lpe-06-assets.test.js",
+    "test:lpe-07": "node tests/lpe-07-readiness.test.js",
     "test:lpe-10": "node tests/lpe-10-analytics.test.js"
   },
   "dependencies": {
