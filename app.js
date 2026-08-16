@@ -6,6 +6,8 @@
 let properties={};
 let current=null; let lang='en'; let visited=[]; let entryPath='';
 let contentModel=null; let knowledgeModel=null; let assetsModel=null; let purchaseConfig=null;
+/* LPE-08: monotonic token for last-wins on rapid property switches. */
+let _switchToken=0;
 let contactConfig={defaultEmail:'contacto@larumstudio.com',properties:{},mode:'mailto',endpoint:null};
 
 /* ── V2: Qualification state ── */
@@ -290,8 +292,10 @@ function htmlEnquiry(p,c){
 function htmlFooter(p){
   return `<footer class="footer"><span>Larum Property Experience</span><span>${p.label} · ${p.brand} · 2026</span></footer>`;
 }
+/* LPE-08: uses the full index (all published slugs) so non-loaded properties
+   appear in the switcher and trigger lazy load on first click. */
 function htmlSwitcher(){
-  return `<div class="switcher">${Object.keys(properties).map(k=>`<button class="${current===k?'active':''}" onclick="setProperty('${k}')">${properties[k].label.split(' · ')[0]}</button>`).join('')}<button onclick="setLang()">${lang==='en'?'ES':'EN'}</button></div>`;
+  return `<div class="switcher">${LarumLoader.getIndexSlugs().map(k=>`<button class="${current===k?'active':''}" onclick="setProperty('${k}')">${(LarumLoader.getIndexLabel(k)||k).split(' · ')[0]}</button>`).join('')}<button onclick="setLang()">${lang==='en'?'ES':'EN'}</button></div>`;
 }
 /* Bilingual labels stay here (LPE-03 §4.3). Menu ids/order come from the shell. */
 const MENU_LABELS={
@@ -844,20 +848,47 @@ function jumpTo(id){
 }
 /* Switching property is a cut, not a journey: fade out, swap, land at the
    top already composed. Scrolling the visitor through the outgoing property
-   on the way to the top is what made the switch feel broken. */
-function setProperty(p){
-  if(p===current||!properties[p])return;
+   on the way to the top is what made the switch feel broken.
+   LPE-08: async path loads the payload on demand; a monotonic token ensures
+   only the last switch wins (rapid taps cannot leave a stale property up). */
+async function setProperty(p){
+  if(p===current)return;
+
+  if(LarumLoader.hasProperty(p)){
+    /* Sync path: payload already cached. */
+    const done=()=>{
+      current=p;render();updateCalcType();calculatePurchase();
+      jumpToTop();initExperience({immediate:true});syncUrl();
+      requestAnimationFrame(()=>swapVeil().classList.remove('on'));
+    };
+    if(prefersReducedMotion()){done();return}
+    swapVeil().classList.add('on');
+    setTimeout(done,190);
+    return;
+  }
+
+  /* Async path: load payload on demand. */
+  const token=++_switchToken;
+  const veil=swapVeil();
+  veil.classList.add('on');
+
+  const ok=await LarumLoader.loadProperty(p);
+  if(_switchToken!==token)return; /* stale — a later switch already won */
+  if(!ok){veil.classList.remove('on');return} /* failure — keep current view */
+
+  /* Integrate newly loaded property into live maps. */
+  contentModel[p]=LarumLoader.getContent(p);
+  knowledgeModel[p]=LarumLoader.getKnowledge(p);
+  assetsModel[p]=LarumLoader.getAssets(p);
+  properties[p]={key:p,...contentModel[p],...resolveMedia(p)};
+
+  if(_switchToken!==token)return;
   const done=()=>{
-    current=p;
-    render();
-    updateCalcType();calculatePurchase();
-    jumpToTop();                          /* instant — no flight through the page */
-    initExperience({immediate:true});     /* no entrance replay on swap */
-    syncUrl();
+    current=p;render();updateCalcType();calculatePurchase();
+    jumpToTop();initExperience({immediate:true});syncUrl();
     requestAnimationFrame(()=>swapVeil().classList.remove('on'));
   };
   if(prefersReducedMotion()){done();return}
-  swapVeil().classList.add('on');
   setTimeout(done,190);
 }
 
@@ -1281,12 +1312,14 @@ function resolveMedia(slug) {
    sends it to their client, who lands on that property, in that language,
    at that chapter. Without this the demo ends and they leave empty-handed. */
 
+/* LPE-08: validates slug against the index (not just loaded properties),
+   so ?property=marbella works even before marbella payload is loaded. */
 function readStateFromUrl(){
   const q=new URLSearchParams(location.search);
   const slug=q.get('property')||q.get('p');
   const lg=q.get('lang')||q.get('l');
   return {
-    slug: slug&&properties[slug] ? slug : null,
+    slug: slug&&LarumLoader.getIndexSlugs().includes(slug) ? slug : null,
     lang: lg==='es'||lg==='en' ? lg : null,
     chapter: q.get('chapter')||null
   };
@@ -1337,7 +1370,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeArriv
    The experience cannot render before its property data exists, so
    index.html loads the data first and calls this. */
 
-function boot() {
+/* LPE-08: boot is async so it can eagerly load a URL-requested property
+   that differs from the default before the first render. */
+async function boot() {
   try {
     applyLoaderData();
 
@@ -1348,8 +1383,26 @@ function boot() {
 
     /* A shared link decides which property and language open. */
     const wanted = readStateFromUrl();
-    if (wanted.slug) current = wanted.slug;
     if (wanted.lang) lang = wanted.lang;
+
+    /* If the URL requests a property other than the already-loaded default,
+       fetch its payload now so the first render shows the right property. */
+    if (wanted.slug && wanted.slug !== current) {
+      const veil = swapVeil();
+      veil.classList.add('on');
+      const ok = await LarumLoader.loadProperty(wanted.slug);
+      if (ok) {
+        const s = wanted.slug;
+        contentModel[s] = LarumLoader.getContent(s);
+        knowledgeModel[s] = LarumLoader.getKnowledge(s);
+        assetsModel[s] = LarumLoader.getAssets(s);
+        properties[s] = { key: s, ...contentModel[s], ...resolveMedia(s) };
+        current = s;
+      }
+      veil.classList.remove('on');
+    } else if (wanted.slug) {
+      current = wanted.slug;
+    }
 
     render();
     initExperience();

@@ -27,7 +27,8 @@ const LarumLoader = (() => {
   'use strict';
 
   const data = {
-    properties: {},    // slug → { content, knowledge, assets, experience }
+    properties: {},    // slug → { content, knowledge, assets, experience } — loaded on demand (db) or all at once (files/pack)
+    index: {},         // slug → { slug, status, is_default, display_order, label } — all published rows, db path only
     status: {},        // slug → lifecycle status (database source only)
     registry: null,    // { default, order, rules }
     contact: null,
@@ -92,34 +93,15 @@ const LarumLoader = (() => {
     const client = (typeof window !== 'undefined') && window.supabaseClient;
     if (!client) { _note('No Supabase client on the page'); return false; }
 
-    const { data: rows, error } = await client
-      .from('properties')
-      .select('slug,status,content,knowledge,assets,display_order,is_default')
-      .order('display_order', { ascending: true });
-
-    if (error) { _note(`Supabase: ${error.message}`); return false; }
-    if (!rows || !rows.length) { _note('Supabase has no properties yet'); return false; }
-
     _reset();
 
-    const order = [];
-    let fallbackDefault = null;
-    for (const row of rows) {
-      /* A row with no content is a draft someone started in the admin and
-         has not filled in. It must not reach a visitor as an empty shell. */
-      if (!row.slug || !row.content || !Object.keys(row.content).length) continue;
-      data.properties[row.slug] = {
-        content: row.content,
-        knowledge: row.knowledge || {},
-        assets: row.assets || {},
-        experience: null
-      };
-      data.status[row.slug] = row.status || 'published';
-      order.push(row.slug);
-      if (row.is_default) fallbackDefault = row.slug;
-    }
+    /* LPE-08: two-query strategy — light index first, then a single-property payload. */
+    const indexOk = await loadIndex();
+    if (!indexOk) return false;
 
-    if (!order.length) { _note('Supabase returned only empty properties'); return false; }
+    const defaultSlug = data.registry.default;
+    const propOk = await loadProperty(defaultSlug);
+    if (!propOk) { _note(`Failed to load default property "${defaultSlug}"`); return false; }
 
     /* Global configuration stays in files: it is not per-property, it
        changes once a year, and putting it in the database would add a
@@ -130,10 +112,81 @@ const LarumLoader = (() => {
       _fetchJSON(`${basePath}/purchase-config.json`).catch(() => _defaultPurchase())
     ]);
 
-    data.registry = { default: fallbackDefault || order[0], order, rules };
+    data.registry.rules = rules;
     data.contact = contact;
     data.purchase = purchase;
     data.ready = true;
+    return true;
+  }
+
+  /* ── LPE-08: light index query — slug + status + label only, no JSONB payload ── */
+
+  async function loadIndex() {
+    const client = (typeof window !== 'undefined') && window.supabaseClient;
+    if (!client) { _note('No Supabase client for index'); return false; }
+
+    const { data: rows, error } = await client
+      .from('properties')
+      .select('slug,status,is_default,display_order,label:content->>label')
+      .order('display_order', { ascending: true });
+
+    if (error) { _note(`Supabase index: ${error.message}`); return false; }
+    if (!rows || !rows.length) { _note('Supabase has no properties yet'); return false; }
+
+    data.index = {};
+    const order = [];
+    let fallbackDefault = null;
+
+    for (const row of rows) {
+      /* A row with no label is a draft with no content — skip it. */
+      if (!row.slug || !row.label) continue;
+      data.index[row.slug] = {
+        slug: row.slug,
+        status: row.status || 'published',
+        is_default: !!row.is_default,
+        display_order: row.display_order,
+        label: row.label
+      };
+      data.status[row.slug] = row.status || 'published';
+      order.push(row.slug);
+      if (row.is_default) fallbackDefault = row.slug;
+    }
+
+    if (!order.length) { _note('Supabase index returned only empty rows'); return false; }
+
+    data.registry = { default: fallbackDefault || order[0], order, rules: {} };
+    return true;
+  }
+
+  /* ── LPE-08: on-demand full payload for a single property — idempotent ── */
+
+  async function loadProperty(slug) {
+    if (!slug) return false;
+    /* Idempotent: if the property is already fully loaded, skip the network call. */
+    if (hasProperty(slug)) return true;
+
+    const client = (typeof window !== 'undefined') && window.supabaseClient;
+    if (!client) { _note('No Supabase client for property load'); return false; }
+
+    const { data: row, error } = await client
+      .from('properties')
+      .select('slug,status,content,knowledge,assets')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (error) { _note(`Supabase property "${slug}": ${error.message}`); return false; }
+    if (!row || !row.content || !Object.keys(row.content).length) {
+      _note(`Property "${slug}" returned no content`);
+      return false;
+    }
+
+    data.properties[slug] = {
+      content: row.content,
+      knowledge: row.knowledge || {},
+      assets: row.assets || {},
+      experience: null
+    };
+    data.status[slug] = row.status || 'published';
     return true;
   }
 
@@ -200,14 +253,34 @@ const LarumLoader = (() => {
 
   /* ── Accessors ── */
 
+  /* Returns only LOADED slugs in registry order.
+     With lazy load (db path) this is a subset of getIndexSlugs(). */
   function getPropertySlugs() {
     const order = data.registry?.order || [];
-    const loaded = Object.keys(data.properties);
-    /* Registry order wins; anything loaded but unlisted is appended. */
+    const loaded = Object.keys(data.properties).filter(hasProperty);
     return [
       ...order.filter(s => loaded.includes(s)),
       ...loaded.filter(s => !order.includes(s))
     ];
+  }
+
+  /* LPE-08: boolean — is this slug fully loaded (content non-empty)? */
+  function hasProperty(slug) {
+    const p = data.properties[slug];
+    return !!(p && p.content && Object.keys(p.content).length);
+  }
+
+  /* LPE-08: canonical slug order from the light index (all published slugs). */
+  function getIndexSlugs() {
+    return data.registry?.order || [];
+  }
+
+  /* LPE-08: label from the light index — works before payload is loaded.
+     Falls back to content.label (files/pack source) then null. */
+  function getIndexLabel(slug) {
+    return data.index[slug]?.label
+      || data.properties[slug]?.content?.label
+      || null;
   }
 
   function getDefaultSlug() {
@@ -229,7 +302,9 @@ const LarumLoader = (() => {
   function getStatus(slug)    { return data.status[slug] || null; }
 
   function getPropertyLabel(slug) {
-    return data.properties[slug]?.content?.label || slug;
+    return data.properties[slug]?.content?.label
+      || data.index[slug]?.label
+      || slug;
   }
 
   /* Flat maps, keyed by slug — the shape the experience engine consumes. */
@@ -475,6 +550,7 @@ const LarumLoader = (() => {
 
   function _reset() {
     data.properties = {};
+    data.index = {};
     data.status = {};
     data.registry = null;
     data.contact = null;
@@ -505,9 +581,11 @@ const LarumLoader = (() => {
 
   return {
     autoLoad, loadFromDb, loadFromFiles, loadFromPack,
+    loadIndex, loadProperty, hasProperty,
     getPropertySlugs, getDefaultSlug, getContent, getKnowledge, getAssets,
     getContentMap, getKnowledgeMap, getAssetsMap,
     getContact, getPurchase, getPropertyLabel, getRules, getSource, getStatus,
+    getIndexSlugs, getIndexLabel,
     isReady, getErrors, getNotes, validate, validateAll, getNormalized, validateNormalized,
     getManifest, getModuleRegistry, exportPack
   };
