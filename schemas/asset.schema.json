@@ -1,0 +1,2 @@
+{"$schema":"http://json-schema.org/draft-07/schema#","title":"Larum Asset","type":"object","required":["schemaVersion","id","slotId","kind","status","source","fallbackPriority"],"properties":{"schemaVersion":{"const":"1.0"},"id":{"type":"string"},"slotId":{"type":"string"},"kind":{"enum":["image","video","image_sequence","svg","document","depth_map"]},"status":{"enum":["placeholder","received","approved","published","archived"]},"source":{"type":"object"},"fallbackPriority":{"type":"number"}}}
+

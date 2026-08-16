@@ -16,6 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const LarumLoader = require('./property-loader.js');
+const { adaptProperty, validateNormalized, deriveManifest, validateManifest } = require('./schemas/adapters');
 
 const ROOT = __dirname;
 const args = process.argv.slice(2);
@@ -30,6 +31,8 @@ function readJSONOr(file, fallback) {
   try { return readJSON(file); } catch { return fallback; }
 }
 
+let sourcePack = null;
+
 function load() {
   const registry = readJSON(path.join(ROOT, 'properties', 'index.json'));
   const pack = { registry, properties: {}, contact: null, purchase: null };
@@ -43,13 +46,15 @@ function load() {
     pack.properties[slug] = {
       content: readJSON(path.join(dir, 'content.json')),
       knowledge: readJSON(path.join(dir, 'knowledge.json')),
-      assets: readJSONOr(path.join(dir, 'assets.json'), {})
+      assets: readJSONOr(path.join(dir, 'assets.json'), {}),
+      experience: readJSONOr(path.join(dir, 'experience.json'), null)
     };
   }
 
   pack.contact = readJSONOr(path.join(ROOT, 'contact-config.json'), null);
   pack.purchase = readJSONOr(path.join(ROOT, 'purchase-config.json'), null);
 
+  sourcePack = pack;
   LarumLoader.loadFromPack(pack);
 }
 
@@ -65,6 +70,34 @@ function report() {
 
   for (const slug of slugs) {
     const r = LarumLoader.validate(slug);
+    const normalized = validateNormalized(adaptProperty(slug, sourcePack.properties[slug]));
+    r.issues.push(...normalized.issues);
+    const derived = deriveManifest(slug);
+    const fileManifest = sourcePack.properties[slug].experience;
+    const resolved = fileManifest || derived;
+    const manifestCheck = validateManifest(resolved);
+    if (!manifestCheck.valid) {
+      r.issues.push(...manifestCheck.issues.map(i => `experience: ${i}`));
+    } else if (fileManifest && JSON.stringify(fileManifest) !== JSON.stringify(derived)) {
+      r.issues.push('experience: snapshot does not equal deriveManifest()');
+    }
+
+    /* LPE-06: asset contract / rights checks — warnings only. Never blocks
+       preview. Surfaces only genuinely-new signals (required-missing,
+       expired, missing-provenance); placeholder/unauthorised are already
+       covered by the loader's existing warnings. */
+    try {
+      const resolver = require('./schemas/asset-resolver');
+      const out = resolver.resolve(resolved, slug, sourcePack.properties[slug].assets || {});
+      for (const id of out.requiredMissing) {
+        r.warnings.push(`assets: required slot "${id}" has no asset`);
+      }
+      for (const f of out.flagged) {
+        if (f.reason === 'expired') r.warnings.push(`assets: ${f.slotId} rights expired`);
+        else if (f.reason === 'missing-provenance') r.warnings.push(`assets: ${f.slotId} has no provenance recorded`);
+      }
+    } catch (e) { /* resolver must never fail validation */ }
+
     const s = r.summary;
 
     console.log(`\n${'─'.repeat(64)}`);
@@ -101,3 +134,4 @@ try {
   console.error(`validate failed: ${e.message}`);
   process.exitCode = 1;
 }
+

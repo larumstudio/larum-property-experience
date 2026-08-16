@@ -20,8 +20,19 @@ const LarumAnalytics = (() => {
   const HEARTBEAT_MS = 10000;
   const IDLE_CUTOFF_MS = 90000; /* no interaction for this long → stop counting */
 
+  /* LPE-10: canonical ids. Consume-when-present — null until LPE-08/09 surface
+     them; the legacy `property` slug is always written (dual-write). */
+  const KNOWN_MODULE_IDS = new Set([
+    'arrival', 'property-dna', 'lived-sequence', 'spatial-zones', 'verified-intelligence',
+    'setting-lifestyle', 'documents-private-room', 'concierge', 'enquiry-handoff',
+    'hero', 'identity', 'image-band', 'explore', 'calculator'
+  ]);
+
   let state = {
     property: null,
+    propertyId: null,
+    revisionId: null,
+    family: null,
     lang: 'en',
     events: [],
     chapters: {},
@@ -56,17 +67,26 @@ const LarumAnalytics = (() => {
   let remoteWarned = false;
   let listenersBound = false;
 
+  /* LPE-10 null-report counters (per session; reset in init). */
+  let nullCounts = { total: 0, propertyId: 0, revisionId: 0, moduleId: 0, family: 0 };
+
   /* ════════════════════════════════════════════════════════════
      LIFECYCLE
      ════════════════════════════════════════════════════════════ */
 
   /* Called again on every render (language switch, property switch), so it
      has to be idempotent: only a genuine property change starts a new visit. */
-  function init(property, lang) {
+  function init(property, lang, ids) {
     const sameVisit = state.property === property && sessionId !== null;
+    ids = ids || {};
 
     state.lang = lang;
     if (sameVisit) {
+      /* Same visit: refresh canonical ids if newly available (LPE-10
+         consume-when-present; they are null until LPE-08/09 surface them). */
+      if (ids.propertyId != null) state.propertyId = ids.propertyId;
+      if (ids.revisionId != null) state.revisionId = ids.revisionId;
+      if (ids.family != null) state.family = ids.family;
       sessionDirty = true;
       return;
     }
@@ -77,9 +97,16 @@ const LarumAnalytics = (() => {
     state.property = property;
     state.startTime = Date.now();
     state.lastActivity = Date.now();
+    nullCounts = { total: 0, propertyId: 0, revisionId: 0, moduleId: 0, family: 0 };
 
     readConsent();
     loadPersisted();
+
+    /* LPE-10: canonical ids come fresh from the runtime each init, NOT from
+       the persisted local profile — so they must be set AFTER loadPersisted(). */
+    state.propertyId = ids.propertyId || null;
+    state.revisionId = ids.revisionId || null;
+    state.family = ids.family || null;
 
     sessionId = resolveSessionId(property);
     sessionSeconds = readSessionSeconds();
@@ -218,23 +245,23 @@ const LarumAnalytics = (() => {
     if (queue.length === 0) return;
     const buffered = queue.slice();
     queue = [];
-    buffered.forEach(e => trackInternal(e.type, e.data));
+    buffered.forEach(e => trackInternal(e.type, e.data, e.moduleId));
   }
 
   /* ════════════════════════════════════════════════════════════
      TRACKING
      ════════════════════════════════════════════════════════════ */
 
-  function track(type, data) {
+  function track(type, data, moduleId) {
     if (consentDenied) return;
     if (!consentGiven) {
-      queue.push({ type, data });
+      queue.push({ type, data, moduleId });
       return;
     }
-    trackInternal(type, data);
+    trackInternal(type, data, moduleId);
   }
 
-  function trackInternal(type, data) {
+  function trackInternal(type, data, moduleId) {
     state.lastActivity = Date.now();
     const event = {
       type,
@@ -285,7 +312,7 @@ const LarumAnalytics = (() => {
     }
 
     persist();
-    enqueueRemote(type, data);
+    enqueueRemote(type, data, moduleId);
   }
 
   function detectInterests(signals) {
@@ -351,11 +378,22 @@ const LarumAnalytics = (() => {
     }
   }
 
-  function enqueueRemote(type, data) {
+  function enqueueRemote(type, data, moduleId) {
     if (!remoteReady()) return;
+    const mid = (moduleId && KNOWN_MODULE_IDS.has(moduleId)) ? moduleId : null;
+    nullCounts.total++;
+    if (!state.propertyId) nullCounts.propertyId++;
+    if (!state.revisionId) nullCounts.revisionId++;
+    if (!mid) nullCounts.moduleId++;
+    if (!state.family) nullCounts.family++;
     outbox.push({
       session_id: sessionId,
       property: state.property,
+      event_schema: 1,
+      property_id: state.propertyId || null,
+      experience_revision_id: state.revisionId || null,
+      module_id: mid,
+      family: state.family || null,
       lang: state.lang,
       event_type: type,
       event_data: data || {}
@@ -383,6 +421,10 @@ const LarumAnalytics = (() => {
     return {
       id: sessionId,
       property: state.property,
+      event_schema: 1,
+      property_id: state.propertyId || null,
+      experience_revision_id: state.revisionId || null,
+      family: state.family || null,
       lang: state.lang,
       entry_path: state.entryPath || null,
       duration_seconds: sessionSeconds,
@@ -531,7 +573,8 @@ const LarumAnalytics = (() => {
     try { sessionStorage.removeItem(SESSION_KEY + '_' + prop); } catch (e) {}
     try { sessionStorage.removeItem(DURATION_KEY + '_' + sessionId); } catch (e) {}
     state = {
-      property: prop, lang, events: [], chapters: {}, scenes: {}, spaces: {},
+      property: prop, propertyId: null, revisionId: null, family: null,
+      lang, events: [], chapters: {}, scenes: {}, spaces: {},
       conciergeQuestions: [], interests: {}, documents: {}, calculatorUsed: false,
       filmWatched: false, enquirySent: false, entryPath: '', interestScores: {},
       questionCount: 0, qualified: false, startTime: Date.now(), lastActivity: Date.now()
@@ -539,6 +582,20 @@ const LarumAnalytics = (() => {
     sessionId = resolveSessionId(prop);
     sessionSeconds = 0;
     outbox = [];
+    nullCounts = { total: 0, propertyId: 0, revisionId: 0, moduleId: 0, family: 0 };
+  }
+
+  /* LPE-10: reconciliation instrument. Counts events missing a canonical id.
+     Non-zero is EXPECTED until LPE-08/09 surface ids — never an error. */
+  function nullReport() {
+    return {
+      totalEvents: nullCounts.total,
+      missingPropertyId: nullCounts.propertyId,
+      missingRevisionId: nullCounts.revisionId,
+      missingModuleId: nullCounts.moduleId,
+      missingFamily: nullCounts.family,
+      schemaVersion: 1
+    };
   }
 
   function debug() {
@@ -546,6 +603,7 @@ const LarumAnalytics = (() => {
       state: JSON.parse(JSON.stringify(state)),
       summary: buildAdvisorSummary(),
       context: buildContextualEnquiry(),
+      nullReport: nullReport(),
       remote: {
         sessionId,
         sessionSeconds,
@@ -561,7 +619,7 @@ const LarumAnalytics = (() => {
     init, track, grantConsent, denyConsent, persist, flush,
     getTopInterests, getVisitedScenes, getVisitedSpaces, getChaptersProgress,
     isQualified, shouldQualify, buildAdvisorSummary, buildContextualEnquiry,
-    reset, debug,
+    reset, debug, nullReport,
     getSessionId() { return sessionId; },
     get state() { return state; }
   };

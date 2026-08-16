@@ -1,0 +1,16 @@
+{
+  "$schema":"http://json-schema.org/draft-07/schema#",
+  "title":"Larum Content",
+  "type":"object",
+  "required":["schemaVersion","identity","dna","scenes","spaces","zones","factsDisplay","copyByLocale"],
+  "properties":{
+    "schemaVersion":{"const":"1.0"},
+    "identity":{"type":"object","required":["label","brand","title","subtitle","intro","shortRef","conciergeIntro"]},
+    "dna":{"type":"object","required":["title","intro","dimensions"],"properties":{"dimensions":{"type":"array","items":{"type":"object","required":["id","label","score","noteByLocale","evidenceIds"]}}}},
+    "scenes":{"type":"array","items":{"type":"object","required":["id","label","description","spaceIds","assetSlotIds"],"properties":{"id":{"type":"string"},"label":{"type":"string"},"description":{"type":"string"},"spaceIds":{"type":"array","items":{"type":"string"}},"assetSlotIds":{"type":"array","items":{"type":"string"}}}}},
+    "spaces":{"type":"array","items":{"type":"object","required":["id","name","description","descriptionByLocale"]}},
+    "zones":{"type":"array","items":{"type":"object","required":["id","label","description","spaceIds"]}},
+    "factsDisplay":{"type":"array"},
+    "copyByLocale":{"type":"object"}
+  }
+}

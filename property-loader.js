@@ -27,7 +27,7 @@ const LarumLoader = (() => {
   'use strict';
 
   const data = {
-    properties: {},    // slug → { content, knowledge, assets }
+    properties: {},    // slug → { content, knowledge, assets, experience }
     status: {},        // slug → lifecycle status (database source only)
     registry: null,    // { default, order, rules }
     contact: null,
@@ -111,7 +111,8 @@ const LarumLoader = (() => {
       data.properties[row.slug] = {
         content: row.content,
         knowledge: row.knowledge || {},
-        assets: row.assets || {}
+        assets: row.assets || {},
+        experience: null
       };
       data.status[row.slug] = row.status || 'published';
       order.push(row.slug);
@@ -151,6 +152,11 @@ const LarumLoader = (() => {
             .catch(e => data.errors.push(`${slug}/${part}: ${e.message}`))
         );
       }
+      tasks.push(
+        _fetchJSON(`${basePath}/properties/${slug}/experience.json`)
+          .then(d => { _ensureProp(slug); data.properties[slug].experience = d; })
+          .catch(() => { /* optional derived snapshot — missing is not an error */ })
+      );
     }
 
     tasks.push(
@@ -178,7 +184,8 @@ const LarumLoader = (() => {
         data.properties[slug] = {
           content: prop.content || {},
           knowledge: prop.knowledge || {},
-          assets: prop.assets || {}
+          assets: prop.assets || {},
+          experience: prop.experience || null
         };
       }
       data.contact = pack.contact || _defaultContact();
@@ -374,10 +381,59 @@ const LarumLoader = (() => {
 
   /* ── Export the offline pack shape (used by build-pack.js) ── */
 
+  /* LPE-01 normalized domain accessors. The legacy runtime remains the
+     default; adapters are optional and loaded only when available. */
+  function _domainAdapters() {
+    if (typeof LarumDomainAdapters !== 'undefined') return LarumDomainAdapters;
+    if (typeof require === 'function') {
+      try { return require('./schemas/adapters'); } catch (e) { return null; }
+    }
+    return null;
+  }
+  function getNormalized(slug) {
+    const adapter = _domainAdapters();
+    const prop = data.properties[slug];
+    return adapter && prop ? adapter.adaptProperty(slug, prop) : null;
+  }
+  function validateNormalized(slug) {
+    const adapter = _domainAdapters();
+    const normalized = getNormalized(slug);
+    return adapter && normalized ? adapter.validateNormalized(normalized) : { valid: false, issues: ['LPE-01 adapters unavailable'], warnings: [] };
+  }
+
+  function _deepEqual(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+
+  function getManifest(slug) {
+    const adapter = _domainAdapters();
+    const derived = adapter && adapter.deriveManifest ? adapter.deriveManifest(slug) : null;
+    const file = data.properties[slug] && data.properties[slug].experience;
+    if (file && derived && _deepEqual(file, derived) && adapter.validateManifest(file).valid) return file;
+    if (derived && adapter.validateManifest(derived).valid) return derived;
+    if (typeof LarumModuleRegistry !== 'undefined' && LarumModuleRegistry.legacyManifest) {
+      return LarumModuleRegistry.legacyManifest();
+    }
+    return derived;
+  }
+
+  function getModuleRegistry() {
+    if (typeof LarumModuleRegistry !== 'undefined') return LarumModuleRegistry;
+    if (typeof require === 'function') {
+      try { return require('./schemas/module-registry'); } catch (e) { return null; }
+    }
+    return null;
+  }
+
   function exportPack() {
     const pack = { registry: data.registry, properties: {}, contact: data.contact, purchase: data.purchase };
     for (const [slug, prop] of Object.entries(data.properties)) {
-      pack.properties[slug] = { content: prop.content, knowledge: prop.knowledge, assets: prop.assets };
+      pack.properties[slug] = {
+        content: prop.content,
+        knowledge: prop.knowledge,
+        assets: prop.assets,
+        experience: prop.experience || (getManifest(slug) || null)
+      };
     }
     return pack;
   }
@@ -452,9 +508,11 @@ const LarumLoader = (() => {
     getPropertySlugs, getDefaultSlug, getContent, getKnowledge, getAssets,
     getContentMap, getKnowledgeMap, getAssetsMap,
     getContact, getPurchase, getPropertyLabel, getRules, getSource, getStatus,
-    isReady, getErrors, getNotes, validate, validateAll, exportPack
+    isReady, getErrors, getNotes, validate, validateAll, getNormalized, validateNormalized,
+    getManifest, getModuleRegistry, exportPack
   };
 })();
 
 if (typeof window !== 'undefined') window.LarumLoader = LarumLoader;
 if (typeof module !== 'undefined' && module.exports) module.exports = LarumLoader;
+

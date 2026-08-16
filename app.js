@@ -206,69 +206,270 @@ function checkQualification() {
    V2: RENDER — full page
    ════════════════════════════════════════════════════════════════════ */
 
+
+/* ── LPE-02: manifest composition (order + visibility only) ── */
+
+function currentManifest(){
+  try{
+    if(typeof LarumLoader!=='undefined'&&LarumLoader.getManifest){
+      const m=LarumLoader.getManifest(current);
+      if(m&&typeof LarumDomainAdapters!=='undefined'&&LarumDomainAdapters.validateManifest){
+        const v=LarumDomainAdapters.validateManifest(m);
+        if(v.valid)return m;
+      }else if(m)return m;
+    }
+  }catch(e){}
+  if(typeof LarumModuleRegistry!=='undefined')return LarumModuleRegistry.legacyManifest();
+  return {modules:[]};
+}
+function isModuleVisible(id){
+  if(typeof LarumModuleRegistry!=='undefined')return LarumModuleRegistry.moduleVisible(currentManifest(),id);
+  return true;
+}
+/* LPE-03: no composePlan here — the shell owns plan → mainHtml. Rail ids still
+   come from the registry; the only local fallback is the two pinned frames. */
+function railChapterIds(){
+  if(typeof LarumModuleRegistry!=='undefined')return LarumModuleRegistry.railChapterIds(currentManifest());
+  return ['hero','identity'];
+}
+
+function htmlHero(p,c){
+  return `<section id="hero" class="hero">${p.heroVideo?`<video class="hero-video" autoplay muted loop playsinline poster="${p.image}"><source src="${p.heroVideo}" type="video/mp4"></video>`:''}<div class="hero-image" style="background-image:url('${p.image}')"></div><div class="hero-copy"><div class="eyebrow">${p.label} · ${p.brand}</div><h1>${p.title.replace('\n','<br>')}</h1><p>${p.subtitle}</p><div class="hero-proof"><span>04 chapters</span><span>Spatial narrative</span><span>Private concierge</span></div><div class="path-picker"><div class="mono">${lang==='en'?'Choose your way in':'Elige tu camino'}</div><button onclick="choosePath('live')"><b>01</b>${lang==='en'?'Live the day':'Vivir el día'} <span>↘</span></button><button onclick="choosePath('space')"><b>02</b>${lang==='en'?'Understand the space':'Entender el espacio'} <span>↘</span></button><button onclick="choosePath('private')"><b>03</b>${lang==='en'?'Speak privately':'Hablar en privado'} <span>↘</span></button></div><button class="cta" onclick="startArrival()">${c.know}<b>↘</b></button></div><div class="scroll">${c.scroll} ↓</div></section>`;
+}
+function htmlIdentity(p,c){
+  return `<section id="identity" class="section light identity"><div class="grid"><div><div class="mono">01 · ${lang==='en'?'Identity':'Identidad'}</div><h2>${c.identity}</h2></div><div><p class="statement">${p.intro}</p><p>${pc('identityNote')}</p></div></div></section>`;
+}
+function htmlPropertyDna(p,c){
+  return `<section class="dna-section"><div class="dna-head"><div><div class="mono">02 · ${lang==='en'?'Property DNA':'ADN de la propiedad'}</div><h2>${p.dna?.title||p.title.replace('\n',' ')}</h2></div><p>${p.dna?.intro||p.intro}</p></div><div class="dna-grid">${dnaDimensions().map((d,i)=>`<div class="dna-item"><button class="dna-trigger" onclick="toggleDna(${i})" aria-expanded="false" aria-controls="dnaNote${i}"><div class="dna-top"><span>0${i+1}</span><b>${d.label}</b><strong>${d.score}</strong></div><div class="dna-bar"><i style="width:${d.score}%"></i></div></button><div class="dna-note" id="dnaNote${i}"><p>${d.note?.[lang]||''}</p></div></div>`).join('')}</div></section>`;
+}
+function htmlImageBand(p,c){
+  return `<div class="image-band" style="background-image:url('${p.band}')"><div class="image-label">02 · ${pc('bandLabel')}</div></div>`;
+}
+function htmlLivedSequence(p,c){
+  return `<section id="sequence" class="living-sequence"><div class="sequence-head"><div><div class="mono">03 · ${lang==='en'?'A day here':'Un día aquí'}</div><h2>${pc('sequenceTitle')}</h2></div><p>${pc('sequenceIntro')}</p></div><div class="sequence-stage" id="sequenceStage" style="background-image:linear-gradient(90deg,rgba(12,13,11,.62),rgba(12,13,11,.08)),url('${p.band}')"><div class="sequence-copy"><div class="mono" id="sequenceTime">${activeSequences()[0][1]}</div><h3 id="sequenceTitle">${activeSequences()[0][0]}</h3><p id="sequenceText">${activeSequences()[0][2]}</p></div><div class="sequence-controls">${activeSequences().map((s,i)=>`<button class="sequence-dot ${i===0?'active':''}" onclick="selectSequence(${i})"><span>0${i+1}</span><b>${s[0]}</b></button>`).join('')}</div></div><div class="scene-links" id="sceneLinks">${activeScenes()[0][1].map((space,i)=>`<button class="scene-link" onclick="openSpace('${space}')"><span>0${i+1}</span>${space}<b>↗</b></button>`).join('')}</div><button class="film-trigger" onclick="handleFilmTrigger()">${pc('filmLabel')} <b>▷</b></button></section>`;
+}
+function htmlExplore(p,c){
+  return `<section id="explore" class="section dark"><div class="mono">04 · ${c.explore}</div><div class="experiences">${p.experiences.map(e=>`<article class="experience"><div class="number">${e[0]}</div><h3>${e[1]}</h3><p>${e[2]}</p></article>`).join('')}</div></section>`;
+}
+function htmlSpatial(p,c){
+  return `<section id="spatial" class="spatial"><div class="spatial-head"><div><div class="mono">05 · ${lang==='en'?'Spatial intelligence':'Inteligencia espacial'}</div><h2>${pc('spatialTitle')}</h2></div><p>${pc('spatialIntro')}</p></div><div class="spatial-map"><div class="map-lines"></div>${activeSpatial().map((m,i)=>`<button class="map-node ${i===0?'active':''}" onclick="selectMapSpace(${i})"><span>${m[0]}</span><strong>${m[1]}</strong><small>${m[2]}</small></button>`).join('')}</div><div class="spatial-detail" id="spatialDetail">${pc('spatialDetail')}</div></section>`;
+}
+function htmlDetails(p,c){
+  return `<section id="details" class="section light"><div class="grid"><div><div class="mono">06 · ${lang==='en'?'Verified details':'Datos verificados'}</div><h2>${pc('detailsTitle')}</h2></div><div><p>${pc('detailsIntro')}</p><div class="facts">${p.facts.map(f=>`<div class="fact"><strong>${f[0]}</strong><span>${f[1]}</span></div>`).join('')}</div></div></div></section>`;
+}
+function htmlSetting(p,c){
+  return `<section id="setting" class="setting"><div class="setting-head"><div><div class="mono">07 · ${lang==='en'?'The setting':'El entorno'}</div><h2>${p.setting?.title||(lang==='en'?'The world around the property.':'El mundo alrededor de la propiedad.')}</h2></div><p>${p.setting?.intro||''}</p></div><div class="setting-grid">${settingCards().map((card,i)=>`<button class="setting-card ${card.source==='verification'?'verification':''}" onclick="openSetting(${i})"><span>0${i+1}</span><strong>${card.title}</strong><p>${card.line}</p><em class="setting-more">${lang==='en'?'Open':'Abrir'} <b>↗</b></em></button>`).join('')}</div><div class="setting-detail" id="settingDetail" aria-live="polite"></div></section>`;
+}
+function htmlDocuments(p,c){
+  return `<section id="documents" class="documents"><div class="documents-head"><div><div class="mono">07 · ${lang==='en'?'Private documents':'Documentos privados'}</div><h2>${lang==='en'?'The information<br>behind the feeling.':'La información<br>detrás del sentimiento.'}</h2></div><p>${lang==='en'?'When you are ready to go deeper, access the documents that make the residence real: certification, plans and brochure.':'Cuando estés listo para profundizar, accede a los documentos que hacen real la residencia: certificación, planos y brochure.'}</p></div><div class="document-grid"><button class="document-card" onclick="openDocument('Energy performance certificate')"><span>01</span><strong>${lang==='en'?'Energy certificate':'Certificado energético'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button><button class="document-card" onclick="openDocument('Floor plans')"><span>02</span><strong>${lang==='en'?'Floor plans':'Planos'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button><button class="document-card" onclick="openDocument('Property brochure')"><span>03</span><strong>${lang==='en'?'Property brochure':'Brochure'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button></div></section>`;
+}
+function htmlCalculator(p,c){
+  return `<section id="calculator" class="calculator"><div class="calculator-head"><div><div class="mono">08 · ${lang==='en'?'Acquisition envelope':'Envolvente de adquisición'}</div><h2>${lang==='en'?'What does<br>acquiring it involve?':'¿Qué implica<br>adquirirla?'}</h2></div><p>${lang==='en'?'Estimate the total acquisition envelope by adapting the calculation to the autonomous community and type of property.':'Estima la envolvente total de adquisición adaptando el cálculo a la comunidad autónoma y tipo de propiedad.'}</p></div><div class="calculator-grid"><div class="calculator-form"><label>${lang==='en'?'Purchase price':'Precio de compra'} <input id="calcPrice" type="number" value="${p.referencePrice||0}" oninput="calculatePurchase()"></label><label>${lang==='en'?'Autonomous community':'Comunidad autónoma'} <select id="calcRegion" onchange="applyRegionRates()">${regionOptions()}</select></label><label>${lang==='en'?'Property type':'Tipo de propiedad'} <select id="calcType" onchange="calculatePurchase()"><option value="resale"${(model('defaultPropertyType')||'resale')==='resale'?' selected':''}>${lang==='en'?'Resale property':'Segunda mano'}</option><option value="new"${model('defaultPropertyType')==='new'?' selected':''}>${lang==='en'?'New build':'Obra nueva'}</option></select></label><div class="rate-row"><label id="itpLabel">ITP % <input id="calcItp" type="number" value="${rate('itp')}" step="0.1" oninput="calculatePurchase()"></label><label id="vatLabel" class="hidden">VAT % <input id="calcVat" type="number" value="${rate('vat')}" step="0.1" oninput="calculatePurchase()"></label><label id="ajdLabel">AJD % <input id="calcAjd" type="number" value="${rate('ajd')}" step="0.1" oninput="calculatePurchase()"></label></div><div class="rate-row"><label>${lang==='en'?'Notary %':'Notaría %'} <input id="calcNotary" type="number" value="${rate('notary')}" step="0.1" oninput="calculatePurchase()"></label><label>${lang==='en'?'Registry %':'Registro %'} <input id="calcRegistry" type="number" value="${rate('registry')}" step="0.1" oninput="calculatePurchase()"></label></div><div class="rate-row"><label>${lang==='en'?'Legal/advisor %':'Legal/asesor %'} <input id="calcLegal" type="number" value="${rate('legal')}" step="0.1" oninput="calculatePurchase()"></label><label>${lang==='en'?'Other %':'Otros %'} <input id="calcOther" type="number" value="${rate('other')}" step="0.1" oninput="calculatePurchase()"></label></div><small class="calculator-note">${lang==='en'?'Planning estimate only. Rates may depend on brackets, buyer profile, property use and current regional rules. Confirm with a Spanish tax advisor.':'Solo estimación orientativa. Los tipos pueden depender de tramos, perfil del comprador, uso y normativa vigente. Confirmar con un asesor fiscal.'}</small></div><div class="calculator-result"><div class="mono">${lang==='en'?'Estimated acquisition':'Adquisición estimada'}</div><div class="total" id="calcTotal">—</div><div class="result-line"><span>${lang==='en'?'Taxes':'Impuestos'}</span><strong id="calcTaxes">—</strong></div><div class="result-line"><span>${lang==='en'?'Other costs':'Otros gastos'}</span><strong id="calcOtherCosts">—</strong></div><div class="result-line total-line"><span>${lang==='en'?'Above price':'Sobre el precio'}</span><strong id="calcAbove">—</strong></div><button class="cta" onclick="openEnquiry()">${lang==='en'?'Ask the property advisor':'Preguntar al asesor'} <b>↗</b></button></div></div></section>`;
+}
+function htmlConcierge(p,c){
+  return `<section id="concierge" class="concierge"><div><div class="advisor"><div class="advisor-avatar">A</div><div><div class="mono">${lang==='en'?'Property Concierge':'Concierge de la propiedad'}</div><div style="font-size:12px;margin-top:5px">${lang==='en'?'Private advisor':'Asesor privado'} · ${p.label}</div></div></div><h2>${c.concierge}</h2><p style="font-size:13px;line-height:1.7;max-width:420px">${c.conciergeSub}</p>
+<div class="concierge-status" id="conciergeStatus"></div>
+<button class="cta" style="color:var(--ink);border-color:var(--ink)" onclick="document.querySelector('.chat input').focus()">${c.explore} <b>↘</b></button></div>
+<div class="chat"><div class="messages" id="chatMessages"><div class="bubble">${p.conciergeIntro}</div></div><form class="chat-form" onsubmit="chat(event)"><input id="chatInput" placeholder="${c.placeholder}"/><button>${c.send} ↗</button></form></div></section>`;
+}
+function htmlArrival(p,c){
+  return `<div id="arrivalOverlay" class="arrival-overlay" aria-hidden="true"><div class="arrival-backdrop"></div><div class="arrival-progress"><span class="arrival-step active">01</span><i></i><span class="arrival-step">02</span><i></i><span class="arrival-step">03</span></div><button class="arrival-close" onclick="closeArrival()">Close ×</button><div class="arrival-content"><div class="eyebrow" id="arrivalEyebrow">Arrival</div><h2 id="arrivalTitle"></h2><p id="arrivalText"></p><button class="arrival-next" onclick="nextArrival()">${lang==='en'?'Continue':'Continuar'} <b>↘</b></button></div></div>`;
+}
+function htmlSpace(p,c){
+  return `<div id="spaceOverlay" class="space-overlay" aria-hidden="true"><button class="space-close" onclick="closeSpace()">Close ×</button><div class="space-media" id="spaceMedia"></div><div class="space-panel"><div class="mono" id="spaceLabel">${lang==='en'?'Explore the space':'Explorar el espacio'}</div><h2 id="spaceTitle"></h2><p id="spaceDescription"></p><div class="space-meta" id="spaceMeta"></div><button class="cta" style="color:var(--paper);border-color:var(--paper)" onclick="closeSpace();jumpTo('concierge')">${lang==='en'?'Ask the advisor':'Preguntar al asesor'} <b>↗</b></button></div></div>`;
+}
+function htmlFilm(){
+  return `<div id="filmOverlay" class="film-overlay" aria-hidden="true"><button class="film-close" onclick="closeFilm()">Close ×</button><iframe id="filmFrame" class="film-frame" title="Property film" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+}
+function htmlEnquiry(p,c){
+  return `<div id="enquiryOverlay" class="enquiry-overlay" aria-hidden="true"><button class="menu-close" onclick="closeEnquiry()">Close ×</button><div class="enquiry-box"><div class="mono">${lang==='en'?'Private enquiry':'Consulta privada'} · ${p.label}</div><h2>${lang==='en'?'Begin a private conversation.':'Inicia una conversación privada.'}</h2><p>${lang==='en'?'Tell the property advisor what matters to you. We will prepare the right next step.':'Cuéntale al asesor qué es importante para ti. Prepararemos el siguiente paso.'}</p>
+<div class="enquiry-context" id="enquiryContext"></div>
+<div id="advisorSummaryBox" class="advisor-summary-box"></div>
+<form onsubmit="submitEnquiry(event)"><input required name="name" placeholder="${lang==='en'?'Full name':'Nombre completo'}"/><input required type="email" name="email" placeholder="${lang==='en'?'Email address':'Email'}"/><select name="interest"><option>${lang==='en'?'What interests you most?':'¿Qué te interesa más?'}</option><option>${lang==='en'?'Living here':'Vivir aquí'}</option><option>${lang==='en'?'Privacy and retreat':'Privacidad y retiro'}</option><option>${lang==='en'?'Entertaining':'Reuniones'}</option><option>${lang==='en'?'Architecture and design':'Arquitectura y diseño'}</option><option>${lang==='en'?'Investment':'Inversión'}</option></select><textarea name="message" placeholder="${lang==='en'?'Anything you would like the advisor to know?':'¿Algo que quieras que el asesor sepa?'}"></textarea><button class="cta" type="submit">${lang==='en'?'Request private contact':'Solicitar contacto privado'} <b>↗</b></button></form><div id="enquirySuccess" class="enquiry-success" aria-live="polite"></div></div></div>`;
+}
+function htmlFooter(p){
+  return `<footer class="footer"><span>Larum Property Experience</span><span>${p.label} · ${p.brand} · 2026</span></footer>`;
+}
+function htmlSwitcher(){
+  return `<div class="switcher">${Object.keys(properties).map(k=>`<button class="${current===k?'active':''}" onclick="setProperty('${k}')">${properties[k].label.split(' · ')[0]}</button>`).join('')}<button onclick="setLang()">${lang==='en'?'ES':'EN'}</button></div>`;
+}
+/* Bilingual labels stay here (LPE-03 §4.3). Menu ids/order come from the shell. */
+const MENU_LABELS={
+  identity:{en:'Identity',es:'Identidad'},
+  sequence:{en:'A day here',es:'Un día aquí'},
+  spatial:{en:'Spatial logic',es:'Lógica espacial'},
+  documents:{en:'Documents',es:'Documentos'},
+  calculator:{en:'Acquisition cost',es:'Coste de adquisición'},
+  concierge:{en:'Private concierge',es:'Concierge privado'}
+};
+
+/* ── LPE-04: engine coordinator ─────────────────────────────────────────
+   app.js no longer owns the 6 P0 module subtrees. It renders them via the
+   module registry, mounts them, and routes cross-module calls through ctx. */
+
+const P0_IDS=['enquiry-handoff','arrival','property-dna','lived-sequence','verified-intelligence','concierge'];
+
+const P0_ROOT={
+  'enquiry-handoff':'#enquiryOverlay',
+  arrival:'#arrivalOverlay',
+  'property-dna':'.dna-section',
+  'lived-sequence':'#sequence',
+  'verified-intelligence':'#details',
+  concierge:'#concierge'
+};
+
+let ctx=null;
+const _mounted={};
+
+function useModule(id){
+  try{
+    if(typeof LarumModuleCatalog!=='undefined'&&LarumModuleCatalog.resolveModule)return LarumModuleCatalog.resolveModule(id);
+    if(typeof LarumModules!=='undefined'&&LarumModules[id])return LarumModules[id];
+  }catch(e){}
+  return null;
+}
+
+function buildCtx(p,c){
+  return {
+    slug:current,
+    lang:lang,
+    copy:c,
+    property:p,
+    model:model,
+    pc:pc,
+    activeSequences:activeSequences,
+    activeScenes:activeScenes,
+    activeSpatial:activeSpatial,
+    activeAssets:activeAssets,
+    dnaDimensions:dnaDimensions,
+    settingCards:settingCards,
+    track:function(ev,d,m){LarumAnalytics.track(ev,d,m);},
+    navigate:jumpTo,
+    selectSequence:selectSequence,
+    openSpace:openSpace,
+    openFilm:openFilm,
+    isVisible:isModuleVisible,
+    visited:visited,
+    knowledge:function(){return knowledgeModel&&knowledgeModel[current];},
+    qualification:qualificationTriggered,
+    entryPath:function(){return entryPath;},
+    contactConfig:contactConfig,
+    actions:{}
+  };
+}
+
+function destroyModules(){
+  for(const id in _mounted){
+    try{_mounted[id].mod.destroy();}catch(e){}
+    delete _mounted[id];
+  }
+}
+
+function mountModules(){
+  for(const id of P0_IDS){
+    const m=useModule(id);
+    if(!m)continue;
+    const root=document.querySelector(P0_ROOT[id]);
+    if(!root)continue;
+    /* LPE-10: per-module ctx so ctx.track stamps the owning module_id.
+       The shared ctx is copied (methods close over module-scope functions in
+       app.js, not over the ctx object), with only `track` re-bound to `id`. */
+    const moduleCtx=Object.assign({},ctx,{track:function(ev,d){LarumAnalytics.track(ev,d,id);}});
+    m.mount(root,moduleCtx);
+    _mounted[id]={mod:m};
+  }
+}
+
 function render(){
   const p=properties[current],c=copy[lang];
   document.documentElement.lang=lang;
+
+  /* LPE-05: family token layer. Reads only manifest.family; no other recipe
+     field is consumed. Flag OFF or missing LarumFamilies → no data-family → :root
+     Villa default. */
+  const applyFamily = (window.LARUM_FAMILY_APPLY !== false);
+  const resolver = (typeof LarumFamilies !== 'undefined') ? LarumFamilies.resolve : null;
+  const fam = (applyFamily && resolver) ? resolver(currentManifest().family).familyId : null;
+  if (fam) document.documentElement.dataset.family = fam;
+  else delete document.documentElement.dataset.family;
 
   /* The shell is rebuilt, so any open disclosure is gone with it. */
   openDnaIndex=-1;openSettingIndex=-1;
   conciergeHistory=[];
 
-  /* V2: analytics init */
-  LarumAnalytics.init(current, lang);
+  /* V2: analytics init — LPE-10 consume-when-present. family is available now
+     (LPE-05); propertyId/revisionId stay null until LPE-08/09 surface them. */
+  LarumAnalytics.init(current, lang, { family: (currentManifest().family || null) });
+
+  /* LPE-04: teardown any previously mounted modules before rebuilding. */
+  destroyModules();
+
+  const manifest=currentManifest();
+  ctx=buildCtx(p,c);
+
+  /* Render every P0 module once per cycle so each holds a fresh ctx; fall
+     back to the retained legacy html* when a flag is off / file absent. */
+  const moduleHtml={};
+  for(const id of P0_IDS){
+    const m=useModule(id);
+    moduleHtml[id]=m?m.render(ctx):null;
+  }
+
+  const slices={
+    hero: htmlHero(p,c),
+    identity: htmlIdentity(p,c),
+    'property-dna': moduleHtml['property-dna']||htmlPropertyDna(p,c),
+    'image-band': htmlImageBand(p,c),
+    'lived-sequence': moduleHtml['lived-sequence']||htmlLivedSequence(p,c),
+    explore: htmlExplore(p,c),
+    'spatial-zones': htmlSpatial(p,c),
+    'verified-intelligence': moduleHtml['verified-intelligence']||htmlDetails(p,c),
+    'setting-lifestyle': htmlSetting(p,c),
+    'documents-private-room': htmlDocuments(p,c),
+    calculator: htmlCalculator(p,c),
+    concierge: moduleHtml['concierge']||htmlConcierge(p,c)
+  };
+
+  /* LPE-03: the shell turns manifest + slices into the page. */
+  const page=LarumExperienceShell.compose(manifest,slices);
+
+  const railHtml=`<div class="chapter-rail">${page.railIds.map((id,i)=>`<button${i===0?' class="active"':''} onclick="jumpTo('${id}')" data-ch="${id}"><span>0${i+1}</span></button>`).join('')}</div>`;
+
+  const menuItems=page.menuIds.map(id=>MENU_LABELS[id]?{id,...MENU_LABELS[id]}:null).filter(Boolean);
+  const menuHtml=`<div id="menuOverlay" class="menu-overlay" aria-hidden="true"><button class="menu-close" onclick="closeMenu()">Close ×</button><div class="mono">Larum Property Experience</div><h2>${lang==='en'?'Explore<br>the place.':'Explora<br>el lugar.'}</h2>${menuItems.map(it=>`<button onclick="closeMenu();jumpTo('${it.id}')">${lang==='en'?it.en:it.es} <b>↘</b></button>`).join('')}</div>`;
+
+  const arrivalHtml=page.showArrival?(moduleHtml['arrival']||htmlArrival(p,c)):'';
+  const enquiryHtml=page.showEnquiry?(moduleHtml['enquiry-handoff']||htmlEnquiry(p,c)):'';
 
   document.getElementById('app').innerHTML=`
 <div class="shell">
 <div class="private-note">${c.private}</div>
 <header class="topbar"><button class="menu" onclick="openMenu()"><span></span>${c.menu}</button><div class="brand">LARUM<small>PROPERTY EXPERIENCE</small></div><button class="enquire" onclick="openEnquiry()">${c.enquire}</button></header>
-<div class="chapter-rail"><button class="active" onclick="jumpTo('hero')" data-ch="hero"><span>01</span></button><button onclick="jumpTo('identity')" data-ch="identity"><span>02</span></button><button onclick="jumpTo('sequence')" data-ch="sequence"><span>03</span></button><button onclick="jumpTo('spatial')" data-ch="spatial"><span>04</span></button><button onclick="jumpTo('concierge')" data-ch="concierge"><span>05</span></button></div>
+${railHtml}
 <main>
-<section id="hero" class="hero">${p.heroVideo?`<video class="hero-video" autoplay muted loop playsinline poster="${p.image}"><source src="${p.heroVideo}" type="video/mp4"></video>`:''}<div class="hero-image" style="background-image:url('${p.image}')"></div><div class="hero-copy"><div class="eyebrow">${p.label} · ${p.brand}</div><h1>${p.title.replace('\n','<br>')}</h1><p>${p.subtitle}</p><div class="hero-proof"><span>04 chapters</span><span>Spatial narrative</span><span>Private concierge</span></div><div class="path-picker"><div class="mono">${lang==='en'?'Choose your way in':'Elige tu camino'}</div><button onclick="choosePath('live')"><b>01</b>${lang==='en'?'Live the day':'Vivir el día'} <span>↘</span></button><button onclick="choosePath('space')"><b>02</b>${lang==='en'?'Understand the space':'Entender el espacio'} <span>↘</span></button><button onclick="choosePath('private')"><b>03</b>${lang==='en'?'Speak privately':'Hablar en privado'} <span>↘</span></button></div><button class="cta" onclick="startArrival()">${c.know}<b>↘</b></button></div><div class="scroll">${c.scroll} ↓</div></section>
-
-<section id="identity" class="section light identity"><div class="grid"><div><div class="mono">01 · ${lang==='en'?'Identity':'Identidad'}</div><h2>${c.identity}</h2></div><div><p class="statement">${p.intro}</p><p>${pc('identityNote')}</p></div></div></section>
-
-<section class="dna-section"><div class="dna-head"><div><div class="mono">02 · ${lang==='en'?'Property DNA':'ADN de la propiedad'}</div><h2>${p.dna?.title||p.title.replace('\n',' ')}</h2></div><p>${p.dna?.intro||p.intro}</p></div><div class="dna-grid">${dnaDimensions().map((d,i)=>`<div class="dna-item"><button class="dna-trigger" onclick="toggleDna(${i})" aria-expanded="false" aria-controls="dnaNote${i}"><div class="dna-top"><span>0${i+1}</span><b>${d.label}</b><strong>${d.score}</strong></div><div class="dna-bar"><i style="width:${d.score}%"></i></div></button><div class="dna-note" id="dnaNote${i}"><p>${d.note?.[lang]||''}</p></div></div>`).join('')}</div></section>
-
-<div class="image-band" style="background-image:url('${p.band}')"><div class="image-label">02 · ${pc('bandLabel')}</div></div>
-
-<section id="sequence" class="living-sequence"><div class="sequence-head"><div><div class="mono">03 · ${lang==='en'?'A day here':'Un día aquí'}</div><h2>${pc('sequenceTitle')}</h2></div><p>${pc('sequenceIntro')}</p></div><div class="sequence-stage" id="sequenceStage" style="background-image:linear-gradient(90deg,rgba(12,13,11,.62),rgba(12,13,11,.08)),url('${p.band}')"><div class="sequence-copy"><div class="mono" id="sequenceTime">${activeSequences()[0][1]}</div><h3 id="sequenceTitle">${activeSequences()[0][0]}</h3><p id="sequenceText">${activeSequences()[0][2]}</p></div><div class="sequence-controls">${activeSequences().map((s,i)=>`<button class="sequence-dot ${i===0?'active':''}" onclick="selectSequence(${i})"><span>0${i+1}</span><b>${s[0]}</b></button>`).join('')}</div></div><div class="scene-links" id="sceneLinks">${activeScenes()[0][1].map((space,i)=>`<button class="scene-link" onclick="openSpace('${space}')"><span>0${i+1}</span>${space}<b>↗</b></button>`).join('')}</div><button class="film-trigger" onclick="handleFilmTrigger()">${pc('filmLabel')} <b>▷</b></button></section>
-
-<section id="explore" class="section dark"><div class="mono">04 · ${c.explore}</div><div class="experiences">${p.experiences.map(e=>`<article class="experience"><div class="number">${e[0]}</div><h3>${e[1]}</h3><p>${e[2]}</p></article>`).join('')}</div></section>
-
-<section id="spatial" class="spatial"><div class="spatial-head"><div><div class="mono">05 · ${lang==='en'?'Spatial intelligence':'Inteligencia espacial'}</div><h2>${pc('spatialTitle')}</h2></div><p>${pc('spatialIntro')}</p></div><div class="spatial-map"><div class="map-lines"></div>${activeSpatial().map((m,i)=>`<button class="map-node ${i===0?'active':''}" onclick="selectMapSpace(${i})"><span>${m[0]}</span><strong>${m[1]}</strong><small>${m[2]}</small></button>`).join('')}</div><div class="spatial-detail" id="spatialDetail">${pc('spatialDetail')}</div></section>
-
-<section id="details" class="section light"><div class="grid"><div><div class="mono">06 · ${lang==='en'?'Verified details':'Datos verificados'}</div><h2>${pc('detailsTitle')}</h2></div><div><p>${pc('detailsIntro')}</p><div class="facts">${p.facts.map(f=>`<div class="fact"><strong>${f[0]}</strong><span>${f[1]}</span></div>`).join('')}</div></div></div></section>
-
-<section id="setting" class="setting"><div class="setting-head"><div><div class="mono">07 · ${lang==='en'?'The setting':'El entorno'}</div><h2>${p.setting?.title||(lang==='en'?'The world around the property.':'El mundo alrededor de la propiedad.')}</h2></div><p>${p.setting?.intro||''}</p></div><div class="setting-grid">${settingCards().map((card,i)=>`<button class="setting-card ${card.source==='verification'?'verification':''}" onclick="openSetting(${i})"><span>0${i+1}</span><strong>${card.title}</strong><p>${card.line}</p><em class="setting-more">${lang==='en'?'Open':'Abrir'} <b>↗</b></em></button>`).join('')}</div><div class="setting-detail" id="settingDetail" aria-live="polite"></div></section>
-
-<section id="documents" class="documents"><div class="documents-head"><div><div class="mono">07 · ${lang==='en'?'Private documents':'Documentos privados'}</div><h2>${lang==='en'?'The information<br>behind the feeling.':'La información<br>detrás del sentimiento.'}</h2></div><p>${lang==='en'?'When you are ready to go deeper, access the documents that make the residence real: certification, plans and brochure.':'Cuando estés listo para profundizar, accede a los documentos que hacen real la residencia: certificación, planos y brochure.'}</p></div><div class="document-grid"><button class="document-card" onclick="openDocument('Energy performance certificate')"><span>01</span><strong>${lang==='en'?'Energy certificate':'Certificado energético'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button><button class="document-card" onclick="openDocument('Floor plans')"><span>02</span><strong>${lang==='en'?'Floor plans':'Planos'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button><button class="document-card" onclick="openDocument('Property brochure')"><span>03</span><strong>${lang==='en'?'Property brochure':'Brochure'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button></div></section>
-
-<section id="calculator" class="calculator"><div class="calculator-head"><div><div class="mono">08 · ${lang==='en'?'Acquisition envelope':'Envolvente de adquisición'}</div><h2>${lang==='en'?'What does<br>acquiring it involve?':'¿Qué implica<br>adquirirla?'}</h2></div><p>${lang==='en'?'Estimate the total acquisition envelope by adapting the calculation to the autonomous community and type of property.':'Estima la envolvente total de adquisición adaptando el cálculo a la comunidad autónoma y tipo de propiedad.'}</p></div><div class="calculator-grid"><div class="calculator-form"><label>${lang==='en'?'Purchase price':'Precio de compra'} <input id="calcPrice" type="number" value="${p.referencePrice||0}" oninput="calculatePurchase()"></label><label>${lang==='en'?'Autonomous community':'Comunidad autónoma'} <select id="calcRegion" onchange="applyRegionRates()">${regionOptions()}</select></label><label>${lang==='en'?'Property type':'Tipo de propiedad'} <select id="calcType" onchange="calculatePurchase()"><option value="resale"${(model('defaultPropertyType')||'resale')==='resale'?' selected':''}>${lang==='en'?'Resale property':'Segunda mano'}</option><option value="new"${model('defaultPropertyType')==='new'?' selected':''}>${lang==='en'?'New build':'Obra nueva'}</option></select></label><div class="rate-row"><label id="itpLabel">ITP % <input id="calcItp" type="number" value="${rate('itp')}" step="0.1" oninput="calculatePurchase()"></label><label id="vatLabel" class="hidden">VAT % <input id="calcVat" type="number" value="${rate('vat')}" step="0.1" oninput="calculatePurchase()"></label><label id="ajdLabel">AJD % <input id="calcAjd" type="number" value="${rate('ajd')}" step="0.1" oninput="calculatePurchase()"></label></div><div class="rate-row"><label>${lang==='en'?'Notary %':'Notaría %'} <input id="calcNotary" type="number" value="${rate('notary')}" step="0.1" oninput="calculatePurchase()"></label><label>${lang==='en'?'Registry %':'Registro %'} <input id="calcRegistry" type="number" value="${rate('registry')}" step="0.1" oninput="calculatePurchase()"></label></div><div class="rate-row"><label>${lang==='en'?'Legal/advisor %':'Legal/asesor %'} <input id="calcLegal" type="number" value="${rate('legal')}" step="0.1" oninput="calculatePurchase()"></label><label>${lang==='en'?'Other %':'Otros %'} <input id="calcOther" type="number" value="${rate('other')}" step="0.1" oninput="calculatePurchase()"></label></div><small class="calculator-note">${lang==='en'?'Planning estimate only. Rates may depend on brackets, buyer profile, property use and current regional rules. Confirm with a Spanish tax advisor.':'Solo estimación orientativa. Los tipos pueden depender de tramos, perfil del comprador, uso y normativa vigente. Confirmar con un asesor fiscal.'}</small></div><div class="calculator-result"><div class="mono">${lang==='en'?'Estimated acquisition':'Adquisición estimada'}</div><div class="total" id="calcTotal">—</div><div class="result-line"><span>${lang==='en'?'Taxes':'Impuestos'}</span><strong id="calcTaxes">—</strong></div><div class="result-line"><span>${lang==='en'?'Other costs':'Otros gastos'}</span><strong id="calcOtherCosts">—</strong></div><div class="result-line total-line"><span>${lang==='en'?'Above price':'Sobre el precio'}</span><strong id="calcAbove">—</strong></div><button class="cta" onclick="openEnquiry()">${lang==='en'?'Ask the property advisor':'Preguntar al asesor'} <b>↗</b></button></div></div></section>
-
-<section id="concierge" class="concierge"><div><div class="advisor"><div class="advisor-avatar">A</div><div><div class="mono">${lang==='en'?'Property Concierge':'Concierge de la propiedad'}</div><div style="font-size:12px;margin-top:5px">${lang==='en'?'Private advisor':'Asesor privado'} · ${p.label}</div></div></div><h2>${c.concierge}</h2><p style="font-size:13px;line-height:1.7;max-width:420px">${c.conciergeSub}</p>
-<div class="concierge-status" id="conciergeStatus"></div>
-<button class="cta" style="color:var(--ink);border-color:var(--ink)" onclick="document.querySelector('.chat input').focus()">${c.explore} <b>↘</b></button></div>
-<div class="chat"><div class="messages" id="chatMessages"><div class="bubble">${p.conciergeIntro}</div></div><form class="chat-form" onsubmit="chat(event)"><input id="chatInput" placeholder="${c.placeholder}"/><button>${c.send} ↗</button></form></div></section>
-</main>
-
-<div id="arrivalOverlay" class="arrival-overlay" aria-hidden="true"><div class="arrival-backdrop"></div><div class="arrival-progress"><span class="arrival-step active">01</span><i></i><span class="arrival-step">02</span><i></i><span class="arrival-step">03</span></div><button class="arrival-close" onclick="closeArrival()">Close ×</button><div class="arrival-content"><div class="eyebrow" id="arrivalEyebrow">Arrival</div><h2 id="arrivalTitle"></h2><p id="arrivalText"></p><button class="arrival-next" onclick="nextArrival()">${lang==='en'?'Continue':'Continuar'} <b>↘</b></button></div></div>
-
-<div id="spaceOverlay" class="space-overlay" aria-hidden="true"><button class="space-close" onclick="closeSpace()">Close ×</button><div class="space-media" id="spaceMedia"></div><div class="space-panel"><div class="mono" id="spaceLabel">${lang==='en'?'Explore the space':'Explorar el espacio'}</div><h2 id="spaceTitle"></h2><p id="spaceDescription"></p><div class="space-meta" id="spaceMeta"></div><button class="cta" style="color:var(--paper);border-color:var(--paper)" onclick="closeSpace();jumpTo('concierge')">${lang==='en'?'Ask the advisor':'Preguntar al asesor'} <b>↗</b></button></div></div>
-
-<div id="filmOverlay" class="film-overlay" aria-hidden="true"><button class="film-close" onclick="closeFilm()">Close ×</button><iframe id="filmFrame" class="film-frame" title="Property film" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
-
-<div id="menuOverlay" class="menu-overlay" aria-hidden="true"><button class="menu-close" onclick="closeMenu()">Close ×</button><div class="mono">Larum Property Experience</div><h2>${lang==='en'?'Explore<br>the place.':'Explora<br>el lugar.'}</h2><button onclick="closeMenu();jumpTo('identity')">${lang==='en'?'Identity':'Identidad'} <b>↘</b></button><button onclick="closeMenu();jumpTo('sequence')">${lang==='en'?'A day here':'Un día aquí'} <b>↘</b></button><button onclick="closeMenu();jumpTo('spatial')">${lang==='en'?'Spatial logic':'Lógica espacial'} <b>↘</b></button><button onclick="closeMenu();jumpTo('documents')">${lang==='en'?'Documents':'Documentos'} <b>↘</b></button><button onclick="closeMenu();jumpTo('calculator')">${lang==='en'?'Acquisition cost':'Coste de adquisición'} <b>↘</b></button><button onclick="closeMenu();jumpTo('concierge')">${lang==='en'?'Private concierge':'Concierge privado'} <b>↘</b></button></div>
-
-<div id="enquiryOverlay" class="enquiry-overlay" aria-hidden="true"><button class="menu-close" onclick="closeEnquiry()">Close ×</button><div class="enquiry-box"><div class="mono">${lang==='en'?'Private enquiry':'Consulta privada'} · ${p.label}</div><h2>${lang==='en'?'Begin a private conversation.':'Inicia una conversación privada.'}</h2><p>${lang==='en'?'Tell the property advisor what matters to you. We will prepare the right next step.':'Cuéntale al asesor qué es importante para ti. Prepararemos el siguiente paso.'}</p>
-<div class="enquiry-context" id="enquiryContext"></div>
-<div id="advisorSummaryBox" class="advisor-summary-box"></div>
-<form onsubmit="submitEnquiry(event)"><input required name="name" placeholder="${lang==='en'?'Full name':'Nombre completo'}"/><input required type="email" name="email" placeholder="${lang==='en'?'Email address':'Email'}"/><select name="interest"><option>${lang==='en'?'What interests you most?':'¿Qué te interesa más?'}</option><option>${lang==='en'?'Living here':'Vivir aquí'}</option><option>${lang==='en'?'Privacy and retreat':'Privacidad y retiro'}</option><option>${lang==='en'?'Entertaining':'Reuniones'}</option><option>${lang==='en'?'Architecture and design':'Arquitectura y diseño'}</option><option>${lang==='en'?'Investment':'Inversión'}</option></select><textarea name="message" placeholder="${lang==='en'?'Anything you would like the advisor to know?':'¿Algo que quieras que el asesor sepa?'}"></textarea><button class="cta" type="submit">${lang==='en'?'Request private contact':'Solicitar contacto privado'} <b>↗</b></button></form><div id="enquirySuccess" class="enquiry-success" aria-live="polite"></div></div></div>
-
-<footer class="footer"><span>Larum Property Experience</span><span>${p.label} · ${p.brand} · 2026</span></footer>
-<div class="switcher">${Object.keys(properties).map(k=>`<button class="${current===k?'active':''}" onclick="setProperty('${k}')">${properties[k].label.split(' · ')[0]}</button>`).join('')}<button onclick="setLang()">${lang==='en'?'ES':'EN'}</button></div>
+${page.mainHtml}</main>
+${arrivalHtml}
+${htmlSpace(p,c)}
+${htmlFilm()}
+${menuHtml}
+${enquiryHtml}
+${htmlFooter(p)}
+${htmlSwitcher()}
 </div>`;
-  updateConciergeStatus();
+
+  /* LPE-04: mount P0 modules into their roots, then wire the coordinator. */
+  mountModules();
+  ctx.actions={
+    enquiry: useModule('enquiry-handoff')?useModule('enquiry-handoff').actions:null,
+    arrival: useModule('arrival')?useModule('arrival').actions:null,
+    sequence: useModule('lived-sequence')?useModule('lived-sequence').actions:null
+  };
+
+  /* Concierge status is refreshed by its own mount() when live; the legacy
+     path still refreshes it here. */
+  if(!useModule('concierge'))updateConciergeStatus();
 }
+
 
 /* ════════════════════════════════════════════════════════════════════
    V2: CONCIERGE STATUS — shows detected interests & qualification level
@@ -306,6 +507,11 @@ function updateConciergeStatus() {
    ════════════════════════════════════════════════════════════════════ */
 
 function selectSequence(i){
+  const m=useModule('lived-sequence');
+  if(m&&ctx){m.actions.select(i);return;}
+  legacySelectSequence(i);
+}
+function legacySelectSequence(i){
   const s=activeSequences()[i];
   if(!visited.includes(s[0]))visited.push(s[0]);
   LarumAnalytics.track('scene_open', { name: s[0] });
@@ -327,7 +533,7 @@ function selectMapSpace(i){
   if(text)document.getElementById('spatialDetail').textContent=text;
 }
 
-function choosePath(path){entryPath=path;LarumAnalytics.track('entry_path',{path});if(path==='live')startArrival();if(path==='space')jumpTo('spatial');if(path==='private')openEnquiry()}
+function choosePath(path){entryPath=path;LarumAnalytics.track('entry_path',{path});if(path==='live'){if(isModuleVisible('arrival'))startArrival();else if(document.getElementById('sequence'))jumpTo('sequence')}if(path==='space'){if(document.getElementById('spatial'))jumpTo('spatial')}if(path==='private'){if(isModuleVisible('enquiry-handoff'))openEnquiry()}}
 
 function openDocument(name){
   LarumAnalytics.track('document_request', { name });
@@ -413,6 +619,14 @@ function openMenu(){const o=document.getElementById('menuOverlay');o.classList.a
 function closeMenu(){const o=document.getElementById('menuOverlay');o.classList.remove('open');o.setAttribute('aria-hidden','true')}
 
 function openEnquiry(){
+  const m=useModule('enquiry-handoff');
+  if(m&&ctx){m.actions.open();return;}
+  legacyOpenEnquiry();
+}
+function legacyOpenEnquiry(){
+  if(!isModuleVisible('enquiry-handoff'))return;
+  const overlay=document.getElementById('enquiryOverlay');
+  if(!overlay)return;
   /* V2: build contextual summary */
   const contextText = LarumAnalytics.buildContextualEnquiry();
   const contextEl = document.getElementById('enquiryContext');
@@ -451,7 +665,7 @@ function openEnquiry(){
   o.classList.add('open');o.setAttribute('aria-hidden','false');
 }
 
-function closeEnquiry(){const o=document.getElementById('enquiryOverlay');o.classList.remove('open');o.setAttribute('aria-hidden','true')}
+function closeEnquiry(){const o=document.getElementById('enquiryOverlay');if(!o)return;o.classList.remove('open');o.setAttribute('aria-hidden','true')}
 
 function submitEnquiry(e){
   e.preventDefault();
@@ -683,7 +897,7 @@ function initExperience(opts){
   teardownExperience();
 
   const rail=document.querySelector('.chapter-rail');if(!rail)return;
-  const sections=['hero','identity','sequence','spatial','concierge'].map(id=>document.getElementById(id)).filter(Boolean);
+  const sections=railChapterIds().map(id=>document.getElementById(id)).filter(Boolean);
   const dots=[...rail.querySelectorAll('button')];
 
   /* The DNA grid animates too but is not a chapter: it must not drive the
@@ -776,8 +990,13 @@ function initExperience(opts){
 }
 
 let arrivalIndex=0;
-function startArrival(){arrivalIndex=0;const o=document.getElementById('arrivalOverlay');o.classList.add('open');o.setAttribute('aria-hidden','false');updateArrival()}
-function closeArrival(){const o=document.getElementById('arrivalOverlay');o.classList.remove('open');o.setAttribute('aria-hidden','true')}
+function startArrival(){
+  const m=useModule('arrival');
+  if(m&&ctx){m.actions.open();return;}
+  legacyStartArrival();
+}
+function legacyStartArrival(){if(!isModuleVisible('arrival')){if(document.getElementById('sequence'))jumpTo('sequence');return}const o=document.getElementById('arrivalOverlay');if(!o){if(document.getElementById('sequence'))jumpTo('sequence');return}arrivalIndex=0;o.classList.add('open');o.setAttribute('aria-hidden','false');updateArrival()}
+function closeArrival(){const o=document.getElementById('arrivalOverlay');if(!o)return;o.classList.remove('open');o.setAttribute('aria-hidden','true')}
 function nextArrival(){if(arrivalIndex<2){arrivalIndex++;updateArrival()}else{closeArrival();jumpTo('identity')}}
 
 function updateArrival(){
@@ -826,7 +1045,7 @@ function jumpToTop(){scrollToInstant(0)}
 
 function captureAnchor(){
   if(window.scrollY<4)return null;
-  const ids=['hero','identity','sequence','spatial','concierge'];
+  const ids=railChapterIds();
   let best=null;
   for(const id of ids){
     const el=document.getElementById(id);if(!el)continue;
@@ -1037,11 +1256,24 @@ function closeChat() {
 function resolveMedia(slug) {
   const a = (assetsModel && assetsModel[slug]) || {};
   const c = (contentModel && contentModel[slug]) || {};
-  return {
-    image: a.hero?.fallbackImage || c.image || '',
-    heroVideo: a.hero?.video || null,
-    band: a.bandImage || c.band || ''
-  };
+  let image = a.hero?.fallbackImage || c.image || '';
+  let heroVideo = a.hero?.video || null;
+  let band = a.bandImage || c.band || '';
+  /* LPE-06: resolve hero/band through the asset contract resolver when
+     available. Flat-field fallback is retained — identical output today
+     (the resolver returns the same URLs the flat reader produced). */
+  try {
+    if (typeof LarumAssetResolver !== 'undefined' && LarumAssetResolver.resolve) {
+      const resolved = LarumAssetResolver.resolve(null, slug, a);
+      const hero = resolved.slots && resolved.slots['hero'];
+      const bandSlot = resolved.slots && resolved.slots['band-image'];
+      if (hero && hero.url) image = hero.url;
+      if (bandSlot && bandSlot.url) band = bandSlot.url;
+      /* heroVideo stays flat: the resolver models one url per slot; the hero
+         video overlay remains a flat-field concern (behavior unchanged). */
+    }
+  } catch (e) {}
+  return { image, heroVideo, band };
 }
 
 /* ── Shareable state ──
@@ -1155,7 +1387,7 @@ function showLoadFailure(detail) {
    It reads state out of the live page, so a screenshot of it is enough
    to tell a stale cache from a real rendering fault. */
 
-const LARUM_BUILD = 'build-5';
+const LARUM_BUILD = 'build-6';
 
 function debugPanel() {
   const ids = ['hero','identity','sequence','spatial','concierge'];

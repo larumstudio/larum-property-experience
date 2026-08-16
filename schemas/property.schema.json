@@ -1,0 +1,2 @@
+{"$schema":"http://json-schema.org/draft-07/schema#","title":"Larum Property","type":"object","required":["schemaVersion","slug","status","label","location","content","knowledge","assets"],"properties":{"schemaVersion":{"const":"1.0"},"slug":{"type":"string","pattern":"^[a-z0-9]+(?:-[a-z0-9]+)*$"},"status":{"enum":["draft","in_production","ready","published","archived"]},"label":{"type":"string"},"location":{"type":"object"},"content":{"type":"object"},"knowledge":{"type":"object"},"assets":{"type":"object"}}}
+

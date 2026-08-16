@@ -9,7 +9,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Larum Property Experience — Private Prototype</title>
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <style>
     /* `overflow-x: hidden` here turns body into a scroll container, which
        silently kills every smooth scroll — the chapter rail, the whole menu
@@ -27,15 +27,28 @@
   <div id="app"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=9"></script>
+  <script src="supabase-config.js?v=10"></script>
 
   <!-- Property data: JSON under properties/ over http://, generated pack over file:// -->
-  <script src="property-pack.js?v=9"></script>
-  <script src="property-loader.js?v=9"></script>
+  <script src="property-pack.js?v=10"></script>
+  <script src="schemas/adapters/index.js?v=10"></script>
+  <script src="schemas/module-registry.js?v=11"></script>
+  <script src="experience-shell.js?v=11"></script>
+  <script src="schemas/families.js?v=13"></script>
+  <script src="schemas/asset-contracts.js?v=14"></script>
+  <script src="schemas/asset-resolver.js?v=14"></script>
+  <script src="modules/registry.js?v=12"></script>
+  <script src="modules/enquiry-handoff.js?v=12"></script>
+  <script src="modules/arrival.js?v=12"></script>
+  <script src="modules/property-dna.js?v=12"></script>
+  <script src="modules/lived-sequence.js?v=12"></script>
+  <script src="modules/verified-intelligence.js?v=12"></script>
+  <script src="modules/concierge.js?v=12"></script>
+  <script src="property-loader.js?v=10"></script>
 
-  <script src="consent.js?v=9"></script>
-  <script src="analytics.js?v=9"></script>
-  <script src="app.js?v=9"></script>
+  <script src="consent.js?v=10"></script>
+  <script src="analytics.js?v=10"></script>
+  <script src="app.js?v=14"></script>
 
   <script>
     /* Data first, then the experience, then the consent gate. */

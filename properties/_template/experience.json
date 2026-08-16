@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "revisionId": "_template-legacy",
+  "propertyId": "_template",
+  "family": "villa-estate",
+  "themeId": "villa-estate-default",
+  "modules": [
+    {
+      "id": "arrival",
+      "instanceId": "arrival-01",
+      "visible": true,
+      "order": 10,
+      "config": {}
+    },
+    {
+      "id": "property-dna",
+      "instanceId": "property-dna-01",
+      "visible": true,
+      "order": 20,
+      "config": {}
+    },
+    {
+      "id": "lived-sequence",
+      "instanceId": "lived-sequence-01",
+      "visible": true,
+      "order": 30,
+      "config": {}
+    },
+    {
+      "id": "spatial-zones",
+      "instanceId": "spatial-zones-01",
+      "visible": true,
+      "order": 40,
+      "config": {}
+    },
+    {
+      "id": "verified-intelligence",
+      "instanceId": "verified-intelligence-01",
+      "visible": true,
+      "order": 50,
+      "config": {}
+    },
+    {
+      "id": "setting-lifestyle",
+      "instanceId": "setting-lifestyle-01",
+      "visible": true,
+      "order": 60,
+      "config": {}
+    },
+    {
+      "id": "documents-private-room",
+      "instanceId": "documents-private-room-01",
+      "visible": true,
+      "order": 70,
+      "config": {}
+    },
+    {
+      "id": "concierge",
+      "instanceId": "concierge-01",
+      "visible": true,
+      "order": 80,
+      "config": {}
+    },
+    {
+      "id": "enquiry-handoff",
+      "instanceId": "enquiry-handoff-01",
+      "visible": true,
+      "order": 90,
+      "config": {}
+    }
+  ],
+  "navigation": {
+    "chapters": [
+      "arrival",
+      "property-dna",
+      "lived-sequence",
+      "spatial-zones",
+      "verified-intelligence",
+      "setting-lifestyle",
+      "documents-private-room",
+      "concierge",
+      "enquiry-handoff"
+    ],
+    "defaultEntry": "arrival-01"
+  },
+  "ctaPolicy": {},
+  "motionPolicy": {
+    "enabled": true,
+    "reducedMotionFallback": "static-composed"
+  },
+  "fallbackPolicy": {},
+  "assetContractIds": []
+}
