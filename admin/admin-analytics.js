@@ -68,7 +68,13 @@ function draw() {
     '<div class="grid-2">' +
       card('Top entry paths', renderEntryPaths(sessions)) +
       card('Content exploration', renderExploration(sessions)) +
-    '</div>';
+    '</div>' +
+
+    card(
+      'Canonical ID coverage',
+      renderNullReport(state.events),
+      { headerRight: '<span class="mono" style="font-size:11px;color:var(--muted)">event_schema · 1 · LPE-10</span>' }
+    );
 }
 
 /* ── Charts ─────────────────────────────────────────────── */
@@ -137,6 +143,49 @@ function renderEntryPaths(sessions) {
   return '<div class="ga-paths">' + sorted.map(([path, n]) =>
     '<div class="ga-path-row"><span class="mono">' + esc(path) + '</span><span class="ga-path-n">' + n + '</span></div>'
   ).join('') + '</div>';
+}
+
+/* LPE-10: Canonical ID coverage reconciliation view (HANDOFF §5).
+   Read-only. Reads from state.events (analytics_events already loaded by
+   admin-core.js). No writes, no mutations. Non-zero missing counts are
+   EXPECTED until LPE-08/09 surface canonical IDs to the runtime. */
+function renderNullReport(events) {
+  const lpe10 = events.filter(e => e.event_schema === 1);
+
+  if (!lpe10.length) {
+    return '<div class="empty">No LPE-10 canonical events in this period. ' +
+      'Canonical fields populate once the analytics schema is live and the visitor runtime runs.</div>' +
+      '<div class="mono" style="margin-top:10px;font-size:11px;color:var(--muted)">' +
+        'The property slug (legacy field) is always written regardless — dual-write retained.' +
+      '</div>';
+  }
+
+  const total = lpe10.length;
+  function pct(n) { return total ? Math.round((n / total) * 100) + '%' : '0%'; }
+
+  const hasPropId = lpe10.filter(e => e.property_id).length;
+  const hasRevId  = lpe10.filter(e => e.experience_revision_id).length;
+  const hasModId  = lpe10.filter(e => e.module_id).length;
+  const hasFamily = lpe10.filter(e => e.family).length;
+
+  function row(field, n) {
+    return '<div class="ga-signal">' +
+      '<span class="mono" style="min-width:210px;display:inline-block">' + esc(field) + '</span>' +
+      '<strong>' + pct(n) + '</strong>' +
+      ' <span class="mono" style="color:var(--muted)">(' + n + ' / ' + total + ')</span>' +
+    '</div>';
+  }
+
+  return '<div class="ga-signals">' +
+    row('property_id', hasPropId) +
+    row('experience_revision_id', hasRevId) +
+    row('module_id', hasModId) +
+    row('family', hasFamily) +
+  '</div>' +
+  '<div class="mono" style="margin-top:12px;font-size:11px;color:var(--muted)">' +
+    'property (slug) always written · dual-write retained · ' +
+    'non-zero missing counts expected until LPE-08/09 surface canonical IDs' +
+  '</div>';
 }
 
 function renderExploration(sessions) {
