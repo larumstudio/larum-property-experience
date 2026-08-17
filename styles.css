@@ -286,6 +286,14 @@ html[data-family="metropolitan-luxury"]{--ink:#0e0f0f;--paper:#ece7dd;--line:rgb
 .distance-list{display:flex;flex-direction:column;gap:2px;margin-bottom:16px}
 .distance-row{display:flex;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid rgba(233,230,222,.1);font-size:13px;color:#c6c4bb}
 .distance-row i{flex:1;border-bottom:1px dotted rgba(233,230,222,.22)}
+
+/* LPE-12 a11y fix: overlays use opacity:0 + pointer-events:none when closed, but
+   aria-hidden="true" with focusable children still registers in the accessibility tree.
+   visibility:hidden removes them from AT and prevents keyboard focus while preserving
+   the existing opacity CSS transition (visibility defaults to visible when .open is set).
+   Scope: .menu-overlay, .film-overlay, .space-overlay (all carry aria-hidden="true" by default).
+   Rule: aria-hidden-focus (serious) — 3 elements — marbella + madrid. */
+.menu-overlay:not(.open),.film-overlay:not(.open),.space-overlay:not(.open){visibility:hidden}
 .distance-row strong{font-family:var(--font-display);font-size:17px;font-weight:400;color:var(--paper,#e9e6de)}
 .distance-row em{font-family:var(--font-mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent,#8a7a52);font-style:normal;white-space:nowrap}
 

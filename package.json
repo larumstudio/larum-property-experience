@@ -2,7 +2,7 @@
   "name": "larum-property-experience",
   "version": "2.1.0",
   "private": true,
-  "description": "Larum Property Experience \u2014 private prototype. Static experience plus a grounded property concierge.",
+  "description": "Larum Property Experience — private prototype. Static experience plus a grounded property concierge.",
   "scripts": {
     "build": "node build-pack.js",
     "validate": "node validate-content.js",
@@ -18,12 +18,23 @@
     "test:lpe-08": "node tests/lpe-08-lazy.test.js",
     "test:lpe-09": "node tests/lpe-09-revisions.test.mjs",
     "test:lpe-10": "node tests/lpe-10-analytics.test.js",
-    "test:lpe-11": "node tests/lpe-11-villa.test.js"
+    "test:lpe-11": "node tests/lpe-11-villa.test.js",
+    "test:lpe-12:gates": "node tests/lpe-12-gates.test.js",
+    "test:lpe-12:smoke": "npx playwright test tests/e2e/smoke/smoke.spec.js",
+    "test:lpe-12:a11y": "npx playwright test tests/e2e/smoke/a11y.spec.js",
+    "test:lpe-12:perf": "node tests/lpe-12-lighthouse.js",
+    "test:lpe-12": "node tests/lpe-12-gates.test.js && npx playwright test tests/e2e/smoke/"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "axe-core": "^4.13.0",
+    "chrome-launcher": "^1.2.1",
+    "lighthouse": "^13.4.1"
   }
 }
