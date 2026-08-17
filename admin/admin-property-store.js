@@ -22,6 +22,7 @@ const INDEX_COLUMNS = [
   'cover_image', 'property_type', 'price', 'currency',
   'display_order', 'is_default',
   'organization_id', 'agent_id',
+  'experience_revision_id',
   'created_at', 'updated_at', 'published_at'
 ].join(',');
 
@@ -136,6 +137,98 @@ export async function saveKnowledge(slug, knowledge) {
   if (cached) {
     cached.knowledge = JSON.parse(JSON.stringify(knowledge));
   }
+}
+
+/* ── Revision lifecycle (LPE-09) ─────────────────────────── */
+
+/* Insert a new draft revision from the property's current snapshots.
+   Returns the inserted row (includes id and revision_number). */
+export async function createRevision(slug, { content, knowledge, assets, createdBy }) {
+  const { data: prop, error: propError } = await window.supabaseClient
+    .from('properties')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (propError || !prop) throw new Error(propError?.message || `Property "${slug}" not found`);
+
+  const { data: latest, error: latestError } = await window.supabaseClient
+    .from('experience_revisions')
+    .select('revision_number')
+    .eq('property_id', prop.id)
+    .order('revision_number', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (latestError) throw new Error(latestError.message);
+  const revisionNumber = (latest?.revision_number || 0) + 1;
+
+  const { data: rev, error } = await window.supabaseClient
+    .from('experience_revisions')
+    .insert({
+      property_id:        prop.id,
+      revision_number:    revisionNumber,
+      status:             'draft',
+      manifest:           {},
+      content_snapshot:   content,
+      knowledge_snapshot: knowledge,
+      assets_snapshot:    assets,
+      created_by:         createdBy
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return rev;
+}
+
+/* Set a revision to published and update the property's publish pointer.
+   The property's experience_revision_id becomes the single source of truth
+   for which revision visitors see. Clears the in-memory cache. */
+export async function publishRevision(slug, revisionId) {
+  const { data: prop, error: propError } = await window.supabaseClient
+    .from('properties')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (propError || !prop) throw new Error(propError?.message || `Property "${slug}" not found`);
+
+  const { error: revError } = await window.supabaseClient
+    .from('experience_revisions')
+    .update({ status: 'published', published_at: new Date().toISOString() })
+    .eq('id', revisionId)
+    .eq('property_id', prop.id);
+  if (revError) throw new Error(revError.message);
+
+  const { error: propUpdateError } = await window.supabaseClient
+    .from('properties')
+    .update({ experience_revision_id: revisionId })
+    .eq('id', prop.id);
+  if (propUpdateError) throw new Error(propUpdateError.message);
+
+  store.cache.delete(slug);
+  const idx = store.index.find(r => r.slug === slug);
+  if (idx) idx.experience_revision_id = revisionId;
+}
+
+/* Atomic rollback: repoint the property's publish pointer to a previous
+   revision. The previously active revision retains its status (no mutation).
+   Clears the in-memory cache so the next load reflects the rollback. */
+export async function rollback(slug, targetRevisionId) {
+  const { data: prop, error: propError } = await window.supabaseClient
+    .from('properties')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (propError || !prop) throw new Error(propError?.message || `Property "${slug}" not found`);
+
+  const { error: propUpdateError } = await window.supabaseClient
+    .from('properties')
+    .update({ experience_revision_id: targetRevisionId })
+    .eq('id', prop.id);
+  if (propUpdateError) throw new Error(propUpdateError.message);
+
+  store.cache.delete(slug);
+  const idx = store.index.find(r => r.slug === slug);
+  if (idx) idx.experience_revision_id = targetRevisionId;
 }
 
 /* ── Audits ───────────────────────────────────────────────── */

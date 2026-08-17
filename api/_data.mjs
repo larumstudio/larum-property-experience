@@ -106,16 +106,44 @@ function fromBundle(slug) {
 
 /* Fetching only what the prompt uses (`select=content,knowledge`) rather
    than the whole row: the assets block is 1-2 KB per property of URLs and
-   provenance the concierge does not read. */
+   provenance the concierge does not read.
+
+   LPE-09: if the property has a publish pointer (experience_revision_id),
+   read content_snapshot/knowledge_snapshot from the active revision instead.
+   Falls back to the property row if the revision fetch fails, keeping the
+   concierge online even during a transition. */
 async function fetchDossier(slug) {
   const url = `${SB_URL}/rest/v1/properties`
     + `?slug=eq.${encodeURIComponent(slug)}`
     + `&status=eq.published`
-    + `&select=content,knowledge&limit=1`;
+    + `&select=content,knowledge,experience_revision_id&limit=1`;
   const r = await fetch(url, { headers: anonHeaders() });
   if (!r.ok) throw new Error(`Supabase ${r.status}`);
   const rows = await r.json();
-  return rows.length ? extractDossier(rows[0]) : null;
+  if (!rows.length) return null;
+  const row = rows[0];
+
+  if (row.experience_revision_id) {
+    try {
+      const revUrl = `${SB_URL}/rest/v1/experience_revisions`
+        + `?id=eq.${encodeURIComponent(row.experience_revision_id)}`
+        + `&select=content_snapshot,knowledge_snapshot&limit=1`;
+      const revR = await fetch(revUrl, { headers: anonHeaders() });
+      if (revR.ok) {
+        const revRows = await revR.json();
+        if (revRows.length && revRows[0].content_snapshot) {
+          return extractDossier({
+            content:   revRows[0].content_snapshot,
+            knowledge: revRows[0].knowledge_snapshot
+          });
+        }
+      }
+    } catch (_) {
+      /* Revision fetch failed — fall through to property content. */
+    }
+  }
+
+  return extractDossier(row);
 }
 
 /* Public: the shape the handler expected from PACK before this file

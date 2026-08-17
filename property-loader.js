@@ -34,7 +34,7 @@ const LarumLoader = (() => {
     contact: null,
     purchase: null,
     ready: false,
-    source: null,      // 'db' | 'files' | 'pack'
+    source: null,      // 'db' | 'db-v2' | 'files' | 'pack'
     errors: [],        // problems with the source that actually loaded
     notes: []          // why an earlier source was skipped — diagnostics only
   };
@@ -45,6 +45,17 @@ const LarumLoader = (() => {
     basePath = basePath || '.';
     const only = _wantedSource();
     const online = location.protocol !== 'file:';
+
+    /* LPE-09: explicit-only path — not part of the automatic fallback cascade. */
+    if (online && only === 'db-v2') {
+      try {
+        if (await loadFromDbV2(basePath)) { data.source = 'db-v2'; return true; }
+      } catch (e) {
+        _note(`Database (db-v2) unavailable (${e.message})`);
+      }
+      data.ready = true;
+      return false;
+    }
 
     if (online && (!only || only === 'db')) {
       try {
@@ -184,6 +195,130 @@ const LarumLoader = (() => {
       content: row.content,
       knowledge: row.knowledge || {},
       assets: row.assets || {},
+      experience: null
+    };
+    data.status[slug] = row.status || 'published';
+    return true;
+  }
+
+  /* ── LPE-09: db-v2 source — reads content from experience_revisions ──
+     Activated only by ?source=db-v2; not part of the automatic cascade.
+
+     Index query includes experience_revision_id so loadPropertyRevision can
+     use the publish pointer directly. When a property has no revision yet,
+     loadPropertyRevision falls back to properties.content/knowledge/assets
+     (same payload as the regular db path), so existing properties keep
+     working while the operator builds their first revision. */
+
+  async function loadFromDbV2(basePath) {
+    const client = (typeof window !== 'undefined') && window.supabaseClient;
+    if (!client) { _note('No Supabase client on the page'); return false; }
+
+    _reset();
+
+    const { data: rows, error } = await client
+      .from('properties')
+      .select('slug,status,is_default,display_order,label:content->>label,experience_revision_id')
+      .order('display_order', { ascending: true });
+
+    if (error) { _note(`Supabase index (db-v2): ${error.message}`); return false; }
+    if (!rows || !rows.length) { _note('Supabase has no properties yet'); return false; }
+
+    const order = [];
+    let fallbackDefault = null;
+
+    for (const row of rows) {
+      if (!row.slug || !row.label) continue;
+      data.index[row.slug] = {
+        slug:                   row.slug,
+        status:                 row.status || 'published',
+        is_default:             !!row.is_default,
+        display_order:          row.display_order,
+        label:                  row.label,
+        experience_revision_id: row.experience_revision_id || null
+      };
+      data.status[row.slug] = row.status || 'published';
+      order.push(row.slug);
+      if (row.is_default) fallbackDefault = row.slug;
+    }
+
+    if (!order.length) { _note('Supabase index (db-v2) returned only empty rows'); return false; }
+
+    data.registry = { default: fallbackDefault || order[0], order, rules: {} };
+
+    const defaultSlug = data.registry.default;
+    const propOk = await loadPropertyRevision(defaultSlug);
+    if (!propOk) { _note(`Failed to load default property "${defaultSlug}" (db-v2)`); return false; }
+
+    const [rules, contact, purchase] = await Promise.all([
+      _fetchJSON(`${basePath}/properties/index.json`).then(r => r.rules || {}).catch(() => ({})),
+      _fetchJSON(`${basePath}/contact-config.json`).catch(() => _defaultContact()),
+      _fetchJSON(`${basePath}/purchase-config.json`).catch(() => _defaultPurchase())
+    ]);
+
+    data.registry.rules = rules;
+    data.contact = contact;
+    data.purchase = purchase;
+    data.ready = true;
+    return true;
+  }
+
+  /* ── LPE-09: on-demand property load from the published revision ──
+     Used by the db-v2 path. Reads content_snapshot/knowledge_snapshot/
+     assets_snapshot from experience_revisions using the publish pointer
+     stored in data.index[slug].experience_revision_id.
+
+     Falls back to properties.content/knowledge/assets when:
+     - experience_revision_id is null (no revision published yet), or
+     - the revision row is unavailable (RLS, network error, etc.).
+
+     Idempotent: hasProperty() guard prevents duplicate fetches. */
+
+  async function loadPropertyRevision(slug) {
+    if (!slug) return false;
+    if (hasProperty(slug)) return true;
+
+    const client = (typeof window !== 'undefined') && window.supabaseClient;
+    if (!client) { _note('No Supabase client for revision load'); return false; }
+
+    const revisionId = data.index[slug]?.experience_revision_id || null;
+
+    if (revisionId) {
+      const { data: rev, error } = await client
+        .from('experience_revisions')
+        .select('content_snapshot,knowledge_snapshot,assets_snapshot')
+        .eq('id', revisionId)
+        .maybeSingle();
+
+      if (!error && rev && rev.content_snapshot && Object.keys(rev.content_snapshot).length) {
+        data.properties[slug] = {
+          content:    rev.content_snapshot,
+          knowledge:  rev.knowledge_snapshot || {},
+          assets:     rev.assets_snapshot   || {},
+          experience: null
+        };
+        return true;
+      }
+      _note(`Revision "${revisionId}" for "${slug}" not available — falling back to property content`);
+    }
+
+    /* No revision pointer, or revision unavailable: read from properties row. */
+    const { data: row, error: propError } = await client
+      .from('properties')
+      .select('slug,status,content,knowledge,assets')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (propError) { _note(`Supabase property "${slug}" (db-v2 fallback): ${propError.message}`); return false; }
+    if (!row || !row.content || !Object.keys(row.content).length) {
+      _note(`Property "${slug}" returned no content (db-v2 fallback)`);
+      return false;
+    }
+
+    data.properties[slug] = {
+      content:    row.content,
+      knowledge:  row.knowledge || {},
+      assets:     row.assets   || {},
       experience: null
     };
     data.status[slug] = row.status || 'published';
@@ -542,7 +677,7 @@ const LarumLoader = (() => {
   function _wantedSource() {
     try {
       const q = new URLSearchParams(location.search).get('source');
-      return ['db', 'files', 'pack'].indexOf(q) !== -1 ? q : null;
+      return ['db', 'db-v2', 'files', 'pack'].indexOf(q) !== -1 ? q : null;
     } catch (e) {
       return null;
     }
@@ -580,8 +715,8 @@ const LarumLoader = (() => {
   }
 
   return {
-    autoLoad, loadFromDb, loadFromFiles, loadFromPack,
-    loadIndex, loadProperty, hasProperty,
+    autoLoad, loadFromDb, loadFromDbV2, loadFromFiles, loadFromPack,
+    loadIndex, loadProperty, loadPropertyRevision, hasProperty,
     getPropertySlugs, getDefaultSlug, getContent, getKnowledge, getAssets,
     getContentMap, getKnowledgeMap, getAssetsMap,
     getContact, getPurchase, getPropertyLabel, getRules, getSource, getStatus,

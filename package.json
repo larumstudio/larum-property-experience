@@ -16,6 +16,7 @@
     "test:lpe-06": "node tests/lpe-06-assets.test.js",
     "test:lpe-07": "node tests/lpe-07-readiness.test.js",
     "test:lpe-08": "node tests/lpe-08-lazy.test.js",
+    "test:lpe-09": "node tests/lpe-09-revisions.test.mjs",
     "test:lpe-10": "node tests/lpe-10-analytics.test.js"
   },
   "dependencies": {
