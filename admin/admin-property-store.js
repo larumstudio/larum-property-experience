@@ -16,24 +16,68 @@ const store = {
   loading: new Set()
 };
 
-const INDEX_COLUMNS = [
+const BASE_INDEX_COLUMNS = [
   'id', 'slug', 'status',
   'name_en', 'name_es', 'location', 'reference',
   'cover_image', 'property_type', 'price', 'currency',
   'display_order', 'is_default',
   'organization_id', 'agent_id',
-  'experience_revision_id',
   'created_at', 'updated_at', 'published_at'
 ].join(',');
 
-const FULL_COLUMNS = INDEX_COLUMNS + ',content,knowledge,assets';
+const REVISION_COL = 'experience_revision_id';
+
+/* Whether the properties table has the experience_revision_id column
+   (migration 005). null = not yet determined this session.
+   Detected lazily by whichever of loadIndex / loadProperty / createProperty
+   runs first — a Workspace deep-link or refresh must work standalone,
+   without the Properties list having loaded first. `revisionDetection`
+   is the in-flight probe so concurrent first-callers share one round trip
+   instead of racing independent detections. */
+let hasRevisionColumn = null;
+let revisionDetection = null;
+
+function isMissingRevisionColumnError(error) {
+  return !!(error && error.message && error.message.includes(REVISION_COL));
+}
+
+async function ensureRevisionColumnKnown() {
+  if (hasRevisionColumn !== null) return hasRevisionColumn;
+
+  if (!revisionDetection) {
+    revisionDetection = window.supabaseClient
+      .from('properties')
+      .select(REVISION_COL)
+      .limit(1)
+      .then(({ error }) => {
+        if (!error) hasRevisionColumn = true;
+        else if (isMissingRevisionColumnError(error)) hasRevisionColumn = false;
+        // Any other error (network, auth, ...) is inconclusive: leave
+        // hasRevisionColumn null so the next call retries detection, and
+        // let the caller's own query surface the real error.
+        return hasRevisionColumn;
+      })
+      .finally(() => { revisionDetection = null; });
+  }
+
+  return revisionDetection;
+}
+
+function indexColumns() {
+  return hasRevisionColumn === false ? BASE_INDEX_COLUMNS : BASE_INDEX_COLUMNS + ',' + REVISION_COL;
+}
+function fullColumns() {
+  return indexColumns() + ',content,knowledge,assets';
+}
 
 export async function loadIndex(force) {
   if (store.indexLoaded && !force) return store.index;
 
+  await ensureRevisionColumnKnown();
+
   const { data, error } = await window.supabaseClient
     .from('properties')
-    .select(INDEX_COLUMNS)
+    .select(indexColumns())
     .order('display_order', { ascending: true });
 
   if (error) throw new Error(error.message);
@@ -61,9 +105,11 @@ export async function loadProperty(slug) {
   store.loading.add(slug);
 
   try {
+    await ensureRevisionColumnKnown();
+
     const { data, error } = await window.supabaseClient
       .from('properties')
-      .select(FULL_COLUMNS)
+      .select(fullColumns())
       .eq('slug', slug)
       .limit(1)
       .maybeSingle();
@@ -182,7 +228,10 @@ export async function createRevision(slug, { content, knowledge, assets, created
 
 /* Set a revision to published and update the property's publish pointer.
    The property's experience_revision_id becomes the single source of truth
-   for which revision visitors see. Clears the in-memory cache. */
+   for which revision visitors see. Mutates the cached property in place
+   (same pattern as savePropertyStatus/savePropertyMeta) so any in-memory
+   reference — including the Workspace's currentProperty — reflects the
+   new pointer immediately, with no stale second copy of the state. */
 export async function publishRevision(slug, revisionId) {
   const { data: prop, error: propError } = await window.supabaseClient
     .from('properties')
@@ -204,14 +253,15 @@ export async function publishRevision(slug, revisionId) {
     .eq('id', prop.id);
   if (propUpdateError) throw new Error(propUpdateError.message);
 
-  store.cache.delete(slug);
+  const cached = store.cache.get(slug);
+  if (cached) cached.experience_revision_id = revisionId;
   const idx = store.index.find(r => r.slug === slug);
   if (idx) idx.experience_revision_id = revisionId;
 }
 
 /* Atomic rollback: repoint the property's publish pointer to a previous
    revision. The previously active revision retains its status (no mutation).
-   Clears the in-memory cache so the next load reflects the rollback. */
+   Mutates the cached property in place — same reasoning as publishRevision. */
 export async function rollback(slug, targetRevisionId) {
   const { data: prop, error: propError } = await window.supabaseClient
     .from('properties')
@@ -226,7 +276,8 @@ export async function rollback(slug, targetRevisionId) {
     .eq('id', prop.id);
   if (propUpdateError) throw new Error(propUpdateError.message);
 
-  store.cache.delete(slug);
+  const cached = store.cache.get(slug);
+  if (cached) cached.experience_revision_id = targetRevisionId;
   const idx = store.index.find(r => r.slug === slug);
   if (idx) idx.experience_revision_id = targetRevisionId;
 }
@@ -281,6 +332,204 @@ export async function deleteAudit(id) {
     .eq('id', id);
 
   if (error) throw new Error(error.message);
+}
+
+/* ── Create property (Admin-M5.X) ────────────────────────── */
+
+const INITIAL_CONTENT = {
+  slug: '',
+  label: '',
+  brand: '',
+  title: '',
+  subtitle: '',
+  intro: '',
+  shortRef: '',
+  referencePrice: 0,
+  defaultRegion: '',
+  defaultPropertyType: 'resale',
+  conciergeIntro: '',
+  facts: [],
+  experiences: [],
+  sequences: [],
+  sceneSpaces: [],
+  spatial: [],
+  spatialNodeDetails: { en: [], es: [] },
+  dna: { title: '', intro: '', dimensions: [] },
+  setting: { title: '', intro: '', cards: [] },
+  copy: {
+    identityNote: { en: '', es: '' },
+    bandLabel: { en: '', es: '' },
+    sequenceTitle: { en: '', es: '' },
+    sequenceIntro: { en: '', es: '' },
+    filmLabel: { en: '', es: '' },
+    spatialTitle: { en: '', es: '' },
+    spatialIntro: { en: '', es: '' },
+    spatialDetail: { en: '', es: '' },
+    detailsTitle: { en: '', es: '' },
+    detailsIntro: { en: '', es: '' }
+  },
+  arrival: {
+    en: [['', '', ''], ['', '', ''], ['', '', '']],
+    es: [['', '', ''], ['', '', ''], ['', '', '']]
+  }
+};
+
+const INITIAL_KNOWLEDGE = {
+  fallback: { en: '', es: '' },
+  property: {
+    facts: {},
+    systems: {},
+    spaces: {}
+  },
+  surroundings: {},
+  intents: [],
+  interestSignals: {},
+  qualification: []
+};
+
+const INITIAL_ASSETS = {
+  propertyId: '',
+  status: 'draft',
+  comment: '',
+  authorised: false,
+  hero: {
+    fallbackImage: '',
+    poster: null,
+    video: null,
+    provenance: { source: '', licence: '', author: '', url: '' }
+  },
+  bandImage: '',
+  bandProvenance: { source: '', licence: '', author: '', url: '' },
+  propertyFilm: null,
+  spaces: {}
+};
+
+export async function createProperty({ slug, label, brand, subtitle, intro, referencePrice, defaultRegion, defaultPropertyType, agentId }) {
+  const content = JSON.parse(JSON.stringify(INITIAL_CONTENT));
+  content.slug = slug;
+  content.label = label || '';
+  content.brand = brand || '';
+  content.subtitle = subtitle || '';
+  content.intro = intro || '';
+  content.referencePrice = referencePrice || 0;
+  content.defaultRegion = defaultRegion || '';
+  content.defaultPropertyType = defaultPropertyType || 'resale';
+
+  const knowledge = JSON.parse(JSON.stringify(INITIAL_KNOWLEDGE));
+  const assets = JSON.parse(JSON.stringify(INITIAL_ASSETS));
+
+  const { data: org, error: orgError } = await window.supabaseClient
+    .from('organizations')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
+  if (orgError) throw new Error('Could not load organization: ' + orgError.message);
+  if (!org) throw new Error('No organization found. Seed the database first.');
+
+  const row = {
+    slug,
+    status: 'draft',
+    organization_id: org.id,
+    content,
+    knowledge,
+    assets,
+    display_order: store.index.length,
+    is_default: false
+  };
+  if (agentId) row.agent_id = agentId;
+
+  await ensureRevisionColumnKnown();
+
+  const { data, error } = await window.supabaseClient
+    .from('properties')
+    .insert(row)
+    .select(fullColumns())
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  store.cache.set(slug, data);
+  store.index.push(data);
+  return data;
+}
+
+/* ── Update property metadata (Admin-M5.X) ───────────────── */
+
+export async function savePropertyStatus(slug, status) {
+  const patch = { status };
+  if (status === 'published') patch.published_at = new Date().toISOString();
+
+  const { error } = await window.supabaseClient
+    .from('properties')
+    .update(patch)
+    .eq('slug', slug);
+
+  if (error) throw new Error(error.message);
+
+  const cached = store.cache.get(slug);
+  if (cached) {
+    cached.status = status;
+    if (patch.published_at) cached.published_at = patch.published_at;
+  }
+  const idx = store.index.find(r => r.slug === slug);
+  if (idx) {
+    idx.status = status;
+    if (patch.published_at) idx.published_at = patch.published_at;
+  }
+}
+
+export async function savePropertyMeta(slug, meta) {
+  const allowed = ['display_order', 'is_default', 'agent_id'];
+  const patch = {};
+  for (const key of allowed) {
+    if (meta[key] !== undefined) patch[key] = meta[key];
+  }
+  if (!Object.keys(patch).length) return;
+
+  const { error } = await window.supabaseClient
+    .from('properties')
+    .update(patch)
+    .eq('slug', slug);
+
+  if (error) throw new Error(error.message);
+
+  const cached = store.cache.get(slug);
+  if (cached) Object.assign(cached, patch);
+  const idx = store.index.find(r => r.slug === slug);
+  if (idx) Object.assign(idx, patch);
+}
+
+/* ── Load agents (for property create/edit) ──────────────── */
+
+export async function loadAgents() {
+  const { data, error } = await window.supabaseClient
+    .from('agents')
+    .select('id, name, slug, agency, status')
+    .eq('status', 'active')
+    .order('name');
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+/* ── Revision helpers ────────────────────────────────────── */
+
+export async function loadRevisions(slug) {
+  const { data: prop, error: propError } = await window.supabaseClient
+    .from('properties')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (propError || !prop) throw new Error(propError?.message || `Property "${slug}" not found`);
+
+  const { data, error } = await window.supabaseClient
+    .from('experience_revisions')
+    .select('*')
+    .eq('property_id', prop.id)
+    .order('revision_number', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
 }
 
 export function getPropertyLabel(row) {

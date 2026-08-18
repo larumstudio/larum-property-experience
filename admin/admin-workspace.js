@@ -4,9 +4,9 @@
    entry and caches it for instant switching.
    ───────────────────────────────────────────────────────────── */
 
-import { esc } from './admin-core.js';
+import { esc, cap } from './admin-core.js';
 import { tabs, emptyState, badge, toast } from './admin-ui.js';
-import { loadProperty, getCached, getPropertyLabel } from './admin-property-store.js';
+import { loadProperty, getCached, getPropertyLabel, savePropertyStatus, savePropertyMeta, loadAgents, loadRevisions, createRevision, publishRevision, rollback } from './admin-property-store.js';
 import * as contentEditor from './admin-content-editor.js';
 import * as assetsEditor from './admin-assets-editor.js';
 import * as experiencePreview from './admin-experience-preview.js';
@@ -26,14 +26,29 @@ const TABS = [
   { id: 'assets',     label: 'Assets' },
   { id: 'experience', label: 'Experience' },
   { id: 'concierge',  label: 'Concierge' },
+  { id: 'revisions',  label: 'Revisions' },
   { id: 'analytics',  label: 'Analytics' },
   { id: 'leads',      label: 'Leads' }
 ];
+
+const STATUS_TRANSITIONS = {
+  draft:         ['in_production'],
+  in_production: ['ready', 'draft'],
+  ready:         ['published', 'in_production'],
+  published:     ['archived'],
+  archived:      ['draft']
+};
+const CONFIRM_STATUSES = new Set(['published', 'archived']);
 
 let activeTab = 'overview';
 let currentSlug = null;
 let currentProperty = null;
 let containerRef = null;
+let agents = [];
+let agentsLoaded = false;
+let savingMeta = false;
+let savingStatus = false;
+let pendingStatus = null;
 
 export async function render(container, params) {
   containerRef = container;
@@ -94,6 +109,14 @@ function draw() {
     '</div>';
 
   window.__workspaceTab = switchTab;
+  window.__wsChangeStatus = handleStatusChange;
+  window.__wsConfirmStatus = confirmStatusChange;
+  window.__wsCancelStatus = cancelStatusChange;
+  window.__wsSaveMeta = handleSaveMeta;
+
+  if (activeTab === 'overview' && currentProperty) {
+    ensureAgentsLoaded();
+  }
 
   if (activeTab === 'content' && currentProperty) {
     const mount = document.getElementById('contentEditorMount');
@@ -123,6 +146,11 @@ function draw() {
   if (activeTab === 'concierge' && currentProperty) {
     const mount = document.getElementById('conciergePanelMount');
     if (mount) conciergePanel.render(mount, currentProperty);
+  }
+
+  if (activeTab === 'revisions' && currentProperty) {
+    const mount = document.getElementById('revisionsPanelMount');
+    if (mount) renderRevisionsPanel(mount);
   }
 
   if (activeTab === 'analytics' && currentProperty) {
@@ -157,6 +185,8 @@ function renderTab(id) {
       return '<div id="experiencePreviewMount"></div>';
     case 'concierge':
       return '<div id="conciergePanelMount"></div>';
+    case 'revisions':
+      return '<div id="revisionsPanelMount"></div>';
     case 'analytics':
       return '<div id="propertyAnalyticsMount"></div>';
     case 'leads':
@@ -216,6 +246,8 @@ function renderOverview() {
 
   html += '</div>';
 
+  html += renderManagementCard(p, status);
+
   html += '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">' +
     '<button class="btn btn-outline" onclick="__workspaceTab(\'content\')">Edit content →</button>' +
     '<button class="btn btn-outline" onclick="__workspaceTab(\'assets\')">Assets →</button>' +
@@ -229,6 +261,330 @@ function renderOverview() {
   '</div>';
 
   return html;
+}
+
+function renderManagementCard(p, status) {
+  const transitions = STATUS_TRANSITIONS[status] || [];
+
+  let html = '<div class="card" style="margin-top:16px">' +
+    '<div class="card-head"><h3>Property management</h3></div>' +
+    '<div class="ce" style="padding:0">';
+
+  html += '<div class="ce-field">' +
+    '<label class="ce-label">Status</label>' +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+      badge(status);
+
+  if (pendingStatus && CONFIRM_STATUSES.has(pendingStatus)) {
+    const action = pendingStatus === 'published' ? 'Publish' : 'Archive';
+    html += '<span style="margin-left:8px;color:var(--orange);font-size:13px">' +
+      esc(action) + ' this property?' +
+    '</span>' +
+    '<button class="btn btn-primary" onclick="__wsConfirmStatus()" ' +
+      (savingStatus ? 'disabled' : '') + '>' +
+      (savingStatus ? 'Saving...' : 'Confirm ' + action.toLowerCase()) +
+    '</button>' +
+    '<button class="btn btn-outline" onclick="__wsCancelStatus()">Cancel</button>';
+  } else if (transitions.length) {
+    transitions.forEach(function(target) {
+      const label = statusActionLabel(status, target);
+      html += '<button class="btn btn-outline" onclick="__wsChangeStatus(\'' + esc(target) + '\')" ' +
+        (savingStatus ? 'disabled' : '') + '>' + esc(label) + '</button>';
+    });
+  }
+
+  html += '</div></div>';
+
+  html += '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
+    '<div class="ce-field" style="flex:1;min-width:120px;max-width:180px">' +
+      '<label class="ce-label" for="ws_order">Display order</label>' +
+      '<input type="number" class="ce-input" id="ws_order" min="0" step="1" ' +
+        'value="' + (p.display_order ?? 0) + '" />' +
+    '</div>' +
+    '<div class="ce-field" style="flex:0;min-width:140px">' +
+      '<label class="ce-label" style="display:block;margin-bottom:8px">Default property</label>' +
+      '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">' +
+        '<input type="checkbox" id="ws_default" ' + (p.is_default ? 'checked' : '') + ' /> ' +
+        'Is default' +
+      '</label>' +
+    '</div>' +
+  '</div>';
+
+  const agentOpts = agents.map(function(a) {
+    const sel = a.id === p.agent_id ? ' selected' : '';
+    return '<option value="' + esc(a.id) + '"' + sel + '>' +
+      esc(a.name) + (a.agency ? ' (' + esc(a.agency) + ')' : '') +
+    '</option>';
+  }).join('');
+
+  html += '<div class="ce-field">' +
+    '<label class="ce-label" for="ws_agent">Agent</label>' +
+    '<select class="ce-input" id="ws_agent">' +
+      '<option value=""' + (!p.agent_id ? ' selected' : '') + '>— None —</option>' +
+      agentOpts +
+    '</select>' +
+  '</div>';
+
+  html += '<div style="margin-top:12px">' +
+    '<button class="btn btn-primary" onclick="__wsSaveMeta()" ' +
+      (savingMeta ? 'disabled' : '') + '>' +
+      (savingMeta ? 'Saving...' : 'Save metadata') +
+    '</button>' +
+  '</div>';
+
+  html += '</div></div>';
+  return html;
+}
+
+function statusActionLabel(current, target) {
+  if (target === 'draft' && current === 'archived') return 'Reopen as draft';
+  if (target === 'draft') return 'Back to draft';
+  if (target === 'in_production' && current === 'ready') return 'Back to production';
+  if (target === 'in_production') return 'Start production';
+  if (target === 'ready') return 'Mark ready';
+  if (target === 'published') return 'Publish';
+  if (target === 'archived') return 'Archive';
+  return cap(target.replace(/_/g, ' '));
+}
+
+async function handleStatusChange(target) {
+  if (savingStatus || !currentSlug) return;
+
+  if (CONFIRM_STATUSES.has(target)) {
+    pendingStatus = target;
+    draw();
+    return;
+  }
+
+  savingStatus = true;
+  draw();
+
+  try {
+    await savePropertyStatus(currentSlug, target);
+    currentProperty.status = target;
+    toast('Status changed to ' + target.replace(/_/g, ' '), 'success');
+  } catch (e) {
+    toast('Status update failed: ' + e.message, 'error');
+  } finally {
+    savingStatus = false;
+    pendingStatus = null;
+    draw();
+  }
+}
+
+async function confirmStatusChange() {
+  if (!pendingStatus || savingStatus || !currentSlug) return;
+
+  savingStatus = true;
+  draw();
+
+  try {
+    await savePropertyStatus(currentSlug, pendingStatus);
+    currentProperty.status = pendingStatus;
+    toast('Status changed to ' + pendingStatus.replace(/_/g, ' '), 'success');
+  } catch (e) {
+    toast('Status update failed: ' + e.message, 'error');
+  } finally {
+    savingStatus = false;
+    pendingStatus = null;
+    draw();
+  }
+}
+
+function cancelStatusChange() {
+  pendingStatus = null;
+  draw();
+}
+
+async function handleSaveMeta() {
+  if (savingMeta || !currentSlug) return;
+
+  const displayOrder = parseInt(document.getElementById('ws_order')?.value, 10);
+  const isDefault = document.getElementById('ws_default')?.checked || false;
+  const agentId = document.getElementById('ws_agent')?.value || null;
+
+  savingMeta = true;
+  draw();
+
+  try {
+    await savePropertyMeta(currentSlug, {
+      display_order: isNaN(displayOrder) ? 0 : displayOrder,
+      is_default: isDefault,
+      agent_id: agentId
+    });
+    currentProperty.display_order = isNaN(displayOrder) ? 0 : displayOrder;
+    currentProperty.is_default = isDefault;
+    currentProperty.agent_id = agentId;
+    toast('Metadata saved', 'success');
+  } catch (e) {
+    toast('Save failed: ' + e.message, 'error');
+  } finally {
+    savingMeta = false;
+    draw();
+  }
+}
+
+function ensureAgentsLoaded() {
+  if (agentsLoaded) return;
+  agentsLoaded = true;
+  loadAgents().then(function(a) { agents = a; draw(); }).catch(function() {});
+}
+
+/* ── Revisions tab (gated on migration 005) ─────────────── */
+
+let revisions = null;
+let revisionsError = null;
+let revisionsLoading = false;
+let creatingRevision = false;
+
+async function renderRevisionsPanel(mount) {
+  window.__wsCreateRevision = handleCreateRevision;
+  window.__wsPublishRevision = handlePublishRevision;
+  window.__wsRollback = handleRollback;
+
+  if (revisions !== null) {
+    mount.innerHTML = buildRevisionsHtml();
+    return;
+  }
+
+  if (revisionsLoading) {
+    mount.innerHTML = '<div class="property-list-loading">Loading revisions...</div>';
+    return;
+  }
+
+  revisionsLoading = true;
+  mount.innerHTML = '<div class="property-list-loading">Loading revisions...</div>';
+
+  try {
+    revisions = await loadRevisions(currentSlug);
+    revisionsError = null;
+  } catch (e) {
+    revisionsError = e.message;
+    revisions = null;
+  } finally {
+    revisionsLoading = false;
+  }
+
+  mount.innerHTML = buildRevisionsHtml();
+}
+
+function buildRevisionsHtml() {
+  if (revisionsError) {
+    const isMissing = revisionsError.includes('experience_revisions') ||
+                      revisionsError.includes('relation') ||
+                      revisionsError.includes('does not exist');
+    if (isMissing) {
+      return '<div class="card">' +
+        '<div class="card-head"><h3>Revisions</h3></div>' +
+        '<div style="padding:16px;color:var(--muted);font-size:13px">' +
+          '<p style="margin:0 0 8px"><strong>Migration 005 not applied.</strong></p>' +
+          '<p style="margin:0">The experience_revisions table does not exist yet. ' +
+          'Revision tracking will be available after migration 005 is applied to the database.</p>' +
+        '</div>' +
+      '</div>';
+    }
+    return emptyState('Could not load revisions', revisionsError);
+  }
+
+  const activeRevisionId = currentProperty?.experience_revision_id || null;
+
+  let html = '<div class="card">' +
+    '<div class="card-head">' +
+      '<h3>Revisions</h3>' +
+      '<button class="btn btn-primary" onclick="__wsCreateRevision()" ' +
+        (creatingRevision ? 'disabled' : '') + '>' +
+        (creatingRevision ? 'Creating...' : '+ Create revision') +
+      '</button>' +
+    '</div>';
+
+  if (!revisions || !revisions.length) {
+    html += '<div style="padding:16px;color:var(--muted);font-size:13px">' +
+      'No revisions yet. Create a revision to snapshot the current property state.</div>';
+  } else {
+    html += '<div class="table-wrap"><table><thead><tr>' +
+      '<th>#</th><th>Status</th><th>Created</th><th>Published</th><th>Actions</th>' +
+    '</tr></thead><tbody>';
+
+    revisions.forEach(function(rev) {
+      const isActive = rev.id === activeRevisionId;
+      html += '<tr' + (isActive ? ' style="background:var(--surface-2)"' : '') + '>' +
+        '<td class="mono">' + esc(String(rev.revision_number)) + '</td>' +
+        '<td>' + badge(rev.status) + (isActive ? ' <span class="badge badge-accent">Active</span>' : '') + '</td>' +
+        '<td class="mono" style="font-size:11px">' + esc(formatDate(rev.created_at)) + '</td>' +
+        '<td class="mono" style="font-size:11px">' + (rev.published_at ? esc(formatDate(rev.published_at)) : '—') + '</td>' +
+        '<td style="display:flex;gap:4px">';
+
+      if (rev.status === 'draft') {
+        html += '<button class="btn btn-outline" style="font-size:11px;padding:2px 8px" ' +
+          'onclick="__wsPublishRevision(\'' + esc(rev.id) + '\')">Publish</button>';
+      }
+      if (rev.status === 'published' && !isActive) {
+        html += '<button class="btn btn-outline" style="font-size:11px;padding:2px 8px" ' +
+          'onclick="__wsRollback(\'' + esc(rev.id) + '\')">Rollback to this</button>';
+      }
+
+      html += '</td></tr>';
+    });
+
+    html += '</tbody></table></div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+async function handleCreateRevision() {
+  if (creatingRevision || !currentSlug || !currentProperty) return;
+
+  creatingRevision = true;
+  const mount = document.getElementById('revisionsPanelMount');
+  if (mount) mount.innerHTML = buildRevisionsHtml();
+
+  try {
+    const rev = await createRevision(currentSlug, {
+      content: currentProperty.content,
+      knowledge: currentProperty.knowledge,
+      assets: currentProperty.assets,
+      createdBy: 'admin'
+    });
+    if (revisions) revisions.unshift(rev);
+    else revisions = [rev];
+    toast('Revision #' + rev.revision_number + ' created', 'success');
+  } catch (e) {
+    toast('Create revision failed: ' + e.message, 'error');
+  } finally {
+    creatingRevision = false;
+    const m = document.getElementById('revisionsPanelMount');
+    if (m) m.innerHTML = buildRevisionsHtml();
+  }
+}
+
+async function handlePublishRevision(revisionId) {
+  if (!currentSlug) return;
+
+  try {
+    await publishRevision(currentSlug, revisionId);
+    if (currentProperty) currentProperty.experience_revision_id = revisionId;
+    revisions = null;
+    toast('Revision published', 'success');
+    draw();
+  } catch (e) {
+    toast('Publish revision failed: ' + e.message, 'error');
+  }
+}
+
+async function handleRollback(revisionId) {
+  if (!currentSlug) return;
+
+  try {
+    await rollback(currentSlug, revisionId);
+    if (currentProperty) currentProperty.experience_revision_id = revisionId;
+    revisions = null;
+    toast('Rolled back to revision', 'success');
+    draw();
+  } catch (e) {
+    toast('Rollback failed: ' + e.message, 'error');
+  }
 }
 
 function computeCompleteness(c) {
@@ -351,5 +707,19 @@ export function teardown() {
   propertyAnalytics.teardown();
   propertyLeads.teardown();
   delete window.__workspaceTab;
+  delete window.__wsChangeStatus;
+  delete window.__wsConfirmStatus;
+  delete window.__wsCancelStatus;
+  delete window.__wsSaveMeta;
+  delete window.__wsCreateRevision;
+  delete window.__wsPublishRevision;
+  delete window.__wsRollback;
   containerRef = null;
+  savingMeta = false;
+  savingStatus = false;
+  pendingStatus = null;
+  revisions = null;
+  revisionsError = null;
+  revisionsLoading = false;
+  creatingRevision = false;
 }
