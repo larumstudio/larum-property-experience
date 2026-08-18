@@ -512,6 +512,98 @@ export async function loadAgents() {
   return data || [];
 }
 
+/* ── Agents module (Admin Hardening Pass) ────────────────────
+   loadAgents() above stays exactly as-is — it's the minimal-column,
+   active-only fetch that admin-properties.js / admin-workspace.js
+   already depend on for the assignment dropdown. These are the fuller
+   CRUD operations for the standalone Agentes module: every agent
+   regardless of status, and every column the "agents" table exposes
+   (migration 001 §2) that a real agent record needs. */
+
+const AGENT_COLUMNS = 'id, name, slug, email, phone, agency, role, photo_url, bio, status, organization_id, created_at, updated_at';
+
+export async function loadAllAgents() {
+  const { data, error } = await window.supabaseClient
+    .from('agents')
+    .select(AGENT_COLUMNS)
+    .order('name');
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function loadAgent(id) {
+  const { data, error } = await window.supabaseClient
+    .from('agents')
+    .select(AGENT_COLUMNS)
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function createAgent({ name, slug, agency, role, photoUrl, bioEn, bioEs, email, phone, status }) {
+  const { data: org, error: orgError } = await window.supabaseClient
+    .from('organizations')
+    .select('id')
+    .limit(1)
+    .maybeSingle();
+  if (orgError) throw new Error('Could not load organization: ' + orgError.message);
+  if (!org) throw new Error('No organization found. Seed the database first.');
+
+  const row = {
+    organization_id: org.id,
+    name,
+    slug: slug || null,
+    email: email || null,
+    phone: phone || null,
+    agency: agency || null,
+    role: role || null,
+    photo_url: photoUrl || null,
+    bio: { en: bioEn || '', es: bioEs || '' },
+    status: status || 'active'
+  };
+
+  const { data, error } = await window.supabaseClient
+    .from('agents')
+    .insert(row)
+    .select(AGENT_COLUMNS)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateAgent(id, patch) {
+  const allowed = ['name', 'slug', 'email', 'phone', 'agency', 'role', 'photo_url', 'bio', 'status'];
+  const clean = {};
+  for (const key of allowed) {
+    if (patch[key] !== undefined) clean[key] = patch[key];
+  }
+  if (!Object.keys(clean).length) return;
+
+  const { error } = await window.supabaseClient
+    .from('agents')
+    .update(clean)
+    .eq('id', id);
+
+  if (error) throw new Error(error.message);
+}
+
+/* Read-only — properties.agent_id is the only relationship this reads;
+   no new column, no new table (Admin Hardening Pass Phase C). */
+export async function loadPropertiesByAgent(agentId) {
+  const { data, error } = await window.supabaseClient
+    .from('properties')
+    .select('id, slug, status, name_en, name_es, location, cover_image, display_order')
+    .eq('agent_id', agentId)
+    .order('display_order', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
 /* ── Revision helpers ────────────────────────────────────── */
 
 export async function loadRevisions(slug) {

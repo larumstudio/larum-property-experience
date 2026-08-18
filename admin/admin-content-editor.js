@@ -18,10 +18,17 @@ let containerRef = null;
 let openSections = { identity: true };
 let saving = false;
 
+/* Admin Hardening Pass — read-only cross-refs into knowledge/assets.
+   Never written back by this editor (it only ever saves `content`);
+   used solely to show space/source status next to the fields that
+   name them, so an operator doesn't have to jump editors blind. */
+let knowledgeRef = {};
+let assetsRef = {};
+
 const SECTIONS = [
   { id: 'identity',     label: 'Identity' },
   { id: 'narrative',    label: 'Narrative' },
-  { id: 'spaces',       label: 'Spaces' },
+  { id: 'spaces',       label: 'Spatial Zones' },
   { id: 'dna',          label: 'DNA' },
   { id: 'information',  label: 'Information' },
   { id: 'surroundings', label: 'Surroundings' },
@@ -39,6 +46,8 @@ export function render(container, property) {
   containerRef = container;
   slug = property.slug;
   draft = JSON.parse(JSON.stringify(property.content || {}));
+  knowledgeRef = property.knowledge || {};
+  assetsRef = property.assets || {};
   openSections = { identity: true };
   draw();
 }
@@ -47,6 +56,8 @@ export function teardown() {
   containerRef = null;
   draft = null;
   slug = null;
+  knowledgeRef = {};
+  assetsRef = {};
   delete window.__ceToggle;
   delete window.__ceInput;
   delete window.__ceSave;
@@ -99,6 +110,21 @@ function handleInput(path, value) {
   setPath(draft, path, value);
 }
 
+/* sceneSpaces[i][0] names the scene for lived-sequence's own bookkeeping,
+   but no consumer (app.js, modules/lived-sequence.js) ever reads it by
+   name — both always index by position, keeping it in lockstep with
+   sequences[i][0]. There is no independent field for it in the editor
+   (Admin Hardening Pass) specifically to avoid a second place that can
+   drift from the sequence title — it is derived on save instead. */
+function syncSceneNames() {
+  if (!Array.isArray(draft.sequences)) return;
+  if (!Array.isArray(draft.sceneSpaces)) draft.sceneSpaces = [];
+  for (let i = 0; i < draft.sequences.length; i++) {
+    if (!draft.sceneSpaces[i]) draft.sceneSpaces[i] = ['', []];
+    draft.sceneSpaces[i][0] = draft.sequences[i][0] || '';
+  }
+}
+
 async function handleSave() {
   if (saving || !slug || !draft) return;
   saving = true;
@@ -107,6 +133,8 @@ async function handleSave() {
   if (btn) btn.disabled = true;
   if (btn) btn.textContent = 'Saving...';
   if (status) status.textContent = '';
+
+  syncSceneNames();
 
   try {
     await saveContent(slug, draft);
@@ -194,10 +222,40 @@ function renderNarrative() {
       fieldText('sequences.' + i + '.1', 'Time', s[1] || '', '09:12') +
       fieldTextarea('sequences.' + i + '.2', 'Description', s[2] || '') +
       fieldText('sceneSpaces.' + i + '.1', 'Spaces (comma-separated)', scSpaces, 'Master suite, Interior patios, Living room') +
+      renderSpaceStatus(sc[1] || []) +
     '</div>';
   }
 
   return h;
+}
+
+/* Admin Hardening Pass — read-only status per named space, computed
+   from knowledge.property.spaces (description EN/ES) and assets.spaces
+   (image). This is the one place an operator sees, while naming a
+   space here, whether its content elsewhere is actually filled in —
+   without merging the three JSONB columns or duplicating their data. */
+function renderSpaceStatus(names) {
+  if (!names.length) return '';
+  const known = knowledgeRef.property?.spaces || {};
+  const media = assetsRef.spaces || {};
+  const chips = names.map(name => {
+    const k = known[name];
+    const hasEn = !!k?.description;
+    const hasEs = !!k?.descriptionEs;
+    const hasImg = !!media[name]?.image;
+    const complete = hasEn && hasEs && hasImg;
+    const title = 'Description EN: ' + (hasEn ? 'yes' : 'missing') +
+      ' · ES: ' + (hasEs ? 'yes' : 'missing') +
+      ' · Image: ' + (hasImg ? 'yes' : 'missing');
+    return '<span class="ae-chip' + (complete ? ' ae-chip-filled' : '') + '" title="' + esc(title) + '">' +
+      esc(name) + (complete ? ' ✓' : '') +
+    '</span>';
+  }).join('');
+  return '<div class="ce-subsec-label mono" style="margin-top:8px">Space status</div>' +
+    '<div class="ae-reference" style="margin-top:4px">' + chips + '</div>' +
+    '<div class="mono" style="font-size:10px;color:var(--muted);margin-top:4px">' +
+      'Descriptions: Concierge → Knowledge. Images: Assets → Spaces.' +
+    '</div>';
 }
 
 /* ── Spaces ──────────────────────────────────────────────── */
@@ -294,7 +352,11 @@ function renderInformation() {
     h += '<div class="ce-repeat-item ce-repeat-inline">' +
       fieldText('facts.' + i + '.0', 'Value', f[0] || '') +
       fieldText('facts.' + i + '.1', 'Label', f[1] || '') +
-      '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'fact\',' + i + ')" title="Remove">×</button>' +
+      '<div class="ce-repeat-actions">' +
+        (i > 0 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'fact\',' + i + ',-1)" title="Move up">↑</button>' : '') +
+        (i < facts.length - 1 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'fact\',' + i + ',1)" title="Move down">↓</button>' : '') +
+        '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'fact\',' + i + ')" title="Remove">×</button>' +
+      '</div>' +
     '</div>';
   }
 
@@ -309,7 +371,11 @@ function renderInformation() {
     h += '<div class="ce-repeat-item">' +
       '<div class="ce-repeat-head">' +
         '<span class="ce-repeat-num">' + esc(e[0] || String(i + 1).padStart(2, '0')) + '</span>' +
-        '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'experience\',' + i + ')" title="Remove">×</button>' +
+        '<div class="ce-repeat-actions">' +
+          (i > 0 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'experience\',' + i + ',-1)" title="Move up">↑</button>' : '') +
+          (i < exps.length - 1 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'experience\',' + i + ',1)" title="Move down">↓</button>' : '') +
+          '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'experience\',' + i + ')" title="Remove">×</button>' +
+        '</div>' +
       '</div>' +
       fieldText('experiences.' + i + '.0', 'Number', e[0] || '') +
       fieldText('experiences.' + i + '.1', 'Title', e[1] || '') +
@@ -347,11 +413,38 @@ function renderSurroundings() {
       '</div>' +
       fieldText('setting.cards.' + i + '.title', 'Title', c.title || '') +
       fieldText('setting.cards.' + i + '.line', 'Line', c.line || '') +
-      fieldText('setting.cards.' + i + '.source', 'Source key', c.source || '', 'parks, restaurants, distances...') +
+      fieldSourceSelect('setting.cards.' + i + '.source', 'Source key', c.source || '') +
     '</div>';
   }
 
   return h;
+}
+
+/* Admin Hardening Pass — `source` must reference a real key of
+   knowledge.surroundings (that's what the visitor's setting overlay
+   opens), so once that knowledge exists it's offered as a picker
+   instead of free text an operator could mistype. Falls back to a
+   plain text field while knowledge.surroundings is still empty (e.g.
+   drafting a brand-new property before Knowledge has been filled in),
+   and always allows the existing value even if it's not in the list. */
+function fieldSourceSelect(path, label, value) {
+  const keys = Object.keys(knowledgeRef.surroundings || {});
+  if (!keys.length) return fieldText(path, label, value, 'parks, restaurants, distances...');
+
+  const id = 'ce_' + path.replace(/\./g, '_');
+  const custom = (value && !keys.includes(value))
+    ? '<option value="' + esc(value) + '" selected>' + esc(value) + ' (not in Knowledge)</option>'
+    : '';
+  const opts = keys.map(k =>
+    '<option value="' + esc(k) + '"' + (k === value ? ' selected' : '') + '>' + esc(k) + '</option>'
+  ).join('');
+
+  return '<div class="ce-field">' +
+    '<label class="ce-label" for="' + id + '">' + esc(label) + '</label>' +
+    '<select class="ce-input" id="' + id + '" onchange="__ceInput(\'' + escAttr(path) + '\',this.value)">' +
+      '<option value="">— none —</option>' + custom + opts +
+    '</select>' +
+  '</div>';
 }
 
 /* ── Arrival ─────────────────────────────────────────────── */
@@ -471,6 +564,12 @@ function moveRepeaterItem(type, index, dir) {
       break;
     case 'setting':
       arrSwap(draft.setting?.cards, index, swap);
+      break;
+    case 'fact':
+      arrSwap(draft.facts, index, swap);
+      break;
+    case 'experience':
+      arrSwap(draft.experiences, index, swap);
       break;
   }
   draw();

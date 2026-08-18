@@ -179,6 +179,7 @@ function renderHero() {
   h += fieldText('hero.provenance.licence', 'Licence', prov.licence || '');
   h += fieldText('hero.provenance.author', 'Author', prov.author || '');
   h += fieldText('hero.provenance.url', 'URL', prov.url || '');
+  h += fieldText('hero.provenance.expiry', 'Rights expiry (optional, YYYY-MM-DD)', prov.expiry || '');
   h += fieldTextarea('hero.provenance.delivery', 'Delivery (optional)', prov.delivery || '');
   h += fieldTextarea('hero.provenance.edit', 'Edit note (optional)', prov.edit || '');
   return h;
@@ -194,6 +195,7 @@ function renderBand() {
   h += fieldText('bandProvenance.licence', 'Licence', prov.licence || '');
   h += fieldText('bandProvenance.author', 'Author', prov.author || '');
   h += fieldText('bandProvenance.url', 'URL', prov.url || '');
+  h += fieldText('bandProvenance.expiry', 'Rights expiry (optional, YYYY-MM-DD)', prov.expiry || '');
   h += fieldTextarea('bandProvenance.delivery', 'Delivery (optional)', prov.delivery || '');
   h += fieldTextarea('bandProvenance.edit', 'Edit note (optional)', prov.edit || '');
   return h;
@@ -245,13 +247,30 @@ function renderSpaces() {
 
   for (const name of spaceKeys) {
     const entry = (spaces[name] && typeof spaces[name] === 'object') ? spaces[name] : {};
+    /* Admin Hardening Pass — provenance used to be a single free-text
+       note here, unlike hero/band's structured {source,licence,author,
+       url}. Structured the same way now, for the same reason it matters
+       for hero/band: rights tracking. A legacy string value (if any
+       property already has one) is preserved as `.note` on first edit
+       — never silently dropped. */
+    const provRaw = entry.provenance;
+    const prov = (provRaw && typeof provRaw === 'object')
+      ? provRaw
+      : { note: (typeof provRaw === 'string' ? provRaw : '') };
+
     h += '<div class="ce-repeat-item">' +
       '<div class="ce-repeat-head">' +
         '<span class="ce-repeat-num">' + esc(name) + '</span>' +
         '<button class="ce-icon-btn ce-icon-del" onclick="__aeRemoveSpace(\'' + escAttr(name) + '\')" title="Remove">×</button>' +
       '</div>' +
       fieldUrl('spaces.' + name + '.image', 'Image (URL)', entry.image || '') +
-      fieldText('spaces.' + name + '.provenance', 'Provenance (note)', entry.provenance || '') +
+      '<div class="ce-subsec"><div class="ce-subsec-label mono">Provenance</div></div>' +
+      fieldText('spaces.' + name + '.provenance.source', 'Source', prov.source || '') +
+      fieldText('spaces.' + name + '.provenance.licence', 'Licence', prov.licence || '') +
+      fieldText('spaces.' + name + '.provenance.author', 'Author', prov.author || '') +
+      fieldText('spaces.' + name + '.provenance.url', 'URL', prov.url || '') +
+      fieldText('spaces.' + name + '.provenance.expiry', 'Rights expiry (optional, YYYY-MM-DD)', prov.expiry || '') +
+      (prov.note ? fieldTextarea('spaces.' + name + '.provenance.note', 'Legacy note', prov.note) : '') +
     '</div>';
   }
 
@@ -351,8 +370,16 @@ function setPath(obj, path, value) {
   for (let i = 0; i < parts.length - 1; i++) {
     const k = parts[i];
     const nextKey = parts[i + 1];
-    if (cur[k] === undefined || cur[k] === null) {
+    const existing = cur[k];
+    /* A legacy scalar (e.g. provenance used to be a plain string) must
+       not be walked into — assigning a property on a string throws in
+       strict mode (all ES modules are strict). Replace it with the
+       expected object/array, but keep the old value as `.note` instead
+       of silently discarding it. */
+    if (existing === undefined || existing === null || typeof existing !== 'object') {
+      const legacy = (typeof existing === 'string' && existing) ? existing : null;
       cur[k] = isArrayIndex(nextKey) ? [] : {};
+      if (legacy) cur[k].note = legacy;
     }
     cur = cur[k];
   }
