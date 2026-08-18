@@ -69,11 +69,44 @@
 
 | Gate | Score | Gated on | Phase |
 |---|---|---|---|
-| Performance | 66 desktop / 62 mobile | LPE-08 (lazy load) | CONDITIONAL |
-| LCP | 3.06s / 5.44s | LPE-08 (lazy load) | CONDITIONAL |
+| Performance | 66 desktop / 62 mobile | Measured on `?source=pack` — see correction below | CONDITIONAL |
+| LCP | 3.06s / 5.44s | Measured on `?source=pack` — see correction below | CONDITIONAL |
 | SEO | 50 | noindex/nofollow (index.html FORBIDDEN) | CONDITIONAL |
-| Security/RLS | Not tested | LPE-09 (migration 005 not applied) | CONDITIONAL |
+| Security/RLS | Not tested | Migration 005 not applied to Supabase | CONDITIONAL |
 | Grounded Concierge | Not tested | ANTHROPIC_API_KEY (operational) | CONDITIONAL |
+
+---
+
+## Correction (2026-08-18, added during Project State Reconciliation)
+
+At the time this closure was written (2026-08-17), LPE-08 (lazy loading) and LPE-09
+(db-v2 loader) were already CLOSED — the table above's original wording ("Gated on:
+LPE-08") was read by a later session as "LPE-08 is not implemented yet," which is
+false and was never the intent.
+
+What is actually true, confirmed by reading `tests/lpe-12-lighthouse.js` and
+`property-loader.js`:
+
+- `tests/lpe-12-lighthouse.js` measures `?property=marbella&source=pack` — the
+  **offline fallback route** (`property-pack.js`, both properties' full payload
+  bundled, used when Supabase is unreachable). This route cannot benefit from lazy
+  loading by design: it has no network round trip to defer.
+- The **primary online route**, `property-loader.js::autoLoad()`, tries `db-v2`
+  (LPE-09, revision-aware, lazy) first, then `db` (LPE-08, lazy), and only falls
+  back to `pack` last. Both lazy routes are CLOSED and are what a real visitor with
+  connectivity actually gets.
+- Lighthouse never measured the `db`/`db-v2` route in this phase, because CI has no
+  live Supabase project to test against. The 66/62 score is real for the pack
+  route; it is not evidence about the route real visitors take.
+- This is a **measurement gap in the LPE-12 harness**, not an unresolved product
+  performance problem. It does not block LPE-13 or any later phase. Closing the gap
+  (running Lighthouse against `db`/`db-v2` with a real or mocked Supabase backend)
+  is a candidate for a future phase, not a reopening of LPE-08/09/12.
+
+`tests/lpe-12-lighthouse.js`'s `THRESHOLDS.performance.conditional` string
+("LPE-08 (lazy load not implemented)") is left as-is in the test file itself since
+it does not affect the PASS/CONDITIONAL/FAIL logic — this closure document is the
+corrected reference for how to interpret that label.
 
 ---
 

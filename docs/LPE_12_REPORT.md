@@ -139,12 +139,21 @@ node tests/lpe-12-lighthouse.js  → PASS (runnable-now gates)
 
 | Metric | Desktop | Mobile | Threshold | Status |
 |---|---|---|---|---|
-| Performance | 66 | 62 | ≥ 90 | ⚑ CONDITIONAL (LPE-08) |
+| Performance | 66 | 62 | ≥ 90 | ⚑ CONDITIONAL — measured on `?source=pack`, see correction below |
 | Accessibility | 92 | 92 | ≥ 90 | PASS |
 | Best Practices | 96 | 96 | ≥ 90 | PASS |
 | SEO | 50 | 50 | ≥ 90 | ⚑ CONDITIONAL (noindex) |
-| LCP | 3.06s | 5.44s | ≤ 2.5s | ⚑ CONDITIONAL (LPE-08) |
+| LCP | 3.06s | 5.44s | ≤ 2.5s | ⚑ CONDITIONAL — measured on `?source=pack`, see correction below |
 | CLS | — | — | ≤ 0.10 | PASS |
+
+**Correction (2026-08-18):** these two rows were originally annotated "CONDITIONAL
+(LPE-08)," written when LPE-08 (lazy loading) had *just* closed and before the
+harness's actual measurement target was reconsidered. LPE-08 and LPE-09 are both
+CLOSED. `tests/lpe-12-lighthouse.js` measures `?source=pack` — the offline fallback
+route, which cannot lazy-load by design — not the primary online `db`/`db-v2` route
+those two phases built. The score is a real measurement of the fallback route, not
+evidence that the primary route is slow. See `docs/LPE_12_CLOSURE.md` for the full
+correction.
 
 ---
 
@@ -152,10 +161,10 @@ node tests/lpe-12-lighthouse.js  → PASS (runnable-now gates)
 
 | Gate | Score | Reason | Upstream |
 |---|---|---|---|
-| Performance | 66/62 | No lazy loading; full payload on initial load | LPE-08 |
-| LCP | 3.06s/5.44s | Initial payload too large without lazy-load | LPE-08 |
+| Performance | 66/62 | Measured on the `?source=pack` fallback route (no lazy loading possible there by design); primary `db`/`db-v2` route not measured — see correction in `docs/LPE_12_CLOSURE.md` | LPE-12 harness gap, not LPE-08 |
+| LCP | 3.06s/5.44s | Same as above — pack route payload size, not the lazy-loaded primary route | LPE-12 harness gap, not LPE-08 |
 | SEO | 50 | `noindex,nofollow` in index.html (FORBIDDEN file); `meta description` absent | Private prototype design; index.html FORBIDDEN |
-| Security/RLS | Not tested | Migration 005 not applied to Supabase | LPE-09 |
+| Security/RLS | Not tested | Migration 005 not applied to Supabase | Operational — pending Simon's AUTORIZO |
 | Grounded Concierge | Not tested runtime | api/concierge.mjs present; requires ANTHROPIC_API_KEY | Operational/deploy |
 
 SEO failed audits (Lighthouse):
