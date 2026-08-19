@@ -24,7 +24,8 @@
     "test:lpe-12:a11y": "npx playwright test tests/e2e/smoke/a11y.spec.js",
     "test:lpe-12:perf": "node tests/lpe-12-lighthouse.js",
     "test:lpe-12": "node tests/lpe-12-gates.test.js && npx playwright test tests/e2e/smoke/",
-    "test:admin-m5x": "node tests/admin-m5x.test.mjs"
+    "test:admin-m5x": "node tests/admin-m5x.test.mjs",
+    "test:auth": "node tests/run-authorization-tests.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0"
