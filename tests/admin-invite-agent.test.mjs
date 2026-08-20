@@ -229,9 +229,9 @@ await test('4b: /auth/v1/invite recibe redirect_to apuntando a admin.html (fix M
     const inviteCalls = callsMatching(mock.calls, '/auth/v1/invite', 'POST');
     assert.equal(inviteCalls.length, 1);
     assert.equal(
-      inviteCalls[0].body.redirect_to,
-      'https://larum-property-experience.vercel.app/admin.html',
-      'invite call must carry an explicit redirect_to, or Supabase falls back to the public Site URL'
+      inviteCalls[0].url,
+      'https://fake-test-project.supabase.invalid/auth/v1/invite?redirect_to=https%3A%2F%2Flarum-property-experience.vercel.app%2Fadmin.html',
+      'redirect_to must be a URL query param — GoTrue reads it exclusively there, a JSON body field is silently ignored'
     );
   } finally { mock.restore(); }
 });
@@ -404,7 +404,10 @@ await test('agente vinculado, nunca confirmado → llama a /auth/v1/invite de nu
     const inviteCalls = callsMatching(mock.calls, '/auth/v1/invite', 'POST');
     assert.equal(inviteCalls.length, 1, 'must actually resend — the earlier invite link is dead');
     assert.equal(inviteCalls[0].body.email, 'pending@example.invalid');
-    assert.equal(inviteCalls[0].body.redirect_to, 'https://larum-property-experience.vercel.app/admin.html');
+    assert.ok(
+      inviteCalls[0].url.includes('redirect_to=' + encodeURIComponent('https://larum-property-experience.vercel.app/admin.html')),
+      'redirect_to must be a URL query param, not a JSON body field'
+    );
     assert.equal(callsMatching(mock.calls, '/rest/v1/agents', 'PATCH').length, 0, 'same user id came back — no re-link needed');
     assert.equal(callsMatching(mock.calls, '/auth/v1/recover').length, 0);
   } finally { mock.restore(); }
@@ -427,7 +430,10 @@ await test('agente confirmado pero sin sesión nunca completada → envía recov
     const recoverCalls = callsMatching(mock.calls, '/auth/v1/recover', 'POST');
     assert.equal(recoverCalls.length, 1);
     assert.equal(recoverCalls[0].body.email, 'stuck@example.invalid');
-    assert.equal(recoverCalls[0].body.redirect_to, 'https://larum-property-experience.vercel.app/admin.html');
+    assert.ok(
+      recoverCalls[0].url.includes('redirect_to=' + encodeURIComponent('https://larum-property-experience.vercel.app/admin.html')),
+      'redirect_to must be a URL query param, not a JSON body field'
+    );
   } finally { mock.restore(); }
 });
 

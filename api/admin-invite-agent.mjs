@@ -135,12 +135,21 @@ async function linkAgentAuthUser(agentId, userId) {
    new dependency added to package.json, consistent with api/_data.mjs
    already talking to Supabase over plain fetch() rather than the JS
    client library. On "already registered", returns a typed outcome
-   instead of throwing, so the caller can take the repair path. */
+   instead of throwing, so the caller can take the repair path.
+
+   redirect_to MUST be a URL query parameter, not a JSON body field —
+   GoTrue's /invite (and /recover, below) read it exclusively off the
+   request URL, the same way auth-js's own _request() helper builds
+   it (redirectTo is passed as a top-level option there, never inside
+   `body`). A body field is silently ignored, which is exactly what
+   let this fix's first two attempts through code review and tests
+   while still landing on the wrong page in production. */
 async function inviteAuthUser(email) {
-  const r = await fetch(`${SB_URL}/auth/v1/invite`, {
+  const url = `${SB_URL}/auth/v1/invite?redirect_to=${encodeURIComponent(INVITE_REDIRECT_TO)}`;
+  const r = await fetch(url, {
     method: 'POST',
     headers: serviceHeaders(),
-    body: JSON.stringify({ email, redirect_to: INVITE_REDIRECT_TO })
+    body: JSON.stringify({ email })
   });
   const body = await r.json().catch(() => ({}));
   if (r.ok) return { ok: true, user: body };
@@ -188,10 +197,11 @@ async function loadAuthUserById(userId) {
    Supabase's /invite refuses accounts it already considers
    confirmed. */
 async function sendPasswordRecovery(email) {
-  const r = await fetch(`${SB_URL}/auth/v1/recover`, {
+  const url = `${SB_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(INVITE_REDIRECT_TO)}`;
+  const r = await fetch(url, {
     method: 'POST',
     headers: serviceHeaders(),
-    body: JSON.stringify({ email, redirect_to: INVITE_REDIRECT_TO })
+    body: JSON.stringify({ email })
   });
   if (r.ok) return { ok: true };
   const body = await r.json().catch(() => ({}));
