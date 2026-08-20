@@ -273,7 +273,7 @@ await test('6: crea membership con role=agent y la organization_id correcta', as
    ═══════════════════════════════════════════════════════════════ */
 console.log('\n[7] Idempotent retry — already linked, membership already exists');
 
-await test('agente ya conectado + membership ya existe → cero invite, cero patch, cero membership POST', async () => {
+await test('agente ya conectado + membership ya existe → recovery_sent, cero invite, cero patch, cero membership POST', async () => {
   const mock = installMockFetch({
     callerUser: { id: 'admin-1' },
     adminMembershipRows: [{ id: 'm1' }],
@@ -285,8 +285,9 @@ await test('agente ya conectado + membership ya existe → cero invite, cero pat
     const res = fakeRes();
     await handler(fakeReq({ body: { agentId: 'agent-6' } }), res);
     assert.equal(res._status, 200);
-    assert.equal(res._body.outcome, 'already_linked');
-    assert.equal(callsMatching(mock.calls, '/auth/v1/invite').length, 0);
+    assert.equal(res._body.outcome, 'recovery_sent');
+    assert.equal(callsMatching(mock.calls, '/auth/v1/invite').length, 0, 'confirmed account must never get a second invite');
+    assert.equal(callsMatching(mock.calls, '/auth/v1/recover').length, 1);
     assert.equal(callsMatching(mock.calls, '/rest/v1/agents', 'PATCH').length, 0);
     assert.equal(callsMatching(mock.calls, '/rest/v1/memberships', 'POST').length, 0);
   } finally { mock.restore(); }
@@ -320,7 +321,7 @@ await test('pulsar Invite dos veces seguidas nunca crea un segundo Auth user (si
     const res2 = fakeRes();
     await handler(fakeReq({ body: { agentId: 'agent-7' } }), res2);
     assert.equal(res2._status, 200);
-    assert.equal(res2._body.outcome, 'already_linked');
+    assert.equal(res2._body.outcome, 'recovery_sent');
     assert.equal(callsMatching(mock2.calls, '/auth/v1/invite').length, 0, 'second call must NOT invite again');
   } finally { mock2.restore(); }
 
@@ -332,7 +333,7 @@ await test('pulsar Invite dos veces seguidas nunca crea un segundo Auth user (si
    ═══════════════════════════════════════════════════════════════ */
 console.log('\n[8] Partial-failure repair — auth_user_id present, membership missing');
 
-await test('auth_user_id ya presente pero SIN membership → repara: crea solo la membership, sin re-invitar', async () => {
+await test('auth_user_id ya presente pero SIN membership → repara la membership sin re-invitar (outcome sigue siendo recovery_sent, la cuenta está confirmada)', async () => {
   const mock = installMockFetch({
     callerUser: { id: 'admin-1' },
     adminMembershipRows: [{ id: 'm1' }],
@@ -344,7 +345,7 @@ await test('auth_user_id ya presente pero SIN membership → repara: crea solo l
     const res = fakeRes();
     await handler(fakeReq({ body: { agentId: 'agent-8' } }), res);
     assert.equal(res._status, 200);
-    assert.equal(res._body.outcome, 'membership_repaired');
+    assert.equal(res._body.outcome, 'recovery_sent');
     assert.equal(callsMatching(mock.calls, '/auth/v1/invite').length, 0, 'must not invite — Auth user already exists');
     assert.equal(callsMatching(mock.calls, '/rest/v1/agents', 'PATCH').length, 0, 'must not re-link — already linked');
     const memberCalls = callsMatching(mock.calls, '/rest/v1/memberships', 'POST');
@@ -447,7 +448,7 @@ await test('recovery falla en Supabase → 502, error propagado', async () => {
   } finally { mock.restore(); }
 });
 
-await test('agente vinculado, confirmado Y con sesión previa → NO reenvía, sigue already_linked (no-regresión)', async () => {
+await test('agente confirmado con sesión previa recibe recovery link igualmente (last_sign_in_at no distingue "usando la cuenta" de "sesión de invite descartada")', async () => {
   const mock = installMockFetch({
     callerUser: { id: 'admin-1' },
     adminMembershipRows: [{ id: 'm1' }],
@@ -459,9 +460,9 @@ await test('agente vinculado, confirmado Y con sesión previa → NO reenvía, s
     const res = fakeRes();
     await handler(fakeReq({ body: { agentId: 'agent-11' } }), res);
     assert.equal(res._status, 200);
-    assert.equal(res._body.outcome, 'already_linked');
-    assert.equal(callsMatching(mock.calls, '/auth/v1/invite').length, 0, 'a fully onboarded agent must never be re-invited');
-    assert.equal(callsMatching(mock.calls, '/auth/v1/recover').length, 0, 'a fully onboarded agent must never get a recovery link either');
+    assert.equal(res._body.outcome, 'recovery_sent');
+    assert.equal(callsMatching(mock.calls, '/auth/v1/invite').length, 0, 'a confirmed agent must never be re-invited');
+    assert.equal(callsMatching(mock.calls, '/auth/v1/recover').length, 1);
   } finally { mock.restore(); }
 });
 

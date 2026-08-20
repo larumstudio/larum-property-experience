@@ -166,19 +166,16 @@ async function findAuthUserByEmail(email) {
 }
 
 /* agents.auth_user_id is set the moment Auth creates the user — at
-   INVITE time, not at ACCEPT time. Two distinct stuck states exist
-   downstream of that, and they need two different remedies:
-     - email_confirmed_at is null: the invite link was never opened
-       at all. A plain re-invite works.
-     - email_confirmed_at is set but last_sign_in_at is null: the
-       link WAS opened and Supabase verified it (that verification is
-       what sets email_confirmed_at, server-side, before the client
-       redirect even happens) — but the resulting session never
-       turned into an actual sign-in, e.g. because it landed on the
-       wrong page (pre redirect_to-fix) and got silently discarded.
-       Supabase refuses a second invite for an already-confirmed
-       user, so this needs a password-recovery link instead — the
-       same mechanism a "forgot password" form would trigger. */
+   INVITE time, not at ACCEPT time. email_confirmed_at is set the
+   moment the link gets opened and Supabase verifies the token,
+   server-side, before the client redirect even happens — so an
+   agent whose link landed on the wrong page (pre redirect_to-fix)
+   and silently lost its session is still marked confirmed. (Even
+   last_sign_in_at gets set in that case — establishing a session
+   from the link counts as a sign-in to Supabase — so it can't
+   distinguish "stuck" from "actually using the account" either.)
+   Only a genuinely unconfirmed link (never opened at all) can take
+   a plain re-invite; anything confirmed needs a recovery link. */
 async function loadAuthUserById(userId) {
   const url = `${SB_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`;
   const r = await fetch(url, { headers: serviceHeaders() });
@@ -275,11 +272,8 @@ export default async function handler(req, res) {
       }
 
       const isConfirmed = !!(authUser.email_confirmed_at || authUser.confirmed_at);
-      const hasSignedIn = !!authUser.last_sign_in_at;
 
-      if (isConfirmed && hasSignedIn) {
-        outcome = 'already_linked';
-      } else if (!isConfirmed) {
+      if (!isConfirmed) {
         /* Link never opened at all — a plain re-invite works and
            Supabase resends against the SAME unconfirmed user rather
            than erroring, so this never creates a second Auth user. */
@@ -293,12 +287,15 @@ export default async function handler(req, res) {
         }
         outcome = 'resent';
       } else {
-        /* Confirmed but never signed in — the earlier link WAS
-           opened and verified, but its session never turned into an
-           actual login (pre redirect_to-fix, it landed on the wrong
-           page and got silently discarded). Supabase would refuse a
-           second /invite for an already-confirmed user, so send a
-           recovery link instead. */
+        /* Confirmed — could genuinely be using the account already,
+           or could be stuck exactly like this fix's motivating case
+           (link opened, session silently established and discarded
+           by the wrong pre-fix landing page — which is enough for
+           Supabase to also mark last_sign_in_at, so that field can't
+           tell the two apart either). Supabase refuses a second
+           /invite for a confirmed user, and a recovery link is safe
+           to send either way — the same "forgot password" flow the
+           agent could trigger themselves. */
         const recovery = await sendPasswordRecovery(agent.email);
         if (!recovery.ok) {
           return res.status(502).json({ error: 'recovery_failed', detail: recovery.message });
@@ -310,7 +307,6 @@ export default async function handler(req, res) {
     const existingMembership = await findMembership(userId, agent.organization_id);
     if (!existingMembership) {
       await createMembership(userId, agent.organization_id);
-      if (outcome === 'already_linked') outcome = 'membership_repaired';
     }
 
     return res.status(200).json({ ok: true, outcome, agentId });

@@ -384,8 +384,8 @@ async function handleInvite() {
     const messages = {
       invited: 'Invitation sent — the agent will receive an email.',
       repaired: 'An account already existed for this email — linked it.',
-      already_linked: 'This agent is already connected.',
-      membership_repaired: 'Account was connected but missing org access — fixed.'
+      resent: 'Invitation resent — the agent will receive a fresh email.',
+      recovery_sent: 'Account already confirmed — sent a password reset link instead.'
     };
     toast(messages[result.outcome] || 'Done.', 'success');
 
