@@ -101,6 +101,17 @@ function installMockFetch(scenario) {
       return json(200, { id: 'new-auth-user-id', email: (scenario.agentRows?.[0]?.email) || 'x@example.invalid' });
     }
 
+    if (url.includes('/auth/v1/admin/users/') && method === 'GET') {
+      // by-id lookup (loadAuthUserById) — distinct from the email-query
+      // lookup below (findAuthUserByEmail).
+      if (scenario.authUserById === undefined) {
+        throw new Error('Test scenario missing authUserById for GET /auth/v1/admin/users/{id}');
+      }
+      return scenario.authUserById
+        ? json(200, scenario.authUserById)
+        : json(404, { error: 'user_not_found' });
+    }
+
     if (url.includes('/auth/v1/admin/users')) {
       return json(200, { users: scenario.existingAuthUsers || [] });
     }
@@ -262,7 +273,8 @@ await test('agente ya conectado + membership ya existe → cero invite, cero pat
     callerUser: { id: 'admin-1' },
     adminMembershipRows: [{ id: 'm1' }],
     agentRows: [{ id: 'agent-6', email: 'done@example.invalid', organization_id: 'org-A', auth_user_id: 'already-linked-user-id', status: 'active', name: 'Done Agent' }],
-    existingMembershipRows: [{ id: 'existing-membership' }]
+    existingMembershipRows: [{ id: 'existing-membership' }],
+    authUserById: { id: 'already-linked-user-id', email: 'done@example.invalid', email_confirmed_at: '2026-01-01T00:00:00Z' }
   });
   try {
     const res = fakeRes();
@@ -296,7 +308,8 @@ await test('pulsar Invite dos veces seguidas nunca crea un segundo Auth user (si
     callerUser: { id: 'admin-1' },
     adminMembershipRows: [{ id: 'm1' }],
     agentRows: [{ id: 'agent-7', email: 'twice@example.invalid', organization_id: 'org-A', auth_user_id: 'new-auth-user-id', status: 'active', name: 'Twice Agent' }],
-    existingMembershipRows: [{ id: 'now-exists' }]
+    existingMembershipRows: [{ id: 'now-exists' }],
+    authUserById: { id: 'new-auth-user-id', email: 'twice@example.invalid', email_confirmed_at: '2026-01-01T00:00:00Z' }
   });
   try {
     const res2 = fakeRes();
@@ -319,7 +332,8 @@ await test('auth_user_id ya presente pero SIN membership → repara: crea solo l
     callerUser: { id: 'admin-1' },
     adminMembershipRows: [{ id: 'm1' }],
     agentRows: [{ id: 'agent-8', email: 'partial@example.invalid', organization_id: 'org-A', auth_user_id: 'orphaned-auth-user-id', status: 'active', name: 'Partial Agent' }],
-    existingMembershipRows: []  // no membership row yet — the partial-failure state
+    existingMembershipRows: [],  // no membership row yet — the partial-failure state
+    authUserById: { id: 'orphaned-auth-user-id', email: 'partial@example.invalid', email_confirmed_at: '2026-01-01T00:00:00Z' }
   });
   try {
     const res = fakeRes();
@@ -350,6 +364,69 @@ await test('invite reporta "already registered" → repara usando el Auth user e
     const patchCalls = callsMatching(mock.calls, '/rest/v1/agents', 'PATCH');
     assert.equal(patchCalls.length, 1);
     assert.equal(patchCalls[0].body.auth_user_id, 'preexisting-auth-id');
+  } finally { mock.restore(); }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   8b — auth_user_id presente pero NUNCA confirmado → reenvío real
+   (bug encontrado en el smoke test: "Resend / repair access" no
+   reenviaba nada para un agente cuyo enlace de invitación original
+   redirigió a la página equivocada y nunca llegó a aceptarse)
+   ═══════════════════════════════════════════════════════════════ */
+console.log('\n[8b] auth_user_id present but never confirmed → real resend');
+
+await test('agente vinculado pero sin confirmar → llama a /auth/v1/invite de nuevo, outcome=resent', async () => {
+  const mock = installMockFetch({
+    callerUser: { id: 'admin-1' },
+    adminMembershipRows: [{ id: 'm1' }],
+    agentRows: [{ id: 'agent-10', email: 'pending@example.invalid', organization_id: 'org-A', auth_user_id: 'pending-auth-user-id', status: 'active', name: 'Pending Agent' }],
+    existingMembershipRows: [{ id: 'existing-membership' }],
+    authUserById: { id: 'pending-auth-user-id', email: 'pending@example.invalid', email_confirmed_at: null },
+    inviteResult: () => ({ ok: true, status: 200, json: async () => ({ id: 'pending-auth-user-id', email: 'pending@example.invalid' }), text: async () => '' })
+  });
+  try {
+    const res = fakeRes();
+    await handler(fakeReq({ body: { agentId: 'agent-10' } }), res);
+    assert.equal(res._status, 200);
+    assert.equal(res._body.outcome, 'resent');
+    const inviteCalls = callsMatching(mock.calls, '/auth/v1/invite', 'POST');
+    assert.equal(inviteCalls.length, 1, 'must actually resend — the earlier invite link is dead');
+    assert.equal(inviteCalls[0].body.email, 'pending@example.invalid');
+    assert.equal(inviteCalls[0].body.redirect_to, 'https://larum-property-experience.vercel.app/admin.html');
+    assert.equal(callsMatching(mock.calls, '/rest/v1/agents', 'PATCH').length, 0, 'same user id came back — no re-link needed');
+  } finally { mock.restore(); }
+});
+
+await test('agente vinculado y confirmado → NO reenvía, sigue already_linked (no-regresión)', async () => {
+  const mock = installMockFetch({
+    callerUser: { id: 'admin-1' },
+    adminMembershipRows: [{ id: 'm1' }],
+    agentRows: [{ id: 'agent-11', email: 'confirmed@example.invalid', organization_id: 'org-A', auth_user_id: 'confirmed-auth-user-id', status: 'active', name: 'Confirmed Agent' }],
+    existingMembershipRows: [{ id: 'existing-membership' }],
+    authUserById: { id: 'confirmed-auth-user-id', email: 'confirmed@example.invalid', email_confirmed_at: '2026-01-01T00:00:00Z' }
+  });
+  try {
+    const res = fakeRes();
+    await handler(fakeReq({ body: { agentId: 'agent-11' } }), res);
+    assert.equal(res._status, 200);
+    assert.equal(res._body.outcome, 'already_linked');
+    assert.equal(callsMatching(mock.calls, '/auth/v1/invite').length, 0, 'a confirmed agent must never be re-invited');
+  } finally { mock.restore(); }
+});
+
+await test('fallo al consultar el Auth user por id → 502, sin intentar reenviar a ciegas', async () => {
+  const mock = installMockFetch({
+    callerUser: { id: 'admin-1' },
+    adminMembershipRows: [{ id: 'm1' }],
+    agentRows: [{ id: 'agent-12', email: 'lookupfail@example.invalid', organization_id: 'org-A', auth_user_id: 'ghost-auth-user-id', status: 'active', name: 'Lookup Fail Agent' }],
+    authUserById: null
+  });
+  try {
+    const res = fakeRes();
+    await handler(fakeReq({ body: { agentId: 'agent-12' } }), res);
+    assert.equal(res._status, 502);
+    assert.equal(res._body.error, 'auth_user_lookup_failed');
+    assert.equal(callsMatching(mock.calls, '/auth/v1/invite').length, 0);
   } finally { mock.restore(); }
 });
 

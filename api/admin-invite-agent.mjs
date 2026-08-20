@@ -165,6 +165,19 @@ async function findAuthUserByEmail(email) {
   return users.find(u => (u.email || '').toLowerCase() === email.toLowerCase()) || null;
 }
 
+/* agents.auth_user_id is set the moment Auth creates the user — at
+   INVITE time, not at ACCEPT time. An agent whose invite link never
+   got clicked (or, as happened here, redirected to the wrong page
+   before the redirect_to fix) has auth_user_id set but never
+   confirmed. Without this check, "already_linked" would silently
+   swallow every resend attempt for exactly that agent. */
+async function loadAuthUserById(userId) {
+  const url = `${SB_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`;
+  const r = await fetch(url, { headers: serviceHeaders() });
+  if (!r.ok) return null;
+  return r.json().catch(() => null);
+}
+
 /* ── Handler ──────────────────────────────────────────────────────── */
 
 export default async function handler(req, res) {
@@ -232,7 +245,29 @@ export default async function handler(req, res) {
 
       await linkAgentAuthUser(agentId, userId);
     } else {
-      outcome = 'already_linked';
+      const authUser = await loadAuthUserById(userId);
+      if (!authUser) {
+        return res.status(502).json({ error: 'auth_user_lookup_failed' });
+      }
+
+      const isConfirmed = !!(authUser.email_confirmed_at || authUser.confirmed_at);
+      if (isConfirmed) {
+        outcome = 'already_linked';
+      } else {
+        /* Never confirmed — the earlier invite is effectively dead
+           (redirected wrong, expired, or simply never opened).
+           Supabase resends against the SAME unconfirmed user rather
+           than erroring, so this never creates a second Auth user. */
+        const invite = await inviteAuthUser(agent.email);
+        if (!invite.ok && !invite.alreadyRegistered) {
+          return res.status(502).json({ error: 'invite_failed', detail: invite.message });
+        }
+        if (invite.ok && invite.user.id !== userId) {
+          userId = invite.user.id;
+          await linkAgentAuthUser(agentId, userId);
+        }
+        outcome = 'resent';
+      }
     }
 
     const existingMembership = await findMembership(userId, agent.organization_id);
