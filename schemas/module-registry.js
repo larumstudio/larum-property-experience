@@ -12,7 +12,12 @@ function _adapters() {
   return null;
 }
 
-const MODULE_IDS = (_adapters() && _adapters().MODULE_IDS) || [
+/* Local alias, not "MODULE_IDS": schemas/adapters/index.js already declares
+   a global MODULE_IDS in this same classic-script scope (index.html loads
+   both), and a second top-level `const MODULE_IDS` here throws a
+   SyntaxError that aborts the whole page. Re-exported as MODULE_IDS on
+   LarumModuleRegistry below, so the public API is unchanged. */
+const REGISTRY_MODULE_IDS = (_adapters() && _adapters().MODULE_IDS) || [
   'arrival', 'property-dna', 'lived-sequence', 'spatial-zones', 'verified-intelligence',
   'setting-lifestyle', 'documents-private-room', 'concierge', 'enquiry-handoff'
 ];
@@ -78,15 +83,15 @@ function requireModule(id) {
 }
 
 function isKnownModule(id) {
-  return MODULE_IDS.indexOf(id) !== -1;
+  return REGISTRY_MODULE_IDS.indexOf(id) !== -1;
 }
 
 function scrollModules() {
-  return MODULE_IDS.filter(id => BINDINGS[id] && BINDINGS[id].slot === 'scroll');
+  return REGISTRY_MODULE_IDS.filter(id => BINDINGS[id] && BINDINGS[id].slot === 'scroll');
 }
 
 function overlayModules() {
-  return MODULE_IDS.filter(id => BINDINGS[id] && BINDINGS[id].slot === 'overlay');
+  return REGISTRY_MODULE_IDS.filter(id => BINDINGS[id] && BINDINGS[id].slot === 'overlay');
 }
 
 function moduleVisible(manifest, id) {
@@ -156,8 +161,8 @@ function legacyManifest() {
     propertyId: 'legacy',
     family: 'villa-estate',
     themeId: 'villa-estate-default',
-    modules: MODULE_IDS.map((id, i) => ({ id, instanceId: `${id}-01`, visible: true, order: (i + 1) * 10, config: {} })),
-    navigation: { chapters: MODULE_IDS.slice(), defaultEntry: 'arrival-01' },
+    modules: REGISTRY_MODULE_IDS.map((id, i) => ({ id, instanceId: `${id}-01`, visible: true, order: (i + 1) * 10, config: {} })),
+    navigation: { chapters: REGISTRY_MODULE_IDS.slice(), defaultEntry: 'arrival-01' },
     ctaPolicy: {},
     motionPolicy: { enabled: true, reducedMotionFallback: 'static-composed' },
     fallbackPolicy: {},
@@ -166,7 +171,7 @@ function legacyManifest() {
 }
 
 const LarumModuleRegistry = {
-  MODULE_IDS, BINDINGS, get, require: requireModule, isKnownModule,
+  MODULE_IDS: REGISTRY_MODULE_IDS, BINDINGS, get, require: requireModule, isKnownModule,
   scrollModules, overlayModules, moduleVisible, composePlan,
   railChapterIds, menuTargets, legacyManifest
 };

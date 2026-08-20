@@ -14,7 +14,11 @@ function _modIds() {
   ];
 }
 
-const MODULE_IDS = _modIds();
+/* Local alias, not "MODULE_IDS": schemas/adapters/index.js already declares
+   a global MODULE_IDS in this same classic-script scope (index.html loads
+   both), and a second top-level `const MODULE_IDS` here throws a
+   SyntaxError that aborts the whole page. */
+const FAMILY_MODULE_IDS = _modIds();
 
 const FAMILIES = {
   'villa-estate': {
@@ -25,7 +29,7 @@ const FAMILIES = {
       typography: { display: "Georgia,'Times New Roman',serif", mono: "'Courier New',Courier,monospace" },
       spacing: { rhythm: 1 }
     },
-    defaultModules: MODULE_IDS.slice(),
+    defaultModules: FAMILY_MODULE_IDS.slice(),
     motionPreset: 'slow-cinematic',
     ctaVocabulary: { primary: 'private-viewing', secondary: 'ask-advisor' }
   },
@@ -37,7 +41,7 @@ const FAMILIES = {
       typography: { display: "'Helvetica Neue',Helvetica,Arial,sans-serif", mono: "'Courier New',Courier,monospace" },
       spacing: { rhythm: 0.9 }
     },
-    defaultModules: MODULE_IDS.slice(),
+    defaultModules: FAMILY_MODULE_IDS.slice(),
     motionPreset: 'editorial',
     ctaVocabulary: { primary: 'request-details', secondary: 'ask-advisor' }
   },
