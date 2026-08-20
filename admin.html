@@ -605,6 +605,7 @@
 import { boot, enterApp, signOut, load, buildPropertyFilter, filteredLeads, filteredSessions } from './admin/admin-core.js';
 import { navigate, register, init as routerInit, current as currentRoute } from './admin/admin-router.js';
 import { closeDrawer, initMobileMenu } from './admin/admin-ui.js';
+import { resolveCapabilities } from './admin/admin-auth-context.js';
 import * as dashboard from './admin/admin-dashboard.js';
 import * as leads from './admin/admin-leads.js';
 import * as sessions from './admin/admin-sessions.js';
@@ -700,9 +701,24 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 });
 
 /* ── Data loaded event ───────────────────────────────────── */
-document.addEventListener('larum:data-loaded', () => {
+/* M6.2: nav items whose route the current role cannot use are hidden
+   here — not just left visible to fail against RLS when clicked. Runs
+   on every larum:data-loaded (login, and every subsequent refresh);
+   idempotent to reapply, and cheap since resolveCapabilities() is
+   memoized after the first resolve (admin-core.js:getRole()). Any
+   data-nav value without a matching "nav.*" key (clientes, ajustes —
+   still undecided placeholders, out of scope for M6.2) is left exactly
+   as it is today. */
+document.addEventListener('larum:data-loaded', async () => {
   buildPropertyFilter();
   document.getElementById('navLeads').textContent = filteredLeads().length;
+
+  const caps = await resolveCapabilities();
+  document.querySelectorAll('[data-nav]').forEach(btn => {
+    const key = 'nav.' + btn.dataset.nav;
+    if (key in caps) btn.style.display = caps[key] ? '' : 'none';
+  });
+
   const route = currentRoute();
   if (route) navigate(route);
 });

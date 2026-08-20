@@ -1,26 +1,51 @@
-/* ── Larum Admin · Global Analytics (M5.7) ──────────────────
+/* ── Larum Admin · Global Analytics (M5.7 + M6.1) ────────────
    Top-level sidebar view: cross-property analytics using
    sessions, leads, and events from core state.
+
+   M6.1 adds a "Visits" subtab. It reuses admin-sessions.js
+   as-is — same render(container)/teardown() contract already
+   used by admin-workspace.js to mount its own sub-panels — no
+   logic is copied or reimplemented here. Visits has no sidebar
+   item of its own; #sessions stays registered in admin-router.js
+   for the direct deep-link, but the only in-app way to reach it
+   is Analytics → Visits.
 
    Zero writes to visitor runtime / API / RLS / schema.
    ───────────────────────────────────────────────────────────── */
 
-import { state, filteredLeads, filteredSessions, esc, minutes } from './admin-core.js';
-import { statCard, card, barChart, interestBars, emptyState } from './admin-ui.js';
+import { state, filteredLeads, filteredSessions, esc, minutes, getRole } from './admin-core.js';
+import { statCard, card, barChart, interestBars, emptyState, tabs } from './admin-ui.js';
+import * as sessionsModule from './admin-sessions.js';
 
 export const title = 'Analytics';
 
+const SUBTABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'visits',   label: 'Visits' }
+];
+
 let containerRef = null;
+let activeSubtab = 'overview';
+let role = null;
 
 /* ── Module contract ─────────────────────────────────────── */
 
-export function render(container) {
+export async function render(container) {
   containerRef = container;
+  activeSubtab = 'overview';
+  role = await getRole();
   draw();
 }
 
 export function teardown() {
+  /* Unconditional, like admin-workspace.js tears down every sub-panel
+     regardless of which tab was active — sessionsModule.teardown() is
+     a safe no-op if Visits was never mounted this visit. */
+  sessionsModule.teardown();
+  delete window.__analyticsSubtab;
   containerRef = null;
+  activeSubtab = 'overview';
+  role = null;
 }
 
 /* ── Rendering ───────────────────────────────────────────── */
@@ -28,13 +53,58 @@ export function teardown() {
 function draw() {
   if (!containerRef) return;
 
+  containerRef.innerHTML =
+    '<div class="page-header"><h2>Analytics</h2></div>' +
+    tabs(SUBTABS, activeSubtab, 'onclick="__analyticsSubtab(this.dataset.tab)"') +
+    '<div id="analyticsSubtabContent" class="workspace-content"></div>';
+
+  window.__analyticsSubtab = switchSubtab;
+
+  const mount = document.getElementById('analyticsSubtabContent');
+  if (!mount) return;
+
+  if (activeSubtab === 'visits') drawVisits(mount);
+  else drawOverview(mount);
+}
+
+function switchSubtab(id) {
+  if (id === activeSubtab) return;
+  activeSubtab = id;
+  draw();
+}
+
+/* Same restricted-access notice for both subtabs: virtually everything
+   in Overview (visits/day, engagement, entry paths, exploration,
+   canonical ID coverage) is sessions/analytics_events-derived, same as
+   Visits itself — there is no RLS policy granting an agent read access
+   to either table (deliberate AE III v1 scope, Migration 006). Showing
+   a "0" here would look like "no traffic" when the real answer is
+   "you cannot see this" — this notice says the true thing instead. */
+function restrictedNotice() {
+  return (
+    '<div class="card">' +
+      '<div class="card-head"><h3>Visit-level analytics is admin-only</h3></div>' +
+      '<div style="padding:16px;color:var(--muted);font-size:13px">' +
+        'Session and event data is not available to the agent role in this release. ' +
+        'Your leads and their status stay visible under Leads.' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function drawVisits(mount) {
+  if (role === 'agent') { mount.innerHTML = restrictedNotice(); return; }
+  sessionsModule.render(mount);
+}
+
+function drawOverview(mount) {
+  if (role === 'agent') { mount.innerHTML = restrictedNotice(); return; }
+
   const sessions = filteredSessions();
   const leads = filteredLeads();
 
   if (!sessions.length && !leads.length) {
-    containerRef.innerHTML =
-      '<div class="page-header"><h2>Analytics</h2></div>' +
-      emptyState('No activity', 'Visitor data will appear here once people start exploring properties.');
+    mount.innerHTML = emptyState('No activity', 'Visitor data will appear here once people start exploring properties.');
     return;
   }
 
@@ -44,9 +114,7 @@ function draw() {
   const qualified = sessions.filter(s => s.qualified).length;
   const convRate = sessions.length ? Math.round((leads.length / sessions.length) * 100) + '%' : '—';
 
-  containerRef.innerHTML =
-    '<div class="page-header"><h2>Analytics</h2></div>' +
-
+  mount.innerHTML =
     '<div class="stats-row">' +
       statCard('Sessions', sessions.length, '') +
       statCard('Avg. time', avgTime, '') +

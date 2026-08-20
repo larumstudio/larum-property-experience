@@ -7,17 +7,36 @@
 
 import { state, esc, minutes } from './admin-core.js';
 import { statCard, card, barChart, interestBars, emptyState } from './admin-ui.js';
+import { resolveCapabilities } from './admin-auth-context.js';
 
 let containerRef = null;
 
 /* ── Module contract ─────────────────────────────────────── */
 
-export function render(container, property) {
+export async function render(container, property) {
   containerRef = container;
   if (!property) {
     container.innerHTML = emptyState('Analytics', 'No property loaded.');
     return;
   }
+
+  /* Same reasoning as the global Analytics module (M6.1): this whole
+     tab is sessions/analytics_events-derived, and there is no RLS
+     policy granting the agent role read access to either table — a
+     "0" here would misleadingly read as "no visits" rather than "you
+     cannot see this". */
+  const caps = await resolveCapabilities();
+  if (!caps['analytics.raw']) {
+    container.innerHTML =
+      '<div class="card">' +
+        '<div class="card-head"><h3>Visit-level analytics is admin-only</h3></div>' +
+        '<div style="padding:16px;color:var(--muted);font-size:13px">' +
+          'Session and event data is not available to the agent role in this release.' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+
   draw(property);
 }
 

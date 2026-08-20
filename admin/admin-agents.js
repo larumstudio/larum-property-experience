@@ -14,9 +14,10 @@
 import { esc, cap } from './admin-core.js';
 import { badge, emptyState, toast } from './admin-ui.js';
 import {
-  loadAllAgents, loadAgent, createAgent, updateAgent, loadPropertiesByAgent
+  loadAllAgents, loadAgent, createAgent, updateAgent, loadPropertiesByAgent, inviteAgent
 } from './admin-property-store.js';
 import { navigate } from './admin-router.js';
+import { resolveCapabilities } from './admin-auth-context.js';
 
 export const title = 'Agentes';
 
@@ -35,9 +36,28 @@ let detailProperties = null; // null = loading, [] = loaded empty
 let detailPropertiesError = null;
 let editDraft = null;        // non-null while editing the open agent
 
+let caps = null;             // resolved once per render() — see admin-auth-context.js
+let inviting = false;
+
 export async function render(container) {
   containerRef = container;
   mode = 'list';
+  caps = await resolveCapabilities();
+
+  /* Agent management has no RLS policy for the agent role beyond
+     reading/editing their own single row (agents self read/update) —
+     loadAllAgents() would silently return just that one row rather
+     than the intended management list. Refuse to even attempt it for
+     a non-admin, matching "ocultar acciones que RLS no permite" rather
+     than showing a misleadingly thin list. Direct-hash-nav guard: the
+     sidebar already hides this item for agent, this is the second layer. */
+  if (!caps['agents.manage']) {
+    containerRef.innerHTML =
+      '<div class="page-header"><h2>Agentes</h2></div>' +
+      emptyState('Not available', 'Agent management is admin-only.');
+    return;
+  }
+
   await loadList();
 }
 
@@ -52,6 +72,8 @@ export function teardown() {
   detailPropertiesError = null;
   editDraft = null;
   saving = false;
+  caps = null;
+  inviting = false;
   delete window.__agToggleCreate;
   delete window.__agCancelCreate;
   delete window.__agCreateSubmit;
@@ -63,6 +85,7 @@ export function teardown() {
   delete window.__agSaveEdit;
   delete window.__agCancelEdit;
   delete window.__agOpenPropertyWorkspace;
+  delete window.__agInvite;
 }
 
 async function loadList() {
@@ -310,10 +333,76 @@ function drawDetail() {
   html += editing ? renderEditForm() : renderReadOnly(a);
   html += '</div>';
 
+  html += renderAccessCard(a);
   html += renderPropertiesCard();
 
   containerRef.innerHTML = html;
   bindGlobals();
+}
+
+/* ── Access (M6.2 — invite / connection status) ──────────────────
+   Reflects agents.auth_user_id directly (already loaded with the
+   agent row) — no separate round-trip just to show status. The same
+   button covers first invite AND repair: the server-side endpoint is
+   idempotent and decides what actually needs to happen. */
+function renderAccessCard(a) {
+  const connected = !!a.auth_user_id;
+
+  let html = '<div class="card" style="margin-top:16px">' +
+    '<div class="card-head"><h3>Access</h3></div>' +
+    '<dl class="kv">' +
+      '<dt>Status</dt><dd>' +
+        (connected
+          ? '<span class="badge badge-green">Connected</span>'
+          : '<span class="badge badge-muted">No account yet</span>') +
+      '</dd>' +
+    '</dl>';
+
+  if (!a.email) {
+    html += '<div class="mono" style="font-size:11px;color:var(--muted);margin-top:8px">' +
+      'Add an email address above before inviting this agent.</div>';
+  } else {
+    html += '<div style="margin-top:10px">' +
+      '<button class="btn ' + (connected ? 'btn-outline' : 'btn-primary') + '" ' +
+        'onclick="__agInvite()"' + (inviting ? ' disabled' : '') + '>' +
+        (inviting ? 'Working…' : (connected ? 'Resend / repair access' : 'Invite to Larum Admin')) +
+      '</button>' +
+    '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+async function handleInvite() {
+  if (inviting || !detailAgent) return;
+  inviting = true;
+  draw();
+
+  try {
+    const result = await inviteAgent(detailAgent.id);
+    const messages = {
+      invited: 'Invitation sent — the agent will receive an email.',
+      repaired: 'An account already existed for this email — linked it.',
+      already_linked: 'This agent is already connected.',
+      membership_repaired: 'Account was connected but missing org access — fixed.'
+    };
+    toast(messages[result.outcome] || 'Done.', 'success');
+
+    /* Refresh the row so the Access card reflects the real state —
+       auth_user_id may have just been set for the first time. */
+    const fresh = await loadAgent(detailAgent.id);
+    if (fresh) {
+      detailAgent = fresh;
+      const idx = agents.findIndex(x => x.id === fresh.id);
+      if (idx >= 0) agents[idx] = fresh;
+    }
+  } catch (e) {
+    toast('Invite failed: ' + e.message, 'error');
+  } finally {
+    inviting = false;
+    draw();
+  }
 }
 
 function renderReadOnly(a) {
@@ -513,4 +602,5 @@ function bindGlobals() {
   window.__agSaveEdit = saveEdit;
   window.__agCancelEdit = cancelEdit;
   window.__agOpenPropertyWorkspace = openPropertyWorkspace;
+  window.__agInvite = handleInvite;
 }

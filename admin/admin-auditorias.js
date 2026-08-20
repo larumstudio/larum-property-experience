@@ -9,6 +9,7 @@ import { esc, fullDate } from './admin-core.js';
 import { statCard, emptyState, toast } from './admin-ui.js';
 import { loadAllAudits, getPropertyLabel } from './admin-property-store.js';
 import { navigate } from './admin-router.js';
+import { resolveCapabilities } from './admin-auth-context.js';
 
 export const title = 'Auditorías';
 
@@ -29,6 +30,21 @@ export async function render(container) {
   containerRef = container;
   state.loading = true;
   state.error = null;
+
+  /* M6.2: second layer behind the sidebar hiding this item for agent —
+     RLS ("audits agent reads own properties") would technically return
+     a real, correctly-scoped-to-just-their-own subset here rather than
+     an empty result, but a "global audits" list that quietly only ever
+     shows the viewer's own properties is a confusing product surface,
+     not a useful one — redundant with the per-property Audit tab they
+     already have. Direct-hash-nav guard (#auditorias). */
+  const caps = await resolveCapabilities();
+  if (!caps['nav.auditorias']) {
+    containerRef.innerHTML =
+      '<div class="page-header"><h2>Auditorías</h2></div>' +
+      emptyState('Not available', 'The cross-property audit list is admin-only. Your own properties\' audits are on their Workspace → Audit tab.');
+    return;
+  }
 
   bind(container);
   draw();

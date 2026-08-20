@@ -12,6 +12,7 @@
 
 import { esc } from './admin-core.js';
 import * as knowledgeEditor from './admin-knowledge-editor.js';
+import { resolveCapabilities } from './admin-auth-context.js';
 
 const PAGE_SIZE = 20;
 
@@ -19,6 +20,7 @@ let containerRef = null;
 let currentSlug = null;
 let currentProperty = null;
 let clickHandler = null;
+let caps = null; // resolved once per render() — see admin-auth-context.js
 
 const state = {
   activeSubtab: 'history',
@@ -32,17 +34,23 @@ const state = {
   msgError: {}
 };
 
-export function render(container, property) {
+export async function render(container, property) {
   const sameSlug = currentSlug === property.slug;
   if (containerRef && containerRef !== container) unbind(containerRef);
   containerRef = container;
   currentSlug = property.slug;
   currentProperty = property;
+  caps = await resolveCapabilities();
+  const canHistory = !!caps['concierge.history'];
 
   if (!sameSlug) {
     /* New property → fresh history state. Knowledge editor manages its
-       own per-slug reset internally when we call its render() below. */
-    state.activeSubtab = 'history';
+       own per-slug reset internally when we call its render() below.
+       M6.2: an agent lands on Knowledge by default — History is
+       admin-only (concierge_conversations has no agent SELECT policy,
+       AE III v1 scope), so defaulting them onto a restricted-notice
+       tab would be a worse first impression than just skipping it. */
+    state.activeSubtab = canHistory ? 'history' : 'knowledge';
     state.loading = true;
     state.error = null;
     state.total = 0;
@@ -55,7 +63,9 @@ export function render(container, property) {
 
   bind(container);
   draw();
-  if (!sameSlug || state.list.length === 0) loadFirstPage();
+  /* Skip the network round-trip entirely when it can only ever come
+     back empty by policy — not just skip rendering it. */
+  if (canHistory && (!sameSlug || state.list.length === 0)) loadFirstPage();
 }
 
 export function teardown() {
@@ -69,6 +79,7 @@ export function teardown() {
   state.messages = {};
   state.msgLoading = {};
   state.msgError = {};
+  caps = null;
 }
 
 /* Event delegation lives on containerRef itself: one listener per mount,
@@ -248,6 +259,14 @@ function subtabsHtml() {
 }
 
 function bodyHtml() {
+  if (!caps || !caps['concierge.history']) {
+    return (
+      '<div class="co-empty">' +
+        '<div class="co-empty-title">Conversation history is admin-only</div>' +
+        '<div class="co-empty-text">concierge_conversations is not available to the agent role in this release.</div>' +
+      '</div>'
+    );
+  }
   if (state.loading && state.list.length === 0) {
     return '<div class="co-status">Loading conversations…</div>';
   }

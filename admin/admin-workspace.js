@@ -7,6 +7,7 @@
 import { esc, cap } from './admin-core.js';
 import { tabs, emptyState, badge, toast } from './admin-ui.js';
 import { loadProperty, getCached, getPropertyLabel, savePropertyStatus, savePropertyMeta, loadAgents, loadRevisions, createRevision, publishRevision, rollback } from './admin-property-store.js';
+import { resolveCapabilities } from './admin-auth-context.js';
 import * as contentEditor from './admin-content-editor.js';
 import * as assetsEditor from './admin-assets-editor.js';
 import * as experiencePreview from './admin-experience-preview.js';
@@ -49,12 +50,14 @@ let agentsLoaded = false;
 let savingMeta = false;
 let savingStatus = false;
 let pendingStatus = null;
+let caps = null; // resolved once per render() — see admin-auth-context.js
 
 export async function render(container, params) {
   containerRef = container;
   currentSlug = params || null;
   activeTab = 'overview';
   currentProperty = null;
+  caps = await resolveCapabilities();
 
   if (!currentSlug) {
     container.innerHTML = emptyState('No property selected', 'Navigate to Propiedades and select a property.');
@@ -263,8 +266,20 @@ function renderOverview() {
   return html;
 }
 
+/* M6.2: status transitions, "Is default" and the agent-reassignment
+   select are UI-conservative — deliberately hidden for the agent role
+   even though the underlying RLS UPDATE policy ("properties agent
+   updates own") does not itself restrict which columns change, only
+   that agent_id/organization_id stay pinned to the caller's own. That
+   RLS permissiveness is fine at the data layer; it does not mean the
+   UI should offer publish/archive or reassignment as agent actions.
+   Display order stays editable for everyone — it only affects sort
+   order of the agent's own listing, nothing administrative. */
 function renderManagementCard(p, status) {
   const transitions = STATUS_TRANSITIONS[status] || [];
+  const canChangeStatus = !!(caps && caps['properties.changeStatus']);
+  const canSetDefault   = !!(caps && caps['properties.setDefault']);
+  const canAssignAgent  = !!(caps && caps['properties.assignAgent']);
 
   let html = '<div class="card" style="margin-top:16px">' +
     '<div class="card-head"><h3>Property management</h3></div>' +
@@ -275,7 +290,9 @@ function renderManagementCard(p, status) {
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
       badge(status);
 
-  if (pendingStatus && CONFIRM_STATUSES.has(pendingStatus)) {
+  if (!canChangeStatus) {
+    /* No buttons at all — read-only badge above is the whole story. */
+  } else if (pendingStatus && CONFIRM_STATUSES.has(pendingStatus)) {
     const action = pendingStatus === 'published' ? 'Publish' : 'Archive';
     html += '<span style="margin-left:8px;color:var(--orange);font-size:13px">' +
       esc(action) + ' this property?' +
@@ -301,29 +318,33 @@ function renderManagementCard(p, status) {
       '<input type="number" class="ce-input" id="ws_order" min="0" step="1" ' +
         'value="' + (p.display_order ?? 0) + '" />' +
     '</div>' +
-    '<div class="ce-field" style="flex:0;min-width:140px">' +
-      '<label class="ce-label" style="display:block;margin-bottom:8px">Default property</label>' +
-      '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">' +
-        '<input type="checkbox" id="ws_default" ' + (p.is_default ? 'checked' : '') + ' /> ' +
-        'Is default' +
-      '</label>' +
-    '</div>' +
+    (canSetDefault
+      ? '<div class="ce-field" style="flex:0;min-width:140px">' +
+          '<label class="ce-label" style="display:block;margin-bottom:8px">Default property</label>' +
+          '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">' +
+            '<input type="checkbox" id="ws_default" ' + (p.is_default ? 'checked' : '') + ' /> ' +
+            'Is default' +
+          '</label>' +
+        '</div>'
+      : '') +
   '</div>';
 
-  const agentOpts = agents.map(function(a) {
-    const sel = a.id === p.agent_id ? ' selected' : '';
-    return '<option value="' + esc(a.id) + '"' + sel + '>' +
-      esc(a.name) + (a.agency ? ' (' + esc(a.agency) + ')' : '') +
-    '</option>';
-  }).join('');
+  if (canAssignAgent) {
+    const agentOpts = agents.map(function(a) {
+      const sel = a.id === p.agent_id ? ' selected' : '';
+      return '<option value="' + esc(a.id) + '"' + sel + '>' +
+        esc(a.name) + (a.agency ? ' (' + esc(a.agency) + ')' : '') +
+      '</option>';
+    }).join('');
 
-  html += '<div class="ce-field">' +
-    '<label class="ce-label" for="ws_agent">Agent</label>' +
-    '<select class="ce-input" id="ws_agent">' +
-      '<option value=""' + (!p.agent_id ? ' selected' : '') + '>— None —</option>' +
-      agentOpts +
-    '</select>' +
-  '</div>';
+    html += '<div class="ce-field">' +
+      '<label class="ce-label" for="ws_agent">Agent</label>' +
+      '<select class="ce-input" id="ws_agent">' +
+        '<option value=""' + (!p.agent_id ? ' selected' : '') + '>— None —</option>' +
+        agentOpts +
+      '</select>' +
+    '</div>';
+  }
 
   html += '<div style="margin-top:12px">' +
     '<button class="btn btn-primary" onclick="__wsSaveMeta()" ' +
@@ -349,6 +370,7 @@ function statusActionLabel(current, target) {
 
 async function handleStatusChange(target) {
   if (savingStatus || !currentSlug) return;
+  if (!caps || !caps['properties.changeStatus']) return; // defense in depth — button isn't rendered either
 
   if (CONFIRM_STATUSES.has(target)) {
     pendingStatus = target;
@@ -400,21 +422,34 @@ async function handleSaveMeta() {
   if (savingMeta || !currentSlug) return;
 
   const displayOrder = parseInt(document.getElementById('ws_order')?.value, 10);
-  const isDefault = document.getElementById('ws_default')?.checked || false;
-  const agentId = document.getElementById('ws_agent')?.value || null;
+  const patch = { display_order: isNaN(displayOrder) ? 0 : displayOrder };
+
+  /* M6.2: only read+send a field if the capability that governs it is
+     actually granted — NOT "read the element if present, else default
+     to false/null". The role-gated card above may not render
+     #ws_default / #ws_agent at all for the agent role; querying a
+     missing checkbox's .checked already safely yields undefined, but
+     silently defaulting that to `false`/`null` here would have
+     force-cleared is_default / agent_id on every single save an agent
+     makes — a real correctness bug that has nothing to do with RLS
+     (RLS would have accepted that destructive write, per the same
+     column-permissiveness noted in renderManagementCard()). Omitting
+     the key entirely is what savePropertyMeta()'s own contract expects
+     for "leave this field alone" (it only patches keys that are
+     `!== undefined`). */
+  if (caps && caps['properties.setDefault']) {
+    patch.is_default = document.getElementById('ws_default')?.checked || false;
+  }
+  if (caps && caps['properties.assignAgent']) {
+    patch.agent_id = document.getElementById('ws_agent')?.value || null;
+  }
 
   savingMeta = true;
   draw();
 
   try {
-    await savePropertyMeta(currentSlug, {
-      display_order: isNaN(displayOrder) ? 0 : displayOrder,
-      is_default: isDefault,
-      agent_id: agentId
-    });
-    currentProperty.display_order = isNaN(displayOrder) ? 0 : displayOrder;
-    currentProperty.is_default = isDefault;
-    currentProperty.agent_id = agentId;
+    await savePropertyMeta(currentSlug, patch);
+    Object.assign(currentProperty, patch);
     toast('Metadata saved', 'success');
   } catch (e) {
     toast('Save failed: ' + e.message, 'error');
@@ -722,4 +757,5 @@ export function teardown() {
   revisionsError = null;
   revisionsLoading = false;
   creatingRevision = false;
+  caps = null;
 }

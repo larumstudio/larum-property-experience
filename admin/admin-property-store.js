@@ -591,6 +591,30 @@ export async function updateAgent(id, patch) {
   if (error) throw new Error(error.message);
 }
 
+/* ── Invite (M6.2) ────────────────────────────────────────────────
+   Calls the server-side endpoint that owns the privileged Supabase
+   Admin API credential — this function never sees that credential,
+   only the caller's own already-issued session token, which the
+   endpoint re-verifies independently server-side (it does not trust
+   this call's identity claims). Safe to call again on an
+   already-invited agent: the endpoint is idempotent and reports what
+   actually happened via `outcome`. */
+export async function inviteAgent(agentId) {
+  const { data: sessionData } = await window.supabaseClient.auth.getSession();
+  const token = sessionData && sessionData.session && sessionData.session.access_token;
+  if (!token) throw new Error('Not authenticated');
+
+  const res = await fetch('/api/admin-invite-agent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ agentId })
+  });
+
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || ('invite_failed_' + res.status));
+  return body;
+}
+
 /* Read-only — properties.agent_id is the only relationship this reads;
    no new column, no new table (Admin Hardening Pass Phase C). */
 export async function loadPropertiesByAgent(agentId) {

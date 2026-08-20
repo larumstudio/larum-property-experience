@@ -9,6 +9,7 @@
 import { esc, fullDate } from './admin-core.js';
 import { badge, toast, emptyState } from './admin-ui.js';
 import { loadAudits, createAudit, updateAudit, deleteAudit } from './admin-property-store.js';
+import { resolveCapabilities } from './admin-auth-context.js';
 
 const STATUSES = ['requested', 'in_progress', 'completed', 'cancelled'];
 
@@ -16,6 +17,7 @@ let containerRef = null;
 let clickHandler = null;
 let currentSlug = null;
 let currentProperty = null;
+let caps = null; // resolved once per render() — see admin-auth-context.js
 
 const state = {
   audits: [],
@@ -31,12 +33,13 @@ const state = {
 
 /* ── Module contract ─────────────────────────────────────── */
 
-export function render(container, property) {
+export async function render(container, property) {
   const sameSlug = currentSlug === property.slug;
   if (containerRef && containerRef !== container) unbind(containerRef);
   containerRef = container;
   currentSlug = property.slug;
   currentProperty = property;
+  caps = await resolveCapabilities();
 
   if (!sameSlug) {
     state.audits = [];
@@ -69,6 +72,7 @@ export function teardown() {
   state.creating = false;
   state.createDraft = null;
   state.saving = false;
+  caps = null;
 }
 
 /* ── Event delegation ────────────────────────────────────── */
@@ -135,6 +139,7 @@ function toggleExpand(id) {
 }
 
 function startEdit(id) {
+  if (!caps || !caps['audits.write']) return; // defense in depth — RLS has no agent write policy on audits either
   const audit = state.audits.find(a => a.id === id);
   if (!audit) return;
   state.editingId = id;
@@ -188,6 +193,7 @@ async function saveEdit() {
 }
 
 async function confirmDelete(id) {
+  if (!caps || !caps['audits.write']) return;
   if (!confirm('Delete this audit permanently?')) return;
   try {
     await deleteAudit(id);
@@ -202,6 +208,7 @@ async function confirmDelete(id) {
 }
 
 function startCreate() {
+  if (!caps || !caps['audits.write']) return;
   state.creating = true;
   state.createDraft = {
     status: 'requested',
@@ -480,10 +487,14 @@ function scoreHtml() {
 }
 
 function auditListHtml() {
+  const canWrite = !!(caps && caps['audits.write']);
+
   let html = '<div class="au-history-section">';
   html += '<div class="au-history-head">';
   html += '<h3>Audit history</h3>';
-  html += '<button class="btn btn-outline" data-au-action="new"' + (state.creating ? ' disabled' : '') + '>+ New audit</button>';
+  if (canWrite) {
+    html += '<button class="btn btn-outline" data-au-action="new"' + (state.creating ? ' disabled' : '') + '>+ New audit</button>';
+  }
   html += '</div>';
 
   if (state.creating) html += createFormHtml();
@@ -548,10 +559,12 @@ function expandedAuditHtml(audit) {
     html += '</div>';
   }
 
-  html += '<div class="au-actions">';
-  html += '<button class="au-btn" data-au-action="edit" data-au-id="' + esc(audit.id) + '">Edit</button>';
-  html += '<button class="au-btn au-btn-danger" data-au-action="delete" data-au-id="' + esc(audit.id) + '">Delete</button>';
-  html += '</div>';
+  if (caps && caps['audits.write']) {
+    html += '<div class="au-actions">';
+    html += '<button class="au-btn" data-au-action="edit" data-au-id="' + esc(audit.id) + '">Edit</button>';
+    html += '<button class="au-btn au-btn-danger" data-au-action="delete" data-au-id="' + esc(audit.id) + '">Delete</button>';
+    html += '</div>';
+  }
   html += '</div>';
   return html;
 }

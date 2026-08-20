@@ -10,7 +10,12 @@ export const state = {
   events: [],
   view: 'dashboard',
   current: null,
-  user: null
+  user: null,
+  /* M6.1: 'admin' | 'agent' | null (not yet resolved). Populated lazily
+     by getRole() below — nothing eager at boot, since most views never
+     need it. Every real user today is 'admin' (the only membership row
+     that exists); 'agent' only becomes reachable once M6.2 ships invite. */
+  role: null
 };
 
 /* ── Auth ─────────────────────────────────────────────────── */
@@ -40,7 +45,40 @@ export async function signOut() {
   state.sessions = [];
   state.events = [];
   state.user = null;
+  state.role = null;
   showGate();
+}
+
+/* M6.1: minimal role read, NOT the full M6.2 capability layer. Reads
+   the caller's own membership row — already permitted by the
+   `memberships self read` RLS policy (Migration 006, live in
+   production), no new SQL, no RLS change. Exists only so a view can
+   tell "the current user cannot see sessions/analytics_events" apart
+   from "there is genuinely no data yet", instead of rendering a
+   misleading empty chart. Memoized in state.role once resolved.
+
+   Fails OPEN to 'admin' on any query error or missing row: this is a
+   display-only gate, not a security boundary (RLS already enforces
+   the real one — if a caller cannot read sessions, the rows come back
+   empty regardless of what this function returns). Failing open here
+   only protects against ever hiding the current single admin's own
+   dashboard behind a transient network hiccup; it grants no additional
+   data access either way. */
+export async function getRole() {
+  if (state.role) return state.role;
+  if (!state.user) return null;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('memberships')
+      .select('role')
+      .limit(1)
+      .maybeSingle();
+    state.role = (!error && data && data.role) ? data.role : 'admin';
+  } catch (e) {
+    state.role = 'admin';
+  }
+  return state.role;
 }
 
 /* ── Data ─────────────────────────────────────────────────── */

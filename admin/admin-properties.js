@@ -11,6 +11,7 @@ import { esc, cap } from './admin-core.js';
 import { badge, emptyState, toast } from './admin-ui.js';
 import { loadIndex, getIndex, getPropertyLabel, createProperty, loadAgents } from './admin-property-store.js';
 import { navigate } from './admin-router.js';
+import { resolveCapabilities } from './admin-auth-context.js';
 
 export const title = 'Propiedades';
 
@@ -18,6 +19,7 @@ let containerRef = null;
 let showingCreate = false;
 let creating = false;
 let agents = [];
+let caps = null; // resolved once per render() — see admin-auth-context.js
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PROPERTY_TYPES = ['resale', 'new'];
@@ -26,6 +28,7 @@ export async function render(container) {
   containerRef = container;
   showingCreate = false;
   creating = false;
+  caps = await resolveCapabilities();
 
   container.innerHTML =
     '<div class="page-header">' +
@@ -47,20 +50,24 @@ function draw() {
   if (!containerRef) return;
   const rows = getIndex();
 
+  const canCreate = !!(caps && caps['properties.create']);
+
   let html = '<div class="page-header">' +
     '<h2>Propiedades</h2>' +
     '<div style="display:flex;gap:8px;align-items:center">' +
       '<span class="mono">' + rows.length + ' properties</span>' +
-      '<button class="btn btn-primary" onclick="__propCreateToggle()">+ Create property</button>' +
+      (canCreate ? '<button class="btn btn-primary" onclick="__propCreateToggle()">+ Create property</button>' : '') +
     '</div>' +
   '</div>';
 
-  if (showingCreate) {
+  if (showingCreate && canCreate) {
     html += renderCreateForm();
   }
 
-  if (!rows.length && !showingCreate) {
-    html += emptyState('No properties yet', 'Click "+ Create property" to add your first property.');
+  if (!rows.length && !(showingCreate && canCreate)) {
+    html += emptyState('No properties yet', canCreate
+      ? 'Click "+ Create property" to add your first property.'
+      : 'No properties are assigned to you yet.');
   } else if (rows.length) {
     html += '<div class="property-grid">' + rows.map(renderCard).join('') + '</div>';
   }
@@ -75,6 +82,7 @@ function draw() {
 }
 
 function toggleCreate() {
+  if (!caps || !caps['properties.create']) return; // defense in depth — RLS has no agent INSERT policy either
   showingCreate = !showingCreate;
   if (showingCreate && !agents.length) {
     loadAgents().then(a => { agents = a; draw(); }).catch(() => {});
@@ -248,4 +256,5 @@ export function teardown() {
   containerRef = null;
   showingCreate = false;
   creating = false;
+  caps = null;
 }
