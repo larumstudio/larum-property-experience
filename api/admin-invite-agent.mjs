@@ -26,6 +26,14 @@ const SB_URL = process.env.SUPABASE_URL || 'https://mtyemgfovvmjrsxevcgh.supabas
 const SB_ANON = process.env.SUPABASE_ANON_KEY || null;
 const SB_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY || null;
 
+/* Without this, Supabase falls back to the project's default Site URL
+   (index.html, the public visitor experience) — which silently
+   consumes and discards the invite session, since it has no code path
+   for it. Must also be present in Supabase's Redirect URLs allowlist
+   (Dashboard → Authentication → URL Configuration) or Supabase ignores
+   it and falls back to the same default. */
+const INVITE_REDIRECT_TO = 'https://larum-property-experience.vercel.app/admin.html';
+
 function anonHeaders(extra) {
   return Object.assign({ apikey: SB_ANON, 'Content-Type': 'application/json' }, extra || {});
 }
@@ -132,7 +140,7 @@ async function inviteAuthUser(email) {
   const r = await fetch(`${SB_URL}/auth/v1/invite`, {
     method: 'POST',
     headers: serviceHeaders(),
-    body: JSON.stringify({ email })
+    body: JSON.stringify({ email, redirect_to: INVITE_REDIRECT_TO })
   });
   const body = await r.json().catch(() => ({}));
   if (r.ok) return { ok: true, user: body };

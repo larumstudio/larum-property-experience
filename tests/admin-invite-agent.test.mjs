@@ -202,6 +202,24 @@ await test('4: crea Auth user exactamente una vez, con el email correcto', async
   } finally { mock.restore(); }
 });
 
+await test('4b: /auth/v1/invite recibe redirect_to apuntando a admin.html (fix M6.2 — redirect)', async () => {
+  const mock = installMockFetch({
+    callerUser: { id: 'admin-1' },
+    adminMembershipRows: [{ id: 'm1' }],
+    agentRows: [{ id: 'agent-3b', email: 'redirect@example.invalid', organization_id: 'org-A', auth_user_id: null, status: 'active', name: 'Redirect Agent' }]
+  });
+  try {
+    await handler(fakeReq({ body: { agentId: 'agent-3b' } }), fakeRes());
+    const inviteCalls = callsMatching(mock.calls, '/auth/v1/invite', 'POST');
+    assert.equal(inviteCalls.length, 1);
+    assert.equal(
+      inviteCalls[0].body.redirect_to,
+      'https://larum-property-experience.vercel.app/admin.html',
+      'invite call must carry an explicit redirect_to, or Supabase falls back to the public Site URL'
+    );
+  } finally { mock.restore(); }
+});
+
 await test('5: vincula agents.auth_user_id con el id devuelto por Auth', async () => {
   const mock = installMockFetch({
     callerUser: { id: 'admin-1' },
