@@ -43,12 +43,22 @@ const COPY_KEYS = [
 ];
 
 export function render(container, property) {
+  /* admin-workspace.js re-invokes render() on every tab switch, not
+     just on navigating to a different property — without this guard,
+     switching to another Workspace tab and back silently discarded
+     any unsaved edit (M6.4 finding). knowledgeRef/assetsRef are
+     read-only cross-refs, not part of the editable draft, so they
+     always refresh regardless — the other editors' own saves should
+     be visible immediately here. */
+  const sameSlug = slug === property.slug && draft;
   containerRef = container;
-  slug = property.slug;
-  draft = JSON.parse(JSON.stringify(property.content || {}));
   knowledgeRef = property.knowledge || {};
   assetsRef = property.assets || {};
-  openSections = { identity: true };
+  if (!sameSlug) {
+    slug = property.slug;
+    draft = JSON.parse(JSON.stringify(property.content || {}));
+    openSections = { identity: true };
+  }
   draw();
 }
 

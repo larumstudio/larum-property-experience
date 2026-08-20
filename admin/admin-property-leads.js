@@ -17,6 +17,7 @@ import {
 let containerRef = null;
 let clickHandler = null;
 let currentProperty = null;
+let openLeadNotesBaseline = null; // notes value when the open lead's drawer was drawn — M6.4 dirty-check
 
 /* ── Module contract ─────────────────────────────────────── */
 
@@ -39,6 +40,7 @@ export function teardown() {
   if (containerRef) unbind(containerRef);
   containerRef = null;
   currentProperty = null;
+  openLeadNotesBaseline = null;
 }
 
 /* ── Event delegation ────────────────────────────────────── */
@@ -54,7 +56,7 @@ function bind(container) {
       const idx = parseInt(el.getAttribute('data-pl-idx'), 10);
       openLead(idx);
     } else if (action === 'close') {
-      closeDrawer();
+      closeDrawerGuarded();
     } else if (action === 'contact') {
       const idx = parseInt(el.getAttribute('data-pl-idx'), 10);
       markContacted(idx);
@@ -136,6 +138,7 @@ function openLead(idx) {
   const leads = getLeads();
   const l = leads[idx];
   if (!l) return;
+  openLeadNotesBaseline = l.notes || '';
 
   const s = sessionForLead(l);
   const events = eventsFor(l.session_id);
@@ -181,6 +184,19 @@ function openLead(idx) {
       '</div>' +
     '</div>'
   );
+}
+
+/* M6.4 finding: closing the drawer without pressing Save/Mark as
+   contacted silently discarded whatever was typed in Advisor notes —
+   a normal "jot a quick note, then close" flow lost data with no
+   warning. Guards only the explicit close click, matching the exact
+   finding; full-navigation-away is a separate, lower-severity gap
+   (no beforeunload anywhere in the app) not in this scope. */
+function closeDrawerGuarded() {
+  const ta = document.getElementById('leadNotes');
+  const current = ta ? ta.value : openLeadNotesBaseline;
+  if (current !== openLeadNotesBaseline && !window.confirm('Discard unsaved notes for this lead?')) return;
+  closeDrawer();
 }
 
 /* ── Actions ─────────────────────────────────────────────── */

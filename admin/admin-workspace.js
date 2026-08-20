@@ -296,8 +296,23 @@ function renderManagementCard(p, status) {
     const action = pendingStatus === 'published' ? 'Publish' : 'Archive';
     html += '<span style="margin-left:8px;color:var(--orange);font-size:13px">' +
       esc(action) + ' this property?' +
-    '</span>' +
-    '<button class="btn btn-primary" onclick="__wsConfirmStatus()" ' +
+    '</span>';
+
+    /* M6.4 finding: publishing ran zero readiness validation and the
+       confirm step never surfaced blocker state, even though the
+       Readiness tab's own engine already computes it. This warns,
+       does not block — the admin keeps the final call, same as the
+       Readiness tab itself has always been informational only. */
+    if (pendingStatus === 'published') {
+      const readiness = getReadinessSummary(currentProperty);
+      if (readiness && readiness.blockers > 0) {
+        html += '<div class="mono" style="width:100%;margin-top:6px;font-size:11px;color:var(--red)">' +
+          '⚠ ' + readiness.blockers + ' readiness blocker' + (readiness.blockers !== 1 ? 's' : '') +
+          ' unresolved — see the Readiness tab before publishing.</div>';
+      }
+    }
+
+    html += '<button class="btn btn-primary" onclick="__wsConfirmStatus()" ' +
       (savingStatus ? 'disabled' : '') + '>' +
       (savingStatus ? 'Saving...' : 'Confirm ' + action.toLowerCase()) +
     '</button>' +
@@ -355,6 +370,24 @@ function renderManagementCard(p, status) {
 
   html += '</div></div>';
   return html;
+}
+
+/* Same LarumReadiness.readiness() call admin-readiness-panel.js makes
+   — reused, not reimplemented. Never throws: a missing global or a
+   computation error just means no summary is shown, the same fail-
+   silent behavior the Readiness tab itself falls back to. */
+function getReadinessSummary(property) {
+  if (!window.LarumReadiness || !property) return null;
+  try {
+    const r = window.LarumReadiness.readiness(property.slug, {
+      content: property.content || null,
+      knowledge: property.knowledge || null,
+      assets: property.assets || null
+    });
+    return { blockers: r.blockers.length, warnings: r.warnings.length };
+  } catch (e) {
+    return null;
+  }
 }
 
 function statusActionLabel(current, target) {

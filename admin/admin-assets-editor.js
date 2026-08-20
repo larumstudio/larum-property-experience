@@ -28,14 +28,24 @@ const SECTIONS = [
 ];
 
 export function render(container, property) {
+  /* Same tab-switch guard as admin-knowledge-editor.js's render() —
+     admin-workspace.js re-invokes render() on every tab switch, not
+     just on navigating to a different property; without this, an
+     unsaved edit here was silently discarded switching tabs and back
+     (M6.4 finding). referenceSpaces is read-only, derived from
+     content, and always recomputed regardless of sameSlug — it should
+     reflect the Content tab's latest saved state even mid-edit here. */
+  const sameSlug = slug === property.slug && draft;
   containerRef = container;
-  slug = property.slug;
-  draft = JSON.parse(JSON.stringify(property.assets || {}));
   const scenes = property?.content?.sceneSpaces || [];
   referenceSpaces = Array.from(new Set(
     scenes.flatMap(s => Array.isArray(s?.[1]) ? s[1] : [])
   ));
-  openSections = { meta: true };
+  if (!sameSlug) {
+    slug = property.slug;
+    draft = JSON.parse(JSON.stringify(property.assets || {}));
+    openSections = { meta: true };
+  }
   draw();
 }
 
@@ -289,6 +299,14 @@ function addSpace(name) {
 
 function removeSpace(name) {
   if (!draft.spaces) return;
+  /* M6.4 finding: this deleted image + provenance with a single click
+     and no confirmation, unlike every equivalent remove action in the
+     Knowledge editor. Same confirm() style as that editor's own
+     removeSpace() for consistency. */
+  const refMsg = referenceSpaces.includes(name)
+    ? '\n\nThis space is referenced by content.sceneSpaces — removing its media here does not remove that reference.'
+    : '';
+  if (!window.confirm('Remove media for space "' + name + '"?' + refMsg)) return;
   delete draft.spaces[name];
   draw();
 }

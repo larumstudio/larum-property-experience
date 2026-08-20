@@ -176,7 +176,13 @@ export async function updateLead(lead, patch) {
   const { error } = await supabaseClient.from('leads').update(patch).eq('id', lead.id);
 
   if (error) {
-    if (note) note.textContent = '';
+    /* M6.4 finding: clearing #savedNote to blank on failure looked
+       identical to "nothing happened yet" right next to the button the
+       operator just clicked — the real error only showed in the
+       page-level #banner, easy to miss from inside a property's
+       Leads tab. Now it fails visibly right where the click happened,
+       in addition to (not instead of) the banner. */
+    if (note) { note.textContent = 'Error — not saved'; note.classList.add('error'); }
     const b = document.getElementById('banner');
     if (b) {
       b.innerHTML = '<strong>The lead could not be updated.</strong> ' + esc(error.message) +
@@ -188,6 +194,7 @@ export async function updateLead(lead, patch) {
     return false;
   }
 
+  if (note) note.classList.remove('error');
   Object.assign(lead, patch);
   if (note) note.textContent = 'Saved';
   return true;

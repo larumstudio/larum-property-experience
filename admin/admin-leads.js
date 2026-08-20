@@ -110,9 +110,22 @@ function openLead(i) {
     '</div>'
   );
 
-  window.__closeDrawer = closeDrawer;
+  window.__closeDrawer = () => closeDrawerGuarded(l.notes || '');
   window.__markContacted = () => markContacted(l, i);
   window.__reopenLead = () => reopenLead(l, i);
+}
+
+/* M6.4 finding: closing the drawer without pressing Save/Mark as
+   contacted silently discarded whatever was typed in Advisor notes —
+   a normal "jot a quick note, then close" flow lost data with no
+   warning. Guards only the explicit close click, matching the exact
+   finding; full-navigation-away is a separate, lower-severity gap
+   (no beforeunload anywhere in the app) not in this scope. */
+function closeDrawerGuarded(baselineNotes) {
+  const ta = document.getElementById('leadNotes');
+  const current = ta ? ta.value : baselineNotes;
+  if (current !== baselineNotes && !window.confirm('Discard unsaved notes for this lead?')) return;
+  closeDrawer();
 }
 
 async function markContacted(lead, idx) {
