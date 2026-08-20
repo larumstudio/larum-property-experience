@@ -166,16 +166,40 @@ async function findAuthUserByEmail(email) {
 }
 
 /* agents.auth_user_id is set the moment Auth creates the user — at
-   INVITE time, not at ACCEPT time. An agent whose invite link never
-   got clicked (or, as happened here, redirected to the wrong page
-   before the redirect_to fix) has auth_user_id set but never
-   confirmed. Without this check, "already_linked" would silently
-   swallow every resend attempt for exactly that agent. */
+   INVITE time, not at ACCEPT time. Two distinct stuck states exist
+   downstream of that, and they need two different remedies:
+     - email_confirmed_at is null: the invite link was never opened
+       at all. A plain re-invite works.
+     - email_confirmed_at is set but last_sign_in_at is null: the
+       link WAS opened and Supabase verified it (that verification is
+       what sets email_confirmed_at, server-side, before the client
+       redirect even happens) — but the resulting session never
+       turned into an actual sign-in, e.g. because it landed on the
+       wrong page (pre redirect_to-fix) and got silently discarded.
+       Supabase refuses a second invite for an already-confirmed
+       user, so this needs a password-recovery link instead — the
+       same mechanism a "forgot password" form would trigger. */
 async function loadAuthUserById(userId) {
   const url = `${SB_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`;
   const r = await fetch(url, { headers: serviceHeaders() });
   if (!r.ok) return null;
   return r.json().catch(() => null);
+}
+
+/* Same endpoint a "forgot password" form calls — the correct way to
+   get a confirmed-but-passwordless account a fresh login link, since
+   Supabase's /invite refuses accounts it already considers
+   confirmed. */
+async function sendPasswordRecovery(email) {
+  const r = await fetch(`${SB_URL}/auth/v1/recover`, {
+    method: 'POST',
+    headers: serviceHeaders(),
+    body: JSON.stringify({ email, redirect_to: INVITE_REDIRECT_TO })
+  });
+  if (r.ok) return { ok: true };
+  const body = await r.json().catch(() => ({}));
+  const msg = (body && (body.msg || body.message || body.error_description)) || `recover_failed_${r.status}`;
+  return { ok: false, message: msg };
 }
 
 /* ── Handler ──────────────────────────────────────────────────────── */
@@ -251,11 +275,12 @@ export default async function handler(req, res) {
       }
 
       const isConfirmed = !!(authUser.email_confirmed_at || authUser.confirmed_at);
-      if (isConfirmed) {
+      const hasSignedIn = !!authUser.last_sign_in_at;
+
+      if (isConfirmed && hasSignedIn) {
         outcome = 'already_linked';
-      } else {
-        /* Never confirmed — the earlier invite is effectively dead
-           (redirected wrong, expired, or simply never opened).
+      } else if (!isConfirmed) {
+        /* Link never opened at all — a plain re-invite works and
            Supabase resends against the SAME unconfirmed user rather
            than erroring, so this never creates a second Auth user. */
         const invite = await inviteAuthUser(agent.email);
@@ -267,6 +292,18 @@ export default async function handler(req, res) {
           await linkAgentAuthUser(agentId, userId);
         }
         outcome = 'resent';
+      } else {
+        /* Confirmed but never signed in — the earlier link WAS
+           opened and verified, but its session never turned into an
+           actual login (pre redirect_to-fix, it landed on the wrong
+           page and got silently discarded). Supabase would refuse a
+           second /invite for an already-confirmed user, so send a
+           recovery link instead. */
+        const recovery = await sendPasswordRecovery(agent.email);
+        if (!recovery.ok) {
+          return res.status(502).json({ error: 'recovery_failed', detail: recovery.message });
+        }
+        outcome = 'recovery_sent';
       }
     }
 
