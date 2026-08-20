@@ -520,7 +520,7 @@ export async function loadAgents() {
    regardless of status, and every column the "agents" table exposes
    (migration 001 §2) that a real agent record needs. */
 
-const AGENT_COLUMNS = 'id, name, slug, email, phone, agency, role, photo_url, bio, status, organization_id, created_at, updated_at';
+const AGENT_COLUMNS = 'id, name, slug, email, phone, agency, role, photo_url, bio, status, organization_id, auth_user_id, created_at, updated_at';
 
 export async function loadAllAgents() {
   const { data, error } = await window.supabaseClient

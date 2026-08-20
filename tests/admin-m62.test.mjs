@@ -150,6 +150,75 @@ await test('inviteAgent() calls the endpoint via fetch, not the Admin API direct
 });
 
 /* ═══════════════════════════════════════════════════════════════
+   GROUP 3b — Access card data correctness (regression guard)
+   Found during the M6.2 production smoke test: AGENT_COLUMNS never
+   selected auth_user_id, so loadAgent()/loadAllAgents() always
+   returned it as undefined — the Access card showed "No account yet"
+   even for an agent whose invite had genuinely succeeded (verified
+   directly against the database at the time; the backend/endpoint
+   were correct, only this column list was wrong). Two layers on
+   purpose: the source check alone would not have caught this bug
+   (AGENT_COLUMNS is a plain string — nothing forces its content to
+   match what the UI actually needs), so the functional mock test
+   below is the one that actually protects the Access card going
+   forward.
+   ═══════════════════════════════════════════════════════════════ */
+console.log('\n[3b] Access card: loadAgent()/loadAllAgents() must select auth_user_id');
+
+await test('AGENT_COLUMNS source includes auth_user_id', async () => {
+  const storeSrc = readFile('admin/admin-property-store.js');
+  const m = storeSrc.match(/const AGENT_COLUMNS = '([^']+)'/);
+  assert.ok(m, 'AGENT_COLUMNS constant not found');
+  const cols = m[1].split(',').map(c => c.trim());
+  assert.ok(cols.includes('auth_user_id'), 'AGENT_COLUMNS is missing auth_user_id');
+});
+
+await test('loadAgent() actually requests auth_user_id from Supabase (functional, not just source text)', async () => {
+  const origClient = globalThis.window.supabaseClient;
+  let requestedSelect = null;
+  globalThis.window.supabaseClient = {
+    from(table) {
+      const chain = {
+        select: (cols) => { requestedSelect = cols; return chain; },
+        eq: () => chain,
+        maybeSingle: () => Promise.resolve({ data: { id: 'a1', auth_user_id: 'u1' }, error: null })
+      };
+      return chain;
+    }
+  };
+  try {
+    const agent = await propertyStore.loadAgent('a1');
+    assert.ok(requestedSelect && requestedSelect.includes('auth_user_id'), `select() was called without auth_user_id: "${requestedSelect}"`);
+    assert.equal(agent.auth_user_id, 'u1', 'loadAgent() must return the auth_user_id it fetched');
+  } finally {
+    globalThis.window.supabaseClient = origClient;
+  }
+});
+
+await test('loadAllAgents() actually requests auth_user_id from Supabase (functional, not just source text)', async () => {
+  const origClient = globalThis.window.supabaseClient;
+  let requestedSelect = null;
+  globalThis.window.supabaseClient = {
+    from(table) {
+      const chain = {
+        select: (cols) => { requestedSelect = cols; return chain; },
+        order: () => chain,
+        then: (resolve) => Promise.resolve({ data: [{ id: 'a1', auth_user_id: 'u1' }, { id: 'a2', auth_user_id: null }], error: null }).then(resolve)
+      };
+      return chain;
+    }
+  };
+  try {
+    const agents = await propertyStore.loadAllAgents();
+    assert.ok(requestedSelect && requestedSelect.includes('auth_user_id'), `select() was called without auth_user_id: "${requestedSelect}"`);
+    assert.equal(agents.find(a => a.id === 'a1').auth_user_id, 'u1');
+    assert.equal(agents.find(a => a.id === 'a2').auth_user_id, null);
+  } finally {
+    globalThis.window.supabaseClient = origClient;
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
    GROUP 4 — [10] Agent UI: gated, not just failing silently
    ═══════════════════════════════════════════════════════════════ */
 console.log('\n[10] Agent UI has no admin-only controls');
