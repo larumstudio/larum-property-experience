@@ -310,6 +310,19 @@ function renderManagementCard(p, status) {
           '⚠ ' + readiness.blockers + ' readiness blocker' + (readiness.blockers !== 1 ? 's' : '') +
           ' unresolved — see the Readiness tab before publishing.</div>';
       }
+
+      /* M6.5d: Larum Score is a separate signal from Readiness (content
+         richness vs technical safety, see the notes in
+         admin-readiness-panel.js / admin-audit-panel.js) — surfaced
+         here too, distinctly labeled, never blocking. A low score with
+         zero blockers is a normal, valid state (thin but safe content);
+         this is advisory only, same non-blocking posture as the
+         readiness warning above. */
+      const larumScore = auditPanel.computeScore(currentProperty).overall;
+      if (larumScore < 50) {
+        html += '<div class="mono" style="width:100%;margin-top:6px;font-size:11px;color:var(--muted)">' +
+          'ⓘ Larum Score is ' + larumScore + '/100 (content richness, not a publish gate) — see the Audit tab.</div>';
+      }
     }
 
     html += '<button class="btn btn-primary" onclick="__wsConfirmStatus()" ' +

@@ -278,7 +278,7 @@ function readCreateInputs() {
 
 /* ── Larum Score computation ─────────────────────────────── */
 
-function computeScore(property) {
+export function computeScore(property) {
   const c = property.content || {};
   const k = property.knowledge || {};
   const a = property.assets || {};
@@ -482,8 +482,48 @@ function scoreHtml() {
     html += '</div>';
   }
 
-  html += '</div></div></div>';
+  html += '</div></div>';
+  html += renderRelationNote();
+  html += '</div>';
   return html;
+}
+
+/* M6.5d: reciprocal of the note in admin-readiness-panel.js — Larum
+   Score measures content richness (word/fact/space counts), not
+   whether the property is safe to publish. Reuses the same
+   window.LarumReadiness.readiness() call admin-workspace.js's publish
+   confirm already makes (M6.4) — read-only, no new engine, no change
+   to how either score is computed. */
+function renderRelationNote() {
+  const blockers = getReadinessBlockerCount();
+  const blockerNote = blockers === null
+    ? ''
+    : blockers > 0
+      ? ' This property currently has <strong style="color:var(--red)">' + blockers + ' readiness blocker' + (blockers !== 1 ? 's' : '') + '</strong> — technical issues, independent of this score.'
+      : ' This property currently has <strong style="color:var(--green)">0 readiness blockers</strong> — technically safe to publish, regardless of this score.';
+
+  return (
+    '<div class="card" style="margin-top:12px">' +
+      '<div style="padding:12px 16px;color:var(--muted);font-size:12px;line-height:1.5">' +
+        'Larum Score measures content richness/commercial completeness — it is not a publish gate. ' +
+        'For whether this property is technically safe to publish, see ' +
+        '<a href="#" onclick="__workspaceTab(\'readiness\');return false" style="color:var(--accent)">Readiness</a>.' +
+        blockerNote +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function getReadinessBlockerCount() {
+  if (!window.LarumReadiness || !currentProperty) return null;
+  try {
+    const r = window.LarumReadiness.readiness(currentProperty.slug, {
+      content: currentProperty.content, knowledge: currentProperty.knowledge, assets: currentProperty.assets
+    });
+    return r.blockers.length;
+  } catch (e) {
+    return null; // same silent-fallback behavior as admin-workspace.js's getReadinessSummary
+  }
 }
 
 function auditListHtml() {

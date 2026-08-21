@@ -79,9 +79,36 @@ function draw() {
   const r = currentReport;
   containerRef.innerHTML =
     renderHeader(r) +
+    renderRelationNote() +
     renderIssueGroups(r) +
     renderModules(r) +
     renderSlots(r);
+}
+
+/* M6.5d: Readiness and the Audit tab's Larum Score both look like "is
+   this property good enough" scores, but measure different things —
+   Readiness reuses the SAME validators that gate the real visitor
+   experience (blockers here mean something would actually break or
+   degrade for a visitor right now); Larum Score is a continuous
+   content-richness heuristic (word counts, fact counts, bilingual
+   coverage) with no pass/fail meaning of its own. A property can be
+   "READY" here with a low Larum Score (technically safe to publish,
+   thin content) or vice versa (rich content, one broken required
+   asset). Both are correct at the same time — this note makes that
+   explicit instead of leaving two numbers to silently contradict each
+   other. No algorithm changed on either side. */
+function renderRelationNote() {
+  return (
+    '<div class="card" style="margin-bottom:16px">' +
+      '<div style="padding:12px 16px;color:var(--muted);font-size:12px;line-height:1.5">' +
+        'Readiness checks whether this property is <strong>technically safe to publish</strong> — ' +
+        'the same validators that gate the live visitor experience. It is not a quality score. ' +
+        'For content richness/commercial completeness, see <strong>Larum Score</strong> in the ' +
+        '<a href="#" onclick="__workspaceTab(\'audit\');return false" style="color:var(--accent)">Audit tab</a> — ' +
+        'the two can disagree (e.g. READY with thin content, or NOT READY with rich content) and that is expected.' +
+      '</div>' +
+    '</div>'
+  );
 }
 
 /* ── Header ──────────────────────────────────────────────── */
