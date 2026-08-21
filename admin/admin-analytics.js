@@ -14,7 +14,7 @@
    ───────────────────────────────────────────────────────────── */
 
 import { state, filteredLeads, filteredSessions, esc, minutes, getRole } from './admin-core.js';
-import { statCard, card, barChart, interestBars, emptyState, tabs } from './admin-ui.js';
+import { statCard, card, barChart, interestBars, emptyState, tabs, truncationNotice } from './admin-ui.js';
 import * as sessionsModule from './admin-sessions.js';
 
 export const title = 'Analytics';
@@ -115,6 +115,9 @@ function drawOverview(mount) {
   const convRate = sessions.length ? Math.round((leads.length / sessions.length) * 100) + '%' : '—';
 
   mount.innerHTML =
+    truncationNotice(state.truncated.sessions, state.sessions.length, 'sessions') +
+    truncationNotice(state.truncated.events, state.events.length, 'events') +
+
     '<div class="stats-row">' +
       statCard('Sessions', sessions.length, '') +
       statCard('Avg. time', avgTime, '') +

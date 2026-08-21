@@ -8,7 +8,7 @@ import {
   timeAgo, fullDate, normaliseInterests, updateLead,
   sessionForLead, eventsFor
 } from './admin-core.js';
-import { badge, openDrawer, closeDrawer, section, chips, timeline } from './admin-ui.js';
+import { badge, openDrawer, closeDrawer, section, chips, timeline, truncationNotice } from './admin-ui.js';
 
 export const title = 'Leads';
 
@@ -23,6 +23,7 @@ export function render(container) {
       '<h2>Leads</h2>' +
       '<span class="mono">' + leads.length + ' rows</span>' +
     '</div>' +
+    truncationNotice(state.truncated.leads, state.leads.length, 'leads') +
     renderTable(leads);
 
   window.__openLead = openLead;

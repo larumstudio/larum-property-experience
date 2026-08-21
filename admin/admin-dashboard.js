@@ -5,7 +5,7 @@
    ───────────────────────────────────────────────────────────── */
 
 import { state, filteredLeads, filteredSessions, esc, minutes, normaliseInterests } from './admin-core.js';
-import { statCard, card, barChart, interestBars } from './admin-ui.js';
+import { statCard, card, barChart, interestBars, truncationNotice } from './admin-ui.js';
 
 export const title = 'Dashboard';
 
@@ -25,6 +25,9 @@ export function render(container) {
       '<h2>Dashboard</h2>' +
       '<p class="page-subtitle">Resumen de actividad de Larum.</p>' +
     '</div>' +
+
+    truncationNotice(state.truncated.leads, state.leads.length, 'leads') +
+    truncationNotice(state.truncated.sessions, state.sessions.length, 'sessions') +
 
     '<div class="stats-grid">' +
       statCard('Visits', sessions.length || '0', 'Sessions tracked') +

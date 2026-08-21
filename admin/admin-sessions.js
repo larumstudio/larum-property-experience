@@ -7,7 +7,7 @@ import {
   state, filteredSessions, esc, cap, minutes,
   timeAgo, fullDate, normaliseInterests, leadForSession, eventsFor
 } from './admin-core.js';
-import { badge, openDrawer, closeDrawer, section, chips, timeline } from './admin-ui.js';
+import { badge, openDrawer, closeDrawer, section, chips, timeline, truncationNotice } from './admin-ui.js';
 
 export const title = 'Visits';
 
@@ -22,6 +22,7 @@ export function render(container) {
       '<h2>Visits</h2>' +
       '<span class="mono">' + sessions.length + ' rows</span>' +
     '</div>' +
+    truncationNotice(state.truncated.sessions, state.sessions.length, 'sessions') +
     renderTable(sessions);
 
   window.__openSession = openSession;

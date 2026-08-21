@@ -248,6 +248,26 @@ export function emptyState(title, text) {
   );
 }
 
+/* ── Truncation notice (M6.5b) ────────────────────────────── */
+
+/* `truncated` is state.truncated.{leads,sessions,events} from
+   admin-core.js's load() — passed in rather than read from `state`
+   directly here, keeping this module's pure render-given-data
+   contract (same as every other builder in this file). `count` is the
+   number of rows actually held (state.leads.length etc — always
+   equal to the cap when truncated, since that's what got returned).
+   Never suggests raising the cap; only tells the operator that older
+   rows in the period exist but aren't in this list. */
+export function truncationNotice(truncated, count, label) {
+  if (!truncated) return '';
+  return (
+    '<div class="mono" style="font-size:11px;color:var(--muted);margin:8px 0 12px">' +
+      'Showing the latest ' + count.toLocaleString('en-US') + ' ' + esc(label) + ' for this period. ' +
+      'Older records are not included — narrow the period filter to see them.' +
+    '</div>'
+  );
+}
+
 /* ── Toast ────────────────────────────────────────────────── */
 
 let toastTimer = null;

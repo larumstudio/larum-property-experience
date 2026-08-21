@@ -17,7 +17,12 @@ export const state = {
      by getRole() below — nothing eager at boot, since most views never
      need it. Every real user today is 'admin' (the only membership row
      that exists); 'agent' only becomes reachable once M6.2 ships invite. */
-  role: null
+  role: null,
+  /* M6.5b: whether the last load() hit the leads/sessions/events cap
+     for the selected period — i.e. more rows exist than what's in
+     state.leads/.sessions/.events. See truncationNotice() in
+     admin-ui.js for how this renders. */
+  truncated: { leads: false, sessions: false, events: false }
 };
 
 /* ── Auth ─────────────────────────────────────────────────── */
@@ -97,10 +102,14 @@ export async function load() {
 
   const from = since();
 
+  /* M6.5b: { count: 'exact' } asks PostgREST to also compute the total
+     number of rows matching the filter, independent of .limit() — the
+     only way to tell "there are exactly 1000 leads this period" from
+     "there are 1000+ and 1000 got cut off" without raising the cap. */
   const [leadsRes, sessionsRes, eventsRes] = await Promise.all([
-    supabaseClient.from('leads').select('*').gte('created_at', from).order('created_at', { ascending: false }).limit(1000),
-    supabaseClient.from('sessions').select('*').gte('created_at', from).order('created_at', { ascending: false }).limit(1000),
-    supabaseClient.from('analytics_events').select('*').gte('created_at', from).order('created_at', { ascending: false }).limit(3000)
+    supabaseClient.from('leads').select('*', { count: 'exact' }).gte('created_at', from).order('created_at', { ascending: false }).limit(1000),
+    supabaseClient.from('sessions').select('*', { count: 'exact' }).gte('created_at', from).order('created_at', { ascending: false }).limit(1000),
+    supabaseClient.from('analytics_events').select('*', { count: 'exact' }).gte('created_at', from).order('created_at', { ascending: false }).limit(3000)
   ]);
 
   if (leadsRes.error) reportError('Leads', leadsRes.error);
@@ -110,6 +119,17 @@ export async function load() {
   state.leads = leadsRes.data || [];
   state.sessions = sessionsRes.data || [];
   state.events = eventsRes.data || [];
+
+  /* Truncated only when the server says more rows exist than we
+     actually received — never inferred just from "length === limit"
+     (a period that happens to have exactly 1000 leads and no more is
+     not truncated). Falls back to false on error, since leadsRes.count
+     is null in that case and typeof null !== 'number'. */
+  state.truncated = {
+    leads: typeof leadsRes.count === 'number' && leadsRes.count > state.leads.length,
+    sessions: typeof sessionsRes.count === 'number' && sessionsRes.count > state.sessions.length,
+    events: typeof eventsRes.count === 'number' && eventsRes.count > state.events.length
+  };
 
   document.dispatchEvent(new CustomEvent('larum:data-loaded'));
 }
