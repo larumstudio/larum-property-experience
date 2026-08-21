@@ -5,7 +5,7 @@
    tokens live in admin.html's stylesheet.
    ───────────────────────────────────────────────────────────── */
 
-import { esc, cap, timeAgo, minutes, fullDate, fmtOffset } from './admin-core.js';
+import { esc, cap, timeAgo, minutes, fullDate, fmtOffset, followUpStatus, plainDate } from './admin-core.js';
 
 /* ── Stat card ────────────────────────────────────────────── */
 
@@ -41,6 +41,20 @@ export function badge(status) {
   const cls = map[status] || 'badge-muted';
   const label = esc(cap((status || '').replace(/_/g, ' ')));
   return '<span class="badge ' + cls + '">' + label + '</span>';
+}
+
+/* ── Follow-up badge (M6.7b) ─────────────────────────────── */
+
+export function followUpBadge(dateStr) {
+  const status = followUpStatus(dateStr);
+  if (!status) return '';
+  const map = {
+    overdue:  ['badge-red',    'Overdue'],
+    today:    ['badge-orange', 'Today'],
+    upcoming: ['badge-muted',  'Upcoming']
+  };
+  const [cls, label] = map[status];
+  return '<span class="badge ' + cls + '" title="Follow-up: ' + esc(plainDate(dateStr)) + '">' + label + '</span>';
 }
 
 /* ── Tabs ─────────────────────────────────────────────────── */

@@ -191,8 +191,14 @@ export function buildPropertyFilter() {
 
 /* ── Lead updates ────────────────────────────────────────── */
 
-export async function updateLead(lead, patch) {
-  const note = document.getElementById('savedNote');
+export async function updateLead(lead, patch, noteElementId) {
+  /* M6.7b: a second independent action (Follow-up) now shares this
+     function with the original Advisor-notes save — defaulting to
+     'savedNote' keeps every existing caller's behavior byte-identical;
+     passing 'savedFollowUp' points the same success/error/conflict
+     feedback at that action's own indicator instead, so saving one
+     never flashes a misleading "Saved" next to the other. */
+  const note = document.getElementById(noteElementId || 'savedNote');
   if (note) note.textContent = 'Saving…';
 
   /* M6.5a: same compare-and-swap as the 5 property saves in
@@ -311,6 +317,29 @@ export function normaliseInterests(raw) {
   if (Array.isArray(v)) return v.map(i => [i.interest || i.name || '?', Number(i.strength) || 1]);
   if (typeof v === 'object') return Object.entries(v).map(([k, n]) => [k, Number(n) || 1]);
   return [];
+}
+
+/* M6.7b — Follow-up. `leads.follow_up_date` is a plain DATE ('YYYY-MM-DD',
+   no time/timezone) — parsed with an explicit local midnight so the
+   comparison against "today" never shifts a day off in western
+   timezones the way `new Date('YYYY-MM-DD')` alone would (that form
+   parses as UTC midnight). */
+export function followUpStatus(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return null;
+  if (d.getTime() < today.getTime()) return 'overdue';
+  if (d.getTime() === today.getTime()) return 'today';
+  return 'upcoming';
+}
+
+export function plainDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr + 'T00:00:00');
+  if (isNaN(d)) return '—';
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function leadForSession(id) {

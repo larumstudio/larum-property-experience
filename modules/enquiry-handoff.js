@@ -7,6 +7,14 @@
 (function (global) {
   let _ctx = null;
   let _root = null;
+  /* M6.7c: anti-spam — module-load timestamp for the minimum-time-to-
+     submit heuristic in submit(), same criteria as app.js's fallback
+     render of this same form (htmlEnquiry()/submitEnquiry(), only used
+     if this module fails to load). This is the file that actually
+     renders and handles the enquiry form in production — verified live
+     that window.LarumModules['enquiry-handoff'] is what mounts
+     #enquiryOverlay's form, not the app.js fallback. */
+  const MODULE_LOAD_TS = Date.now();
 
   function render(ctx) {
     _ctx = ctx;
@@ -15,7 +23,7 @@
     return `<div id="enquiryOverlay" class="enquiry-overlay" aria-hidden="true"><button class="menu-close" data-action="enquiry-close">Close ×</button><div class="enquiry-box"><div class="mono">${lang==='en'?'Private enquiry':'Consulta privada'} · ${p.label}</div><h2>${lang==='en'?'Begin a private conversation.':'Inicia una conversación privada.'}</h2><p>${lang==='en'?'Tell the property advisor what matters to you. We will prepare the right next step.':'Cuéntale al asesor qué es importante para ti. Prepararemos el siguiente paso.'}</p>
 <div class="enquiry-context" id="enquiryContext"></div>
 <div id="advisorSummaryBox" class="advisor-summary-box"></div>
-<form><input required name="name" placeholder="${lang==='en'?'Full name':'Nombre completo'}"/><input required type="email" name="email" placeholder="${lang==='en'?'Email address':'Email'}"/><select name="interest"><option>${lang==='en'?'What interests you most?':'¿Qué te interesa más?'}</option><option>${lang==='en'?'Living here':'Vivir aquí'}</option><option>${lang==='en'?'Privacy and retreat':'Privacidad y retiro'}</option><option>${lang==='en'?'Entertaining':'Reuniones'}</option><option>${lang==='en'?'Architecture and design':'Arquitectura y diseño'}</option><option>${lang==='en'?'Investment':'Inversión'}</option></select><textarea name="message" placeholder="${lang==='en'?'Anything you would like the advisor to know?':'¿Algo que quieras que el asesor sepa?'}"></textarea><button class="cta" type="submit">${lang==='en'?'Request private contact':'Solicitar contacto privado'} <b>↗</b></button></form><div id="enquirySuccess" class="enquiry-success" aria-live="polite"></div></div></div>`;
+<form><input type="text" name="company" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"/><input required name="name" placeholder="${lang==='en'?'Full name':'Nombre completo'}"/><input required type="email" name="email" placeholder="${lang==='en'?'Email address':'Email'}"/><select name="interest"><option>${lang==='en'?'What interests you most?':'¿Qué te interesa más?'}</option><option>${lang==='en'?'Living here':'Vivir aquí'}</option><option>${lang==='en'?'Privacy and retreat':'Privacidad y retiro'}</option><option>${lang==='en'?'Entertaining':'Reuniones'}</option><option>${lang==='en'?'Architecture and design':'Arquitectura y diseño'}</option><option>${lang==='en'?'Investment':'Inversión'}</option></select><textarea name="message" placeholder="${lang==='en'?'Anything you would like the advisor to know?':'¿Algo que quieras que el asesor sepa?'}"></textarea><button class="cta" type="submit">${lang==='en'?'Request private contact':'Solicitar contacto privado'} <b>↗</b></button></form><div id="enquirySuccess" class="enquiry-success" aria-live="polite"></div></div></div>`;
   }
 
   function open() {
@@ -71,6 +79,20 @@
     e.preventDefault();
     const form = e.target;
     const data = new FormData(form);
+
+    /* M6.7c: anti-spam — honeypot ("company", hidden off-screen, a real
+       visitor never sees or fills it) plus a minimum time-to-submit (a
+       real visitor needs at least a moment to read the form and type
+       into it). Same criteria as app.js's fallback render of this form.
+       A caught submission still shows success — telling a bot it was
+       detected only teaches it to adapt, and does nothing for a real
+       visitor either way. */
+    const isSpam = !!data.get('company') || (Date.now() - MODULE_LOAD_TS) < 800;
+    if (isSpam) {
+      showEnquirySuccess(data.get('name'));
+      return;
+    }
+
     const cfg = _ctx.contactConfig.properties[_ctx.slug] || {};
     const to = cfg.email || _ctx.contactConfig.defaultEmail;
 

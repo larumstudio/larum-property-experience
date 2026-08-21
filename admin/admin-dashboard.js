@@ -4,8 +4,8 @@
    component system. No new metrics, no new logic.
    ───────────────────────────────────────────────────────────── */
 
-import { state, filteredLeads, filteredSessions, esc, minutes, normaliseInterests } from './admin-core.js';
-import { statCard, card, barChart, interestBars, truncationNotice } from './admin-ui.js';
+import { state, filteredLeads, filteredSessions, esc, minutes, normaliseInterests, followUpStatus, plainDate } from './admin-core.js';
+import { statCard, card, barChart, interestBars, truncationNotice, followUpBadge } from './admin-ui.js';
 
 export const title = 'Dashboard';
 
@@ -19,6 +19,16 @@ export function render(container) {
   const qualified = sessions.filter(s => s.qualified).length;
 
   const avgTime = sessions.length ? minutes(totalSeconds / sessions.length) : '—';
+
+  /* M6.7b: due = overdue + today — the two states that need action now.
+     Bound by the same period filter as every other number on this page
+     (leads outside the selected period were never loaded into
+     state.leads) — widen the period filter to see older pending
+     follow-ups, same as for any other stat here. */
+  const dueLeads = leads.filter(l => {
+    const s = followUpStatus(l.follow_up_date);
+    return s === 'overdue' || s === 'today';
+  });
 
   container.innerHTML =
     '<div class="page-header">' +
@@ -35,12 +45,26 @@ export function render(container) {
       statCard('Questions', questions, 'Asked to concierge') +
       statCard('Leads', leads.length, 'Enquiries submitted') +
       statCard('Qualified', qualified, 'Meeting the triggers') +
+      statCard('Follow-ups due', dueLeads.length, 'Overdue or due today') +
     '</div>' +
 
     '<div class="grid-2">' +
       card('Visits per day', renderDays(sessions), { headerRight: '<span class="mono">Last 14 days</span>' }) +
       card('Detected interests', renderInterests(sessions, leads)) +
-    '</div>';
+    '</div>' +
+
+    (dueLeads.length ? card('Follow-ups due', renderDueFollowUps(dueLeads)) : '');
+}
+
+function renderDueFollowUps(dueLeads) {
+  const sorted = dueLeads.slice().sort((a, b) => (a.follow_up_date < b.follow_up_date ? -1 : 1));
+  return '<div class="ga-signals">' + sorted.map(l =>
+    '<div class="ga-signal">' +
+      '<span>' + esc(l.name || 'Anonymous') + ' · ' + esc(l.property || '—') + '</span>' +
+      followUpBadge(l.follow_up_date) +
+      ' <span class="mono" style="color:var(--muted)">' + esc(plainDate(l.follow_up_date)) + '</span>' +
+    '</div>'
+  ).join('') + '</div>';
 }
 
 function renderDays(sessions) {

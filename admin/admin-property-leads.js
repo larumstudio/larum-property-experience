@@ -12,7 +12,7 @@ import {
 } from './admin-core.js';
 import {
   statCard, badge, emptyState, openDrawer, closeDrawer,
-  section, chips, timeline, toast, historyHtml
+  section, chips, timeline, toast, historyHtml, followUpBadge
 } from './admin-ui.js';
 
 let containerRef = null;
@@ -66,6 +66,9 @@ function bind(container) {
     } else if (action === 'reopen') {
       const idx = parseInt(el.getAttribute('data-pl-idx'), 10);
       reopenLead(idx);
+    } else if (action === 'followup') {
+      const idx = parseInt(el.getAttribute('data-pl-idx'), 10);
+      saveFollowUp(idx);
     }
   };
   container.addEventListener('click', clickHandler);
@@ -110,7 +113,7 @@ function draw() {
 
 function renderTable(leads) {
   let html = '<div class="card"><div class="table-wrap"><table><thead><tr>' +
-    '<th>Contact</th><th>Interest</th><th>Signals</th><th>Time</th><th>Received</th><th>Status</th>' +
+    '<th>Contact</th><th>Interest</th><th>Signals</th><th>Time</th><th>Received</th><th>Follow-up</th><th>Status</th>' +
     '</tr></thead><tbody>';
 
   leads.forEach((l, i) => {
@@ -126,6 +129,7 @@ function renderTable(leads) {
       '<td>' + (signals.length ? esc(signals.join(' · ')) : '<span class="badge badge-muted">—</span>') + '</td>' +
       '<td class="num">' + (l.duration_minutes || 0) + 'm</td>' +
       '<td>' + timeAgo(l.created_at) + '</td>' +
+      '<td>' + (followUpBadge(l.follow_up_date) || '<span class="badge badge-muted">—</span>') + '</td>' +
       '<td>' + (l.qualified ? '<span class="badge badge-red">Qualified</span> ' : '') +
         badge(status) + '</td>' +
     '</tr>';
@@ -176,6 +180,16 @@ function openLead(idx) {
       ? '<div class="qlist">' + questions.map(q => '<div>' + esc(q) + '</div>').join('') + '</div>'
       : '') +
     section('Timeline', events.length ? timeline(events) : '') +
+
+    '<div class="sec">' +
+      '<h4>Follow-up</h4>' +
+      '<div class="actions">' +
+        '<input type="date" id="leadFollowUp" value="' + esc(l.follow_up_date || '') + '" />' +
+        '<button class="btn btn-outline" data-pl-action="followup" data-pl-idx="' + idx + '">Save</button>' +
+        (l.follow_up_date ? followUpBadge(l.follow_up_date) : '') +
+        '<span class="saved" id="savedFollowUp"></span>' +
+      '</div>' +
+    '</div>' +
 
     '<div class="sec">' +
       '<h4>Advisor notes</h4>' +
@@ -246,6 +260,19 @@ async function reopenLead(idx) {
   if (!lead) return;
   const notes = (document.getElementById('leadNotes') || {}).value || '';
   const ok = await updateLead(lead, { status: 'new', notes });
+  if (ok) {
+    draw();
+    setTimeout(() => openLead(idx), 100);
+  }
+}
+
+async function saveFollowUp(idx) {
+  const leads = getLeads();
+  const lead = leads[idx];
+  if (!lead) return;
+  const input = document.getElementById('leadFollowUp');
+  const value = input ? (input.value || null) : null;
+  const ok = await updateLead(lead, { follow_up_date: value }, 'savedFollowUp');
   if (ok) {
     draw();
     setTimeout(() => openLead(idx), 100);

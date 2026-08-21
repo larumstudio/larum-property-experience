@@ -5,6 +5,17 @@
    LarumLoader. Nothing about a specific residence is hardcoded here. */
 let properties={};
 let current=null; let lang='en'; let visited=[]; let entryPath='';
+/* M6.7c: anti-spam. Page-load timestamp for the minimum-time-to-submit
+   heuristic in submitEnquiry() — a real visitor takes at least a few
+   seconds to read the form and type into it; a submission arriving
+   faster than that is almost certainly scripted. Client-side only, by
+   design: leads are inserted directly by the browser (no serverless
+   function sits between this form and Supabase), so there is no
+   server-side point in this flow to enforce it from instead — this
+   deters the ordinary unsophisticated bots that are the realistic
+   threat here, not a targeted attacker willing to call the REST API
+   directly. */
+const APP_LOAD_TS=Date.now();
 let contentModel=null; let knowledgeModel=null; let assetsModel=null; let purchaseConfig=null;
 /* LPE-08: monotonic token for last-wins on rapid property switches. */
 let _switchToken=0;
@@ -287,7 +298,7 @@ function htmlEnquiry(p,c){
   return `<div id="enquiryOverlay" class="enquiry-overlay" aria-hidden="true"><button class="menu-close" onclick="closeEnquiry()">Close ×</button><div class="enquiry-box"><div class="mono">${lang==='en'?'Private enquiry':'Consulta privada'} · ${p.label}</div><h2>${lang==='en'?'Begin a private conversation.':'Inicia una conversación privada.'}</h2><p>${lang==='en'?'Tell the property advisor what matters to you. We will prepare the right next step.':'Cuéntale al asesor qué es importante para ti. Prepararemos el siguiente paso.'}</p>
 <div class="enquiry-context" id="enquiryContext"></div>
 <div id="advisorSummaryBox" class="advisor-summary-box"></div>
-<form onsubmit="submitEnquiry(event)"><input required name="name" placeholder="${lang==='en'?'Full name':'Nombre completo'}"/><input required type="email" name="email" placeholder="${lang==='en'?'Email address':'Email'}"/><select name="interest"><option>${lang==='en'?'What interests you most?':'¿Qué te interesa más?'}</option><option>${lang==='en'?'Living here':'Vivir aquí'}</option><option>${lang==='en'?'Privacy and retreat':'Privacidad y retiro'}</option><option>${lang==='en'?'Entertaining':'Reuniones'}</option><option>${lang==='en'?'Architecture and design':'Arquitectura y diseño'}</option><option>${lang==='en'?'Investment':'Inversión'}</option></select><textarea name="message" placeholder="${lang==='en'?'Anything you would like the advisor to know?':'¿Algo que quieras que el asesor sepa?'}"></textarea><button class="cta" type="submit">${lang==='en'?'Request private contact':'Solicitar contacto privado'} <b>↗</b></button></form><div id="enquirySuccess" class="enquiry-success" aria-live="polite"></div></div></div>`;
+<form onsubmit="submitEnquiry(event)"><input type="text" name="company" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"/><input required name="name" placeholder="${lang==='en'?'Full name':'Nombre completo'}"/><input required type="email" name="email" placeholder="${lang==='en'?'Email address':'Email'}"/><select name="interest"><option>${lang==='en'?'What interests you most?':'¿Qué te interesa más?'}</option><option>${lang==='en'?'Living here':'Vivir aquí'}</option><option>${lang==='en'?'Privacy and retreat':'Privacidad y retiro'}</option><option>${lang==='en'?'Entertaining':'Reuniones'}</option><option>${lang==='en'?'Architecture and design':'Arquitectura y diseño'}</option><option>${lang==='en'?'Investment':'Inversión'}</option></select><textarea name="message" placeholder="${lang==='en'?'Anything you would like the advisor to know?':'¿Algo que quieras que el asesor sepa?'}"></textarea><button class="cta" type="submit">${lang==='en'?'Request private contact':'Solicitar contacto privado'} <b>↗</b></button></form><div id="enquirySuccess" class="enquiry-success" aria-live="polite"></div></div></div>`;
 }
 function htmlFooter(p){
   return `<footer class="footer"><span>Larum Property Experience</span><span>${p.label} · ${p.brand} · 2026</span></footer>`;
@@ -675,6 +686,21 @@ function submitEnquiry(e){
   e.preventDefault();
   const form=e.target;
   const data=new FormData(form);
+
+  /* M6.7c: anti-spam — honeypot ("company", hidden off-screen, a real
+     visitor never sees or fills it) plus a minimum time-to-submit (a
+     real visitor needs at least a moment to read the form and type
+     into it). Either signal alone can false-positive in principle;
+     together they catch the ordinary scripted bots that are the
+     realistic threat here without a CAPTCHA. A caught submission still
+     shows success — telling a bot it was detected only teaches it to
+     adapt, and does nothing for a real visitor either way. */
+  const isSpam = !!data.get('company') || (Date.now()-APP_LOAD_TS) < 800;
+  if (isSpam) {
+    showEnquirySuccess(data.get('name'));
+    return;
+  }
+
   const cfg=contactConfig.properties[current]||{};
   const to=cfg.email||contactConfig.defaultEmail;
 

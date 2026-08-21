@@ -8,7 +8,7 @@ import {
   timeAgo, fullDate, normaliseInterests, updateLead,
   sessionForLead, eventsFor, loadLeadHistory, ensureAgentDirectory, actorLabel
 } from './admin-core.js';
-import { badge, openDrawer, closeDrawer, section, chips, timeline, truncationNotice, historyHtml } from './admin-ui.js';
+import { badge, openDrawer, closeDrawer, section, chips, timeline, truncationNotice, historyHtml, followUpBadge } from './admin-ui.js';
 
 export const title = 'Leads';
 
@@ -36,7 +36,7 @@ function renderTable(leads) {
   }
 
   let html = '<div class="card"><div class="table-wrap"><table><thead><tr>' +
-    '<th>Contact</th><th>Property</th><th>Interest</th><th>Signals</th><th>Time</th><th>Received</th><th>Status</th>' +
+    '<th>Contact</th><th>Property</th><th>Interest</th><th>Signals</th><th>Time</th><th>Received</th><th>Follow-up</th><th>Status</th>' +
     '</tr></thead><tbody>';
 
   leads.forEach((l, i) => {
@@ -53,6 +53,7 @@ function renderTable(leads) {
       '<td>' + (signals.length ? esc(signals.join(' · ')) : '<span class="badge badge-muted">—</span>') + '</td>' +
       '<td class="num">' + (l.duration_minutes || 0) + 'm</td>' +
       '<td>' + timeAgo(l.created_at) + '</td>' +
+      '<td>' + (followUpBadge(l.follow_up_date) || '<span class="badge badge-muted">—</span>') + '</td>' +
       '<td>' + (l.qualified ? '<span class="badge badge-red">Qualified</span> ' : '') +
         badge(status) + '</td>' +
     '</tr>';
@@ -102,6 +103,16 @@ function openLead(i) {
     section('Timeline', events.length ? timeline(events) : '') +
 
     '<div class="sec">' +
+      '<h4>Follow-up</h4>' +
+      '<div class="actions">' +
+        '<input type="date" id="leadFollowUp" value="' + esc(l.follow_up_date || '') + '" />' +
+        '<button class="btn btn-outline" onclick="__saveFollowUp()">Save</button>' +
+        (l.follow_up_date ? followUpBadge(l.follow_up_date) : '') +
+        '<span class="saved" id="savedFollowUp"></span>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="sec">' +
       '<h4>Advisor notes</h4>' +
       '<textarea id="leadNotes" placeholder="What was agreed, when to follow up…">' + esc(l.notes || '') + '</textarea>' +
       '<div class="actions">' +
@@ -117,8 +128,20 @@ function openLead(i) {
   window.__closeDrawer = () => closeDrawerGuarded(l.notes || '');
   window.__markContacted = () => markContacted(l, i);
   window.__reopenLead = () => reopenLead(l, i);
+  window.__saveFollowUp = () => saveFollowUp(l, i);
 
   loadHistoryInto(l.id);
+}
+
+async function saveFollowUp(lead, idx) {
+  const input = document.getElementById('leadFollowUp');
+  const value = input ? (input.value || null) : null;
+  const ok = await updateLead(lead, { follow_up_date: value }, 'savedFollowUp');
+  if (ok) {
+    const content = document.getElementById('viewContent');
+    if (content) render(content);
+    setTimeout(() => openLead(idx), 100);
+  }
 }
 
 /* M6.6a — fetched on demand (lead_history is not bulk-loaded), guarded
