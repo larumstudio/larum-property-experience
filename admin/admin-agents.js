@@ -39,6 +39,27 @@ let editDraft = null;        // non-null while editing the open agent
 let caps = null;             // resolved once per render() — see admin-auth-context.js
 let inviting = false;
 
+/* Every typed error code api/admin-invite-agent.mjs can return, mapped
+   to something an admin can act on. Never echoes e.message raw — the
+   endpoint's codes are deliberately terse identifiers, not sentences,
+   and it never returns anything sensitive (no privileged credentials,
+   no Auth internals) for this map to accidentally surface either way. */
+const INVITE_ERROR_MESSAGES = {
+  'Not authenticated': 'Your session has expired — sign in again and retry.',
+  unauthenticated: 'Your session has expired — sign in again and retry.',
+  method_not_allowed: 'Something went wrong sending this request. Reload the page and try again.',
+  missing_agent_id: 'No agent selected. Reload the page and try again.',
+  agent_not_found: 'This agent no longer exists.',
+  not_org_admin: 'You do not have permission to manage this agent.',
+  agent_missing_email: 'Add an email address above before inviting this agent.',
+  invite_unconfigured: 'Invitations are not configured on this server yet.',
+  already_registered_but_not_found: 'An account already exists for this email but could not be located automatically — check Supabase Auth directly.',
+  invite_failed: 'Supabase could not send the invitation. Try again shortly.',
+  auth_user_lookup_failed: 'Could not check this agent\'s account status. Try again shortly.',
+  recovery_failed: 'Supabase could not send the password reset link. Try again shortly.',
+  invite_processing_failed: 'Something went wrong processing this request. Try again shortly.'
+};
+
 export async function render(container) {
   containerRef = container;
   mode = 'list';
@@ -347,6 +368,7 @@ function drawDetail() {
    idempotent and decides what actually needs to happen. */
 function renderAccessCard(a) {
   const connected = !!a.auth_user_id;
+  const inactive = a.status === 'inactive';
 
   let html = '<div class="card" style="margin-top:16px">' +
     '<div class="card-head"><h3>Access</h3></div>' +
@@ -357,6 +379,17 @@ function renderAccessCard(a) {
           : '<span class="badge badge-muted">No account yet</span>') +
       '</dd>' +
     '</dl>';
+
+  /* An account existing is not the same as being able to use it —
+     current_agent_id() in Migration 006 already fails closed on
+     status='inactive' (RLS is the real boundary, unchanged here),
+     so this is display-only: make sure "Connected" is never read as
+     "this agent can currently do anything". */
+  if (connected && inactive) {
+    html += '<div class="mono" style="font-size:11px;color:var(--muted);margin-top:8px">' +
+      'This agent is inactive — even though an account exists, they cannot access ' +
+      'Larum Admin until reactivated (set Status to Active above).</div>';
+  }
 
   if (!a.email) {
     html += '<div class="mono" style="font-size:11px;color:var(--muted);margin-top:8px">' +
@@ -398,7 +431,7 @@ async function handleInvite() {
       if (idx >= 0) agents[idx] = fresh;
     }
   } catch (e) {
-    toast('Invite failed: ' + e.message, 'error');
+    toast(INVITE_ERROR_MESSAGES[e.message] || ('Invite failed: ' + e.message), 'error');
   } finally {
     inviting = false;
     draw();

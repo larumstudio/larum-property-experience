@@ -545,6 +545,23 @@ await test('agentId apunta a un agente inexistente → 404', async () => {
   } finally { mock.restore(); }
 });
 
+await test('agente sin email y sin auth_user_id → 400 agent_missing_email, cero llamadas a Auth (M6.3)', async () => {
+  const mock = installMockFetch({
+    callerUser: { id: 'admin-1' },
+    adminMembershipRows: [{ id: 'm1' }],
+    agentRows: [{ id: 'agent-15', email: null, organization_id: 'org-A', auth_user_id: null, status: 'active', name: 'No Email Agent' }]
+  });
+  try {
+    const res = fakeRes();
+    await handler(fakeReq({ body: { agentId: 'agent-15' } }), res);
+    assert.equal(res._status, 400);
+    assert.equal(res._body.error, 'agent_missing_email');
+    assert.equal(callsMatching(mock.calls, '/auth/v1/invite').length, 0);
+    assert.equal(callsMatching(mock.calls, '/auth/v1/recover').length, 0);
+    assert.equal(callsMatching(mock.calls, '/rest/v1/memberships', 'POST').length, 0);
+  } finally { mock.restore(); }
+});
+
 /* ═══════════════════════════════════════════════════════════════
    SUMMARY
    ═══════════════════════════════════════════════════════════════ */
