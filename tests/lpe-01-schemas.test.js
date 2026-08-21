@@ -21,7 +21,13 @@ for (const slug of ['madrid', 'marbella']) {
   const result = validateNormalized(normalized);
   assert.equal(result.issues.length, 0, `${slug}: ${result.issues.join('; ')}`);
   assert.equal(normalized.content.scenes.length, raw.content.sequences.length);
-  assert.equal(normalized.content.identity.title, raw.content.title);
+  /* M6.8: content.title was promoted from a plain string to {en, es} —
+     the normalized identity layer is language-agnostic by design (see
+     schemas/adapters/index.js's textOf()) and always resolves English,
+     so compare against that specifically rather than the raw bilingual
+     object (which the normalized string can no longer equal). */
+  const expectedTitle = typeof raw.content.title === 'string' ? raw.content.title : raw.content.title.en;
+  assert.equal(normalized.content.identity.title, expectedTitle);
   assert.deepEqual(raw.content.sequences[0], [raw.content.sequences[0][0], raw.content.sequences[0][1], raw.content.sequences[0][2]]);
   assert.equal(adaptProperty(slug, raw).content.scenes[0].id, normalized.content.scenes[0].id);
 }

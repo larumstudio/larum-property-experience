@@ -388,22 +388,22 @@ const INITIAL_CONTENT = {
   slug: '',
   label: '',
   brand: '',
-  title: '',
-  subtitle: '',
-  intro: '',
+  title: { en: '', es: '' },
+  subtitle: { en: '', es: '' },
+  intro: { en: '', es: '' },
   shortRef: '',
   referencePrice: 0,
   defaultRegion: '',
   defaultPropertyType: 'resale',
-  conciergeIntro: '',
+  conciergeIntro: { en: '', es: '' },
   facts: [],
   experiences: [],
   sequences: [],
   sceneSpaces: [],
   spatial: [],
   spatialNodeDetails: { en: [], es: [] },
-  dna: { title: '', intro: '', dimensions: [] },
-  setting: { title: '', intro: '', cards: [] },
+  dna: { title: { en: '', es: '' }, intro: { en: '', es: '' }, dimensions: [] },
+  setting: { title: { en: '', es: '' }, intro: { en: '', es: '' }, cards: [] },
   copy: {
     identityNote: { en: '', es: '' },
     bandLabel: { en: '', es: '' },
@@ -457,8 +457,8 @@ export async function createProperty({ slug, label, brand, subtitle, intro, refe
   content.slug = slug;
   content.label = label || '';
   content.brand = brand || '';
-  content.subtitle = subtitle || '';
-  content.intro = intro || '';
+  content.subtitle = { en: subtitle || '', es: '' };
+  content.intro = { en: intro || '', es: '' };
   content.referencePrice = referencePrice || 0;
   content.defaultRegion = defaultRegion || '';
   content.defaultPropertyType = defaultPropertyType || 'resale';

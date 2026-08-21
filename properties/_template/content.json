@@ -1,51 +1,185 @@
 {
   "slug": "REPLACE-slug",
-
   "label": "City · District",
   "brand": "Agency name",
-  "title": "The Thesis\nof the Property",
-  "subtitle": "One sentence that states what this residence is about.",
-  "intro": "The paragraph under Identity. Do not list rooms — state the point of view of the property.",
+  "title": {
+    "en": "The Thesis\nof the Property",
+    "es": ""
+  },
+  "subtitle": {
+    "en": "One sentence that states what this residence is about.",
+    "es": ""
+  },
+  "intro": {
+    "en": "The paragraph under Identity. Do not list rooms — state the point of view of the property.",
+    "es": ""
+  },
   "shortRef": "REF · District",
-
   "referencePrice": 0,
   "defaultRegion": "Andalucía",
-
   "facts": [
-    ["0", "BEDROOMS"],
-    ["0", "BATHROOMS"],
-    ["0", "M² TOTAL"],
-    ["0", "M² INTERIOR"]
+    [
+      "0",
+      {
+        "en": "BEDROOMS",
+        "es": ""
+      }
+    ],
+    [
+      "0",
+      {
+        "en": "BATHROOMS",
+        "es": ""
+      }
+    ],
+    [
+      "0",
+      {
+        "en": "M² TOTAL",
+        "es": ""
+      }
+    ],
+    [
+      "0",
+      {
+        "en": "M² INTERIOR",
+        "es": ""
+      }
+    ]
   ],
-
   "experiences": [
-    ["01", "First pillar", "What it is and why it matters to the way the property is lived."],
-    ["02", "Second pillar", "What it is and why it matters to the way the property is lived."],
-    ["03", "Third pillar", "What it is and why it matters to the way the property is lived."]
+    [
+      "01",
+      {
+        "en": "First pillar",
+        "es": ""
+      },
+      {
+        "en": "What it is and why it matters to the way the property is lived.",
+        "es": ""
+      }
+    ],
+    [
+      "02",
+      {
+        "en": "Second pillar",
+        "es": ""
+      },
+      {
+        "en": "What it is and why it matters to the way the property is lived.",
+        "es": ""
+      }
+    ],
+    [
+      "03",
+      {
+        "en": "Third pillar",
+        "es": ""
+      },
+      {
+        "en": "What it is and why it matters to the way the property is lived.",
+        "es": ""
+      }
+    ]
   ],
-
-  "conciergeIntro": "I am the private digital advisor for REF. Ask me about the residence, its spaces or the area.",
-
+  "conciergeIntro": {
+    "en": "I am the private digital advisor for REF. Ask me about the residence, its spaces or the area.",
+    "es": ""
+  },
   "sequences": [
-    ["Moment one", "08:00", "What the property is like at this hour, and what it makes possible."],
-    ["Moment two", "13:00", "What the property is like at this hour, and what it makes possible."],
-    ["Moment three", "19:00", "What the property is like at this hour, and what it makes possible."],
-    ["Moment four", "22:00", "What the property is like at this hour, and what it makes possible."]
+    [
+      "Moment one",
+      "08:00",
+      {
+        "en": "What the property is like at this hour, and what it makes possible.",
+        "es": ""
+      }
+    ],
+    [
+      "Moment two",
+      "13:00",
+      {
+        "en": "What the property is like at this hour, and what it makes possible.",
+        "es": ""
+      }
+    ],
+    [
+      "Moment three",
+      "19:00",
+      {
+        "en": "What the property is like at this hour, and what it makes possible.",
+        "es": ""
+      }
+    ],
+    [
+      "Moment four",
+      "22:00",
+      {
+        "en": "What the property is like at this hour, and what it makes possible.",
+        "es": ""
+      }
+    ]
   ],
-
   "sceneSpaces": [
-    ["Moment one", ["Space A", "Space B", "Space C"]],
-    ["Moment two", ["Space A", "Space B", "Space C"]],
-    ["Moment three", ["Space A", "Space B", "Space C"]],
-    ["Moment four", ["Space A", "Space B", "Space C"]]
+    [
+      "Moment one",
+      [
+        "Space A",
+        "Space B",
+        "Space C"
+      ]
+    ],
+    [
+      "Moment two",
+      [
+        "Space A",
+        "Space B",
+        "Space C"
+      ]
+    ],
+    [
+      "Moment three",
+      [
+        "Space A",
+        "Space B",
+        "Space C"
+      ]
+    ],
+    [
+      "Moment four",
+      [
+        "Space A",
+        "Space B",
+        "Space C"
+      ]
+    ]
   ],
-
   "spatial": [
-    ["01", "First zone", "Space A · Space B"],
-    ["02", "Second zone", "Space B · Space C"],
-    ["03", "Third zone", "Space C · Space D"]
+    [
+      "01",
+      {
+        "en": "First zone",
+        "es": ""
+      },
+      "Space A · Space B"
+    ],
+    [
+      "02",
+      {
+        "en": "Second zone",
+        "es": ""
+      },
+      "Space B · Space C"
+    ],
+    [
+      "03",
+      {
+        "en": "Third zone",
+        "es": ""
+      },
+      "Space C · Space D"
+    ]
   ],
-
   "spatialNodeDetails": {
     "en": [
       "How the first zone relates to the rest of the property.",
@@ -58,11 +192,16 @@
       "Cómo se relaciona la tercera zona con el resto de la propiedad."
     ]
   },
-
   "comment_dna": "Each score opens its note on click. The note is the sentence that earns the number — write it as the property would say it, never as a feature list.",
   "dna": {
-    "title": "The category this property belongs to",
-    "intro": "One paragraph on what defines it against comparable properties.",
+    "title": {
+      "en": "The category this property belongs to",
+      "es": ""
+    },
+    "intro": {
+      "en": "One paragraph on what defines it against comparable properties.",
+      "es": ""
+    },
     "dimensions": [
       {
         "label": "Dimension one",
@@ -75,39 +214,105 @@
       {
         "label": "Dimension two",
         "score": "90",
-        "note": { "en": "…", "es": "…" }
+        "note": {
+          "en": "…",
+          "es": "…"
+        }
       },
       {
         "label": "Dimension three",
         "score": "90",
-        "note": { "en": "…", "es": "…" }
+        "note": {
+          "en": "…",
+          "es": "…"
+        }
       },
       {
         "label": "Dimension four",
         "score": "90",
-        "note": { "en": "…", "es": "…" }
+        "note": {
+          "en": "…",
+          "es": "…"
+        }
       },
       {
         "label": "Dimension five",
         "score": "90",
-        "note": { "en": "…", "es": "…" }
+        "note": {
+          "en": "…",
+          "es": "…"
+        }
       }
     ]
   },
-
   "comment_setting": "Each card opens a panel built from knowledge.surroundings. `source` must name a key in that object, or the special values `distances` (renders the distance readout) or `verification` (renders what the agency has and has not confirmed).",
   "setting": {
-    "title": "The area, in one line.",
-    "intro": "One paragraph describing the surroundings as a rhythm of life, not as a map pin.",
+    "title": {
+      "en": "The area, in one line.",
+      "es": ""
+    },
+    "intro": {
+      "en": "One paragraph describing the surroundings as a rhythm of life, not as a map pin.",
+      "es": ""
+    },
     "cards": [
-      { "title": "Morning", "line": "What the morning looks like around the property", "source": "parks" },
-      { "title": "Afternoon", "line": "What the afternoon looks like around the property", "source": "restaurants" },
-      { "title": "Evening", "line": "What the evening looks like around the property", "source": "culture" },
-      { "title": "Connection", "line": "How the property relates to the wider area", "source": "distances" },
-      { "title": "Verification", "line": "Distances and local claims to be confirmed by the advisor", "source": "verification" }
+      {
+        "title": {
+          "en": "Morning",
+          "es": ""
+        },
+        "line": {
+          "en": "What the morning looks like around the property",
+          "es": ""
+        },
+        "source": "parks"
+      },
+      {
+        "title": {
+          "en": "Afternoon",
+          "es": ""
+        },
+        "line": {
+          "en": "What the afternoon looks like around the property",
+          "es": ""
+        },
+        "source": "restaurants"
+      },
+      {
+        "title": {
+          "en": "Evening",
+          "es": ""
+        },
+        "line": {
+          "en": "What the evening looks like around the property",
+          "es": ""
+        },
+        "source": "culture"
+      },
+      {
+        "title": {
+          "en": "Connection",
+          "es": ""
+        },
+        "line": {
+          "en": "How the property relates to the wider area",
+          "es": ""
+        },
+        "source": "distances"
+      },
+      {
+        "title": {
+          "en": "Verification",
+          "es": ""
+        },
+        "line": {
+          "en": "Distances and local claims to be confirmed by the advisor",
+          "es": ""
+        },
+        "source": "verification"
+      }
     ]
   },
-
   "copy": {
     "identityNote": {
       "en": "Second paragraph of the Identity section.",
@@ -150,17 +355,40 @@
       "es": "Párrafo que introduce los datos confirmados."
     }
   },
-
   "arrival": {
     "en": [
-      ["Chapter one", "The line that lands first.", "The line that explains it."],
-      ["Chapter two", "The line that lands first.", "The line that explains it."],
-      ["Chapter three", "The line that lands first.", "Now you can explore how it lives."]
+      [
+        "Chapter one",
+        "The line that lands first.",
+        "The line that explains it."
+      ],
+      [
+        "Chapter two",
+        "The line that lands first.",
+        "The line that explains it."
+      ],
+      [
+        "Chapter three",
+        "The line that lands first.",
+        "Now you can explore how it lives."
+      ]
     ],
     "es": [
-      ["Capítulo uno", "La frase que llega primero.", "La frase que lo explica."],
-      ["Capítulo dos", "La frase que llega primero.", "La frase que lo explica."],
-      ["Capítulo tres", "La frase que llega primero.", "Ahora puedes explorar cómo se vive aquí."]
+      [
+        "Capítulo uno",
+        "La frase que llega primero.",
+        "La frase que lo explica."
+      ],
+      [
+        "Capítulo dos",
+        "La frase que llega primero.",
+        "La frase que lo explica."
+      ],
+      [
+        "Capítulo tres",
+        "La frase que llega primero.",
+        "Ahora puedes explorar cómo se vive aquí."
+      ]
     ]
   }
 }

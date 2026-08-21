@@ -11,6 +11,10 @@
   let conciergeHistory = [];
   let conciergeEndpointDown = false;
 
+  /* M6.8: same bilingual-content resolver as app.js's t() — local copy,
+     no cross-file import between these classic IIFE modules. */
+  function t(v, lang) { return v == null ? '' : typeof v === 'string' ? v : (v[lang] || v.en || v.es || ''); }
+
   function render(ctx) {
     _ctx = ctx;
     conciergeHistory = [];
@@ -20,7 +24,7 @@
     return `<section id="concierge" class="concierge"><div><div class="advisor"><div class="advisor-avatar">A</div><div><div class="mono">${lang==='en'?'Property Concierge':'Concierge de la propiedad'}</div><div style="font-size:12px;margin-top:5px">${lang==='en'?'Private advisor':'Asesor privado'} · ${p.label}</div></div></div><h2>${c.concierge}</h2><p style="font-size:13px;line-height:1.7;max-width:420px">${c.conciergeSub}</p>
 <div class="concierge-status" id="conciergeStatus"></div>
 <button class="cta" style="color:var(--ink);border-color:var(--ink)" data-action="concierge-focus">${c.explore} <b>↘</b></button></div>
-<div class="chat"><div class="messages" id="chatMessages"><div class="bubble">${p.conciergeIntro}</div></div><form class="chat-form"><input id="chatInput" placeholder="${c.placeholder}"/><button>${c.send} ↗</button></form></div></section>`;
+<div class="chat"><div class="messages" id="chatMessages"><div class="bubble">${t(p.conciergeIntro,lang)}</div></div><form class="chat-form"><input id="chatInput" placeholder="${c.placeholder}"/><button>${c.send} ↗</button></form></div></section>`;
   }
 
   function escapeHtml(s) {

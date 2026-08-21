@@ -8,11 +8,15 @@
   let _ctx = null;
   let _root = null;
 
+  /* M6.8: same bilingual-content resolver as app.js's t() — local copy,
+     no cross-file import between these classic IIFE modules. */
+  function t(v, lang) { return v == null ? '' : typeof v === 'string' ? v : (v[lang] || v.en || v.es || ''); }
+
   function render(ctx) {
     _ctx = ctx;
     const p = ctx.property;
     const lang = ctx.lang;
-    return `<section id="details" class="section light"><div class="grid"><div><div class="mono">06 · ${lang==='en'?'Verified details':'Datos verificados'}</div><h2>${ctx.pc('detailsTitle')}</h2></div><div><p>${ctx.pc('detailsIntro')}</p><div class="facts">${p.facts.map(f=>`<div class="fact"><strong>${f[0]}</strong><span>${f[1]}</span></div>`).join('')}</div></div></div></section>`;
+    return `<section id="details" class="section light"><div class="grid"><div><div class="mono">06 · ${lang==='en'?'Verified details':'Datos verificados'}</div><h2>${ctx.pc('detailsTitle')}</h2></div><div><p>${ctx.pc('detailsIntro')}</p><div class="facts">${p.facts.map(f=>`<div class="fact"><strong>${f[0]}</strong><span>${t(f[1],lang)}</span></div>`).join('')}</div></div></div></section>`;
   }
 
   function mount(root, ctx) {

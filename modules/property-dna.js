@@ -10,13 +10,19 @@
   let _root = null;
   let openDnaIndex = -1;
 
+  /* M6.8: same bilingual-content resolver as app.js's t() — this module
+     has no import from app.js (classic IIFE, loaded as a separate
+     script), so a small local copy is the least-coupled fix. Tolerates
+     the legacy plain-string shape too. */
+  function t(v, lang) { return v == null ? '' : typeof v === 'string' ? v : (v[lang] || v.en || v.es || ''); }
+
   function render(ctx) {
     _ctx = ctx;
     openDnaIndex = -1;
     const p = ctx.property;
     const lang = ctx.lang;
     const dims = ctx.dnaDimensions();
-    return `<section class="dna-section"><div class="dna-head"><div><div class="mono">02 · ${lang==='en'?'Property DNA':'ADN de la propiedad'}</div><h2>${p.dna?.title||p.title.replace('\n',' ')}</h2></div><p>${p.dna?.intro||p.intro}</p></div><div class="dna-grid">${dims.map((d,i)=>`<div class="dna-item"><button class="dna-trigger" data-action="dna-toggle" data-index="${i}" aria-expanded="false" aria-controls="dnaNote${i}"><div class="dna-top"><span>0${i+1}</span><b>${d.label}</b><strong>${d.score}</strong></div><div class="dna-bar"><i style="width:${d.score}%"></i></div></button><div class="dna-note" id="dnaNote${i}"><p>${d.note?.[lang]||''}</p></div></div>`).join('')}</div></section>`;
+    return `<section class="dna-section"><div class="dna-head"><div><div class="mono">02 · ${lang==='en'?'Property DNA':'ADN de la propiedad'}</div><h2>${t(p.dna?.title,lang)||t(p.title,lang).replace('\n',' ')}</h2></div><p>${t(p.dna?.intro,lang)||t(p.intro,lang)}</p></div><div class="dna-grid">${dims.map((d,i)=>`<div class="dna-item"><button class="dna-trigger" data-action="dna-toggle" data-index="${i}" aria-expanded="false" aria-controls="dnaNote${i}"><div class="dna-top"><span>0${i+1}</span><b>${d.label}</b><strong>${d.score}</strong></div><div class="dna-bar"><i style="width:${d.score}%"></i></div></button><div class="dna-note" id="dnaNote${i}"><p>${d.note?.[lang]||''}</p></div></div>`).join('')}</div></section>`;
   }
 
   function toggleDna(i) {

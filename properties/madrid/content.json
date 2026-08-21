@@ -2,68 +2,122 @@
   "slug": "madrid",
   "label": "Madrid · Goya",
   "brand": "Christie’s",
-  "title": "The Light\nof Goya",
-  "subtitle": "A private residence shaped by light, silence and intelligent comfort.",
-  "intro": "M1558 is not defined by the number of rooms, but by the way Madrid is held at a distance — through light, quiet interiors and a terrace that opens the home to the city.",
+  "title": {
+    "en": "The Light\nof Goya",
+    "es": ""
+  },
+  "subtitle": {
+    "en": "A private residence shaped by light, silence and intelligent comfort.",
+    "es": ""
+  },
+  "intro": {
+    "en": "M1558 is not defined by the number of rooms, but by the way Madrid is held at a distance — through light, quiet interiors and a terrace that opens the home to the city.",
+    "es": ""
+  },
   "shortRef": "M1558 · Goya",
   "referencePrice": 3796000,
   "defaultRegion": "Comunidad de Madrid",
   "facts": [
     [
       "3",
-      "BEDROOMS"
+      {
+        "en": "BEDROOMS",
+        "es": ""
+      }
     ],
     [
       "4",
-      "BATHROOMS"
+      {
+        "en": "BATHROOMS",
+        "es": ""
+      }
     ],
     [
       "237",
-      "M² TOTAL"
+      {
+        "en": "M² TOTAL",
+        "es": ""
+      }
     ],
     [
       "190",
-      "M² INTERIOR"
+      {
+        "en": "M² INTERIOR",
+        "es": ""
+      }
     ]
   ],
   "experiences": [
     [
       "01",
-      "The Light",
-      "Floor-to-ceiling windows, inner patios and a calm that changes throughout the day."
+      {
+        "en": "The Light",
+        "es": ""
+      },
+      {
+        "en": "Floor-to-ceiling windows, inner patios and a calm that changes throughout the day.",
+        "es": ""
+      }
     ],
     [
       "02",
-      "Intelligent Comfort",
-      "Aerothermal climate, underfloor heating and home automation — technology without theatre."
+      {
+        "en": "Intelligent Comfort",
+        "es": ""
+      },
+      {
+        "en": "Aerothermal climate, underfloor heating and home automation — technology without theatre.",
+        "es": ""
+      }
     ],
     [
       "03",
-      "The Terrace",
-      "A private edge above Goya. The city remains close, but never intrusive."
+      {
+        "en": "The Terrace",
+        "es": ""
+      },
+      {
+        "en": "A private edge above Goya. The city remains close, but never intrusive.",
+        "es": ""
+      }
     ]
   ],
-  "conciergeIntro": "I am the private digital advisor for M1558. Ask me about the residence, its spaces or Goya.",
+  "conciergeIntro": {
+    "en": "I am the private digital advisor for M1558. Ask me about the residence, its spaces or Goya.",
+    "es": ""
+  },
   "sequences": [
     [
       "Morning light",
       "09:12",
-      "The residence wakes slowly. Light enters through the windows and patios, turning the private interior into a changing composition."
+      {
+        "en": "The residence wakes slowly. Light enters through the windows and patios, turning the private interior into a changing composition.",
+        "es": ""
+      }
     ],
     [
       "The threshold",
       "12:40",
-      "The city remains close, but the home creates a deliberate distance: a quiet interior above the rhythm of Goya."
+      {
+        "en": "The city remains close, but the home creates a deliberate distance: a quiet interior above the rhythm of Goya.",
+        "es": ""
+      }
     ],
     [
       "Golden hour",
       "19:46",
-      "The terrace becomes the final room of the day. Madrid is no longer the destination; it is the view."
+      {
+        "en": "The terrace becomes the final room of the day. Madrid is no longer the destination; it is the view.",
+        "es": ""
+      }
     ],
     [
       "After dark",
       "22:18",
-      "Comfort becomes invisible. The house closes around you, while the city continues outside."
+      {
+        "en": "Comfort becomes invisible. The house closes around you, while the city continues outside.",
+        "es": ""
+      }
     ]
   ],
   "sceneSpaces": [
@@ -103,17 +157,26 @@
   "spatial": [
     [
       "01",
-      "Private core",
+      {
+        "en": "Private core",
+        "es": ""
+      },
       "Master suite · Interior patios"
     ],
     [
       "02",
-      "Living axis",
+      {
+        "en": "Living axis",
+        "es": ""
+      },
       "Living room · Kitchen · Terrace"
     ],
     [
       "03",
-      "City edge",
+      {
+        "en": "City edge",
+        "es": ""
+      },
       "Terrace · Goya skyline"
     ]
   ],
@@ -130,8 +193,14 @@
     ]
   },
   "dna": {
-    "title": "The Private Urban Residence",
-    "intro": "A home defined by light, calm and intelligent comfort — a private interior that keeps the city close without letting it take over.",
+    "title": {
+      "en": "The Private Urban Residence",
+      "es": ""
+    },
+    "intro": {
+      "en": "A home defined by light, calm and intelligent comfort — a private interior that keeps the city close without letting it take over.",
+      "es": ""
+    },
     "dimensions": [
       {
         "label": "Light",
@@ -176,32 +245,68 @@
     ]
   },
   "setting": {
-    "title": "The city, within reach.",
-    "intro": "Goya is not presented as a pin on a map, but as a rhythm of culture, dining, movement and private city life.",
+    "title": {
+      "en": "The city, within reach.",
+      "es": ""
+    },
+    "intro": {
+      "en": "Goya is not presented as a pin on a map, but as a rhythm of culture, dining, movement and private city life.",
+      "es": ""
+    },
     "cards": [
       {
-        "title": "Morning",
-        "line": "Retiro and the city waking around you",
+        "title": {
+          "en": "Morning",
+          "es": ""
+        },
+        "line": {
+          "en": "Retiro and the city waking around you",
+          "es": ""
+        },
         "source": "parks"
       },
       {
-        "title": "Lunch",
-        "line": "The restaurants and galleries of Salamanca",
+        "title": {
+          "en": "Lunch",
+          "es": ""
+        },
+        "line": {
+          "en": "The restaurants and galleries of Salamanca",
+          "es": ""
+        },
         "source": "restaurants"
       },
       {
-        "title": "Evening",
-        "line": "A residence above Madrid’s urban rhythm",
+        "title": {
+          "en": "Evening",
+          "es": ""
+        },
+        "line": {
+          "en": "A residence above Madrid’s urban rhythm",
+          "es": ""
+        },
         "source": "culture"
       },
       {
-        "title": "Connection",
-        "line": "A central address with the city close",
+        "title": {
+          "en": "Connection",
+          "es": ""
+        },
+        "line": {
+          "en": "A central address with the city close",
+          "es": ""
+        },
         "source": "distances"
       },
       {
-        "title": "Verification",
-        "line": "Distances and local claims to be confirmed by the advisor",
+        "title": {
+          "en": "Verification",
+          "es": ""
+        },
+        "line": {
+          "en": "Distances and local claims to be confirmed by the advisor",
+          "es": ""
+        },
         "source": "verification"
       }
     ]

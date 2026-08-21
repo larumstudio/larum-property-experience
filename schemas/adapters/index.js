@@ -5,6 +5,15 @@ const clone = value => value == null ? value : JSON.parse(JSON.stringify(value))
 const slug = value => String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item';
 const idFor = (prefix, value, index) => `${prefix}-${slug(value)}-${index + 1}`;
 const locales = value => ({ en: value?.en || '', es: value?.es || '' });
+/* M6.8: several content.json fields were promoted from plain strings to
+   {en, es}. This normalized layer feeds only validateNormalized() (a
+   structural/id-uniqueness check, language-agnostic by design — see
+   readiness.js), so — same reasoning as api/concierge.mjs's textEn() —
+   textOf() always prefers English here, tolerating the legacy
+   plain-string shape too. Needed wherever a value that might now be
+   {en,es} is fed into idFor()'s slug() (an object would otherwise slug
+   to "object-object"), not just for display fields. */
+const textOf = value => (value == null ? '' : typeof value === 'string' ? value : (value.en || value.es || ''));
 
 const FAMILY_BY_SLUG = {
   madrid: 'urban-apartment',
@@ -20,7 +29,7 @@ function adaptContent(raw, propertySlug) {
   const c = clone(raw || {});
   const scenes = (c.sequences || []).map((s, i) => ({
     id: idFor('scene', s[0], i), label: s[0] || '', time: s[1] || null,
-    description: s[2] || '', spaceIds: ((c.sceneSpaces || [])[i]?.[1] || []).map((x, n) => idFor('space', x, n)), assetSlotIds: []
+    description: textOf(s[2]), spaceIds: ((c.sceneSpaces || [])[i]?.[1] || []).map((x, n) => idFor('space', x, n)), assetSlotIds: []
   }));
   const allSpaces = [];
   (c.sceneSpaces || []).forEach(sc => (sc[1] || []).forEach((name, i) => {
@@ -29,12 +38,12 @@ function adaptContent(raw, propertySlug) {
   const spaces = allSpaces.map((x, i) => ({ id: x.id, name: x.name, type: null, zoneId: null, description: x.name, descriptionByLocale: locales({}) }));
   const spaceId = name => allSpaces.find(x => x.name === name)?.id || idFor('space', name, allSpaces.length);
   scenes.forEach((scene, i) => { scene.spaceIds = ((c.sceneSpaces || [])[i]?.[1] || []).map(spaceId); });
-  const zones = (c.spatial || []).map((z, i) => ({ id: idFor('zone', z[1], i), label: z[1] || '', description: z[2] || '', spaceIds: [], planAnchor: null }));
+  const zones = (c.spatial || []).map((z, i) => ({ id: idFor('zone', textOf(z[1]), i), label: textOf(z[1]), description: z[2] || '', spaceIds: [], planAnchor: null }));
   const dna = c.dna || {};
   const dimensions = (dna.dimensions || []).map((d, i) => ({ id: idFor('dna', d.label, i), label: d.label || '', score: d.score ?? null, noteByLocale: locales(d.note), evidenceIds: [] }));
   return {
-    schemaVersion: '1.0', identity: { label:c.label||'', brand:c.brand||'', title:c.title||'', subtitle:c.subtitle||'', intro:c.intro||'', shortRef:c.shortRef||'', conciergeIntro:c.conciergeIntro||'' },
-    dna: { title:dna.title||'', intro:dna.intro||'', dimensions }, scenes, spaces, zones,
+    schemaVersion: '1.0', identity: { label:c.label||'', brand:c.brand||'', title:textOf(c.title), subtitle:textOf(c.subtitle), intro:textOf(c.intro), shortRef:c.shortRef||'', conciergeIntro:textOf(c.conciergeIntro) },
+    dna: { title:textOf(dna.title), intro:textOf(dna.intro), dimensions }, scenes, spaces, zones,
     factsDisplay: clone(c.facts || []), copyByLocale: clone(c.copy || {}),
     legacy: { slug: propertySlug, sequences: clone(c.sequences || []), sceneSpaces: clone(c.sceneSpaces || []), spatial: clone(c.spatial || []) }
   };

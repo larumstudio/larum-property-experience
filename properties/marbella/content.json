@@ -2,68 +2,122 @@
   "slug": "marbella",
   "label": "Nueva Andalucía · Marbella",
   "brand": "NVOGA",
-  "title": "The Private\nResort",
-  "subtitle": "A residence designed for the art of living outdoors.",
-  "intro": "Villa Casia is a sequence of outdoor rituals: arrival, water, gathering, retreat and the slow transition from afternoon light to evening.",
+  "title": {
+    "en": "The Private\nResort",
+    "es": ""
+  },
+  "subtitle": {
+    "en": "A residence designed for the art of living outdoors.",
+    "es": ""
+  },
+  "intro": {
+    "en": "Villa Casia is a sequence of outdoor rituals: arrival, water, gathering, retreat and the slow transition from afternoon light to evening.",
+    "es": ""
+  },
   "shortRef": "Villa Casia · Nueva Andalucía",
   "referencePrice": 3990000,
   "defaultRegion": "Andalucía",
   "facts": [
     [
       "4",
-      "BEDROOMS"
+      {
+        "en": "BEDROOMS",
+        "es": ""
+      }
     ],
     [
       "5",
-      "BATHROOMS"
+      {
+        "en": "BATHROOMS",
+        "es": ""
+      }
     ],
     [
       "710",
-      "M² BUILT"
+      {
+        "en": "M² BUILT",
+        "es": ""
+      }
     ],
     [
       "980",
-      "M² PLOT"
+      {
+        "en": "M² PLOT",
+        "es": ""
+      }
     ]
   ],
   "experiences": [
     [
       "01",
-      "The Garden",
-      "The first room is outside: landscape, shade and distance from the world."
+      {
+        "en": "The Garden",
+        "es": ""
+      },
+      {
+        "en": "The first room is outside: landscape, shade and distance from the world.",
+        "es": ""
+      }
     ],
     [
       "02",
-      "The Water",
-      "A day organised around reflection, movement and the temperature of the light."
+      {
+        "en": "The Water",
+        "es": ""
+      },
+      {
+        "en": "A day organised around reflection, movement and the temperature of the light.",
+        "es": ""
+      }
     ],
     [
       "03",
-      "The Social House",
-      "A residence built for gathering — without giving up privacy."
+      {
+        "en": "The Social House",
+        "es": ""
+      },
+      {
+        "en": "A residence built for gathering — without giving up privacy.",
+        "es": ""
+      }
     ]
   ],
-  "conciergeIntro": "I am the private digital advisor for Villa Casia. Ask me about the residence, its spaces or Nueva Andalucía.",
+  "conciergeIntro": {
+    "en": "I am the private digital advisor for Villa Casia. Ask me about the residence, its spaces or Nueva Andalucía.",
+    "es": ""
+  },
   "sequences": [
     [
       "First light",
       "08:06",
-      "The day begins outdoors. Garden, shade and the first reflection in the water become part of the morning ritual."
+      {
+        "en": "The day begins outdoors. Garden, shade and the first reflection in the water become part of the morning ritual.",
+        "es": ""
+      }
     ],
     [
       "Gather",
       "14:20",
-      "The social heart of the house opens: kitchen, living spaces and the exterior become one continuous place."
+      {
+        "en": "The social heart of the house opens: kitchen, living spaces and the exterior become one continuous place.",
+        "es": ""
+      }
     ],
     [
       "Golden hour",
       "20:14",
-      "The water catches the last light. The villa shifts from a home into a private world for the evening."
+      {
+        "en": "The water catches the last light. The villa shifts from a home into a private world for the evening.",
+        "es": ""
+      }
     ],
     [
       "Night garden",
       "23:08",
-      "The noise falls away. What remains is privacy, warmth and the feeling of having nowhere else to be."
+      {
+        "en": "The noise falls away. What remains is privacy, warmth and the feeling of having nowhere else to be.",
+        "es": ""
+      }
     ]
   ],
   "sceneSpaces": [
@@ -103,17 +157,26 @@
   "spatial": [
     [
       "01",
-      "Private retreat",
+      {
+        "en": "Private retreat",
+        "es": ""
+      },
       "Master suite · Private rooms"
     ],
     [
       "02",
-      "Social heart",
+      {
+        "en": "Social heart",
+        "es": ""
+      },
       "Kitchen · Dining room · Outdoor lounge"
     ],
     [
       "03",
-      "Open landscape",
+      {
+        "en": "Open landscape",
+        "es": ""
+      },
       "Garden · Pool terrace · Infinity pool"
     ]
   ],
@@ -130,8 +193,14 @@
     ]
   },
   "dna": {
-    "title": "The Private Resort",
-    "intro": "A residence shaped by outdoor life, water and gathering — with enough privacy to make the entire property feel like a world of its own.",
+    "title": {
+      "en": "The Private Resort",
+      "es": ""
+    },
+    "intro": {
+      "en": "A residence shaped by outdoor life, water and gathering — with enough privacy to make the entire property feel like a world of its own.",
+      "es": ""
+    },
     "dimensions": [
       {
         "label": "Outdoor life",
@@ -176,32 +245,68 @@
     ]
   },
   "setting": {
-    "title": "The Golf Valley, reimagined.",
-    "intro": "Nueva Andalucía becomes a landscape of mornings outdoors, long lunches, golf, coast and private return.",
+    "title": {
+      "en": "The Golf Valley, reimagined.",
+      "es": ""
+    },
+    "intro": {
+      "en": "Nueva Andalucía becomes a landscape of mornings outdoors, long lunches, golf, coast and private return.",
+      "es": ""
+    },
     "cards": [
       {
-        "title": "Morning",
-        "line": "Outdoor life in the Golf Valley",
+        "title": {
+          "en": "Morning",
+          "es": ""
+        },
+        "line": {
+          "en": "Outdoor life in the Golf Valley",
+          "es": ""
+        },
         "source": "golf"
       },
       {
-        "title": "Afternoon",
-        "line": "Water, shade and the rhythm of the garden",
+        "title": {
+          "en": "Afternoon",
+          "es": ""
+        },
+        "line": {
+          "en": "Water, shade and the rhythm of the garden",
+          "es": ""
+        },
         "source": "beaches"
       },
       {
-        "title": "Evening",
-        "line": "Marbella, the coast and private return",
+        "title": {
+          "en": "Evening",
+          "es": ""
+        },
+        "line": {
+          "en": "Marbella, the coast and private return",
+          "es": ""
+        },
         "source": "restaurants"
       },
       {
-        "title": "Connection",
-        "line": "A residential world close to the life of Marbella",
+        "title": {
+          "en": "Connection",
+          "es": ""
+        },
+        "line": {
+          "en": "A residential world close to the life of Marbella",
+          "es": ""
+        },
         "source": "distances"
       },
       {
-        "title": "Verification",
-        "line": "Distances and local claims to be confirmed by the advisor",
+        "title": {
+          "en": "Verification",
+          "es": ""
+        },
+        "line": {
+          "en": "Distances and local claims to be confirmed by the advisor",
+          "es": ""
+        },
         "source": "verification"
       }
     ]

@@ -191,14 +191,14 @@ function renderIdentity() {
   h += fieldReadOnly('Slug', draft.slug || '');
   h += fieldText('label', 'Location label', draft.label || '', 'Madrid · Goya');
   h += fieldText('brand', 'Brand / Agency', draft.brand || '', "Christie's");
-  h += fieldTextarea('title', 'Title', draft.title || '', 'The Light\nof Goya');
-  h += fieldText('subtitle', 'Subtitle', draft.subtitle || '');
-  h += fieldTextarea('intro', 'Introduction', draft.intro || '');
+  h += fieldBilingual('title', 'Title', draft.title || {}, { multiline: true });
+  h += fieldBilingual('subtitle', 'Subtitle', draft.subtitle || {});
+  h += fieldBilingual('intro', 'Introduction', draft.intro || {}, { multiline: true });
   h += fieldText('shortRef', 'Short reference', draft.shortRef || '', 'M1558 · Goya');
   h += fieldNumber('referencePrice', 'Reference price (€)', draft.referencePrice || 0);
   h += fieldText('defaultRegion', 'Default region', draft.defaultRegion || '', 'Comunidad de Madrid');
   h += fieldSelect('defaultPropertyType', 'Property type', draft.defaultPropertyType || 'resale', PROPERTY_TYPES);
-  h += fieldTextarea('conciergeIntro', 'Concierge intro', draft.conciergeIntro || '');
+  h += fieldBilingual('conciergeIntro', 'Concierge intro', draft.conciergeIntro || {}, { multiline: true });
 
   h += '<div class="ce-subsec"><div class="ce-subsec-label mono">Bilingual copy</div></div>';
   for (const key of COPY_KEYS) {
@@ -240,7 +240,7 @@ function renderNarrative() {
       '</div>' +
       fieldText('sequences.' + i + '.0', 'Title', s[0] || '') +
       fieldText('sequences.' + i + '.1', 'Time', s[1] || '', '09:12') +
-      fieldTextarea('sequences.' + i + '.2', 'Description', s[2] || '') +
+      fieldBilingual('sequences.' + i + '.2', 'Description', s[2] || {}, { multiline: true }) +
       fieldText('sceneSpaces.' + i + '.1', 'Spaces (comma-separated)', scSpaces, 'Master suite, Interior patios, Living room') +
       renderSpaceStatus(sc[1] || []) +
     '</div>';
@@ -306,7 +306,7 @@ function renderSpaces() {
         '</div>' +
       '</div>' +
       fieldText('spatial.' + i + '.0', 'Number', z[0] || '') +
-      fieldText('spatial.' + i + '.1', 'Zone name', z[1] || '') +
+      fieldBilingual('spatial.' + i + '.1', 'Zone name', z[1] || {}) +
       fieldText('spatial.' + i + '.2', 'Spaces', z[2] || '') +
       fieldTextarea('spatialNodeDetails.en.' + i, 'Detail (EN)', (details.en || [])[i] || '') +
       fieldTextarea('spatialNodeDetails.es.' + i, 'Detail (ES)', (details.es || [])[i] || '') +
@@ -321,8 +321,8 @@ function renderSpaces() {
 function renderDna() {
   const dna = draft.dna || {};
   let h = '';
-  h += fieldText('dna.title', 'DNA title', dna.title || '');
-  h += fieldTextarea('dna.intro', 'DNA intro', dna.intro || '');
+  h += fieldBilingual('dna.title', 'DNA title', dna.title || {});
+  h += fieldBilingual('dna.intro', 'DNA intro', dna.intro || {}, { multiline: true });
 
   const dims = dna.dimensions || [];
 
@@ -371,7 +371,7 @@ function renderInformation() {
     const f = facts[i] || [];
     h += '<div class="ce-repeat-item ce-repeat-inline">' +
       fieldText('facts.' + i + '.0', 'Value', f[0] || '') +
-      fieldText('facts.' + i + '.1', 'Label', f[1] || '') +
+      fieldBilingual('facts.' + i + '.1', 'Label', f[1] || {}) +
       '<div class="ce-repeat-actions">' +
         (i > 0 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'fact\',' + i + ',-1)" title="Move up">↑</button>' : '') +
         (i < facts.length - 1 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'fact\',' + i + ',1)" title="Move down">↓</button>' : '') +
@@ -398,8 +398,8 @@ function renderInformation() {
         '</div>' +
       '</div>' +
       fieldText('experiences.' + i + '.0', 'Number', e[0] || '') +
-      fieldText('experiences.' + i + '.1', 'Title', e[1] || '') +
-      fieldTextarea('experiences.' + i + '.2', 'Description', e[2] || '') +
+      fieldBilingual('experiences.' + i + '.1', 'Title', e[1] || {}) +
+      fieldBilingual('experiences.' + i + '.2', 'Description', e[2] || {}, { multiline: true }) +
     '</div>';
   }
 
@@ -411,8 +411,8 @@ function renderInformation() {
 function renderSurroundings() {
   const setting = draft.setting || {};
   let h = '';
-  h += fieldText('setting.title', 'Setting title', setting.title || '');
-  h += fieldTextarea('setting.intro', 'Setting intro', setting.intro || '');
+  h += fieldBilingual('setting.title', 'Setting title', setting.title || {});
+  h += fieldBilingual('setting.intro', 'Setting intro', setting.intro || {}, { multiline: true });
 
   const cards = setting.cards || [];
   h += '<div class="ce-subsec">' +
@@ -424,15 +424,15 @@ function renderSurroundings() {
     const c = cards[i] || {};
     h += '<div class="ce-repeat-item">' +
       '<div class="ce-repeat-head">' +
-        '<span class="ce-repeat-num">' + esc(c.title || '?') + '</span>' +
+        '<span class="ce-repeat-num">' + esc((c.title && c.title.en) || c.title || '?') + '</span>' +
         '<div class="ce-repeat-actions">' +
           (i > 0 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'setting\',' + i + ',-1)" title="Move up">↑</button>' : '') +
           (i < cards.length - 1 ? '<button class="ce-icon-btn" onclick="__ceMoveRepeat(\'setting\',' + i + ',1)" title="Move down">↓</button>' : '') +
           '<button class="ce-icon-btn ce-icon-del" onclick="__ceRemoveRepeat(\'setting\',' + i + ')" title="Remove">×</button>' +
         '</div>' +
       '</div>' +
-      fieldText('setting.cards.' + i + '.title', 'Title', c.title || '') +
-      fieldText('setting.cards.' + i + '.line', 'Line', c.line || '') +
+      fieldBilingual('setting.cards.' + i + '.title', 'Title', c.title || {}) +
+      fieldBilingual('setting.cards.' + i + '.line', 'Line', c.line || {}) +
       fieldSourceSelect('setting.cards.' + i + '.source', 'Source key', c.source || '') +
     '</div>';
   }
@@ -506,35 +506,35 @@ function addRepeaterItem(type) {
     case 'sequence':
       if (!draft.sequences) draft.sequences = [];
       if (!draft.sceneSpaces) draft.sceneSpaces = [];
-      draft.sequences.push(['', '', '']);
+      draft.sequences.push(['', '', { en: '', es: '' }]);
       draft.sceneSpaces.push(['', []]);
       break;
     case 'spatial':
       if (!draft.spatial) draft.spatial = [];
       if (!draft.spatialNodeDetails) draft.spatialNodeDetails = { en: [], es: [] };
       const num = String(draft.spatial.length + 1).padStart(2, '0');
-      draft.spatial.push([num, '', '']);
+      draft.spatial.push([num, { en: '', es: '' }, '']);
       draft.spatialNodeDetails.en.push('');
       draft.spatialNodeDetails.es.push('');
       break;
     case 'dna':
-      if (!draft.dna) draft.dna = { title: '', intro: '', dimensions: [] };
+      if (!draft.dna) draft.dna = { title: { en: '', es: '' }, intro: { en: '', es: '' }, dimensions: [] };
       if (!draft.dna.dimensions) draft.dna.dimensions = [];
       draft.dna.dimensions.push({ label: '', score: '', note: { en: '', es: '' } });
       break;
     case 'fact':
       if (!draft.facts) draft.facts = [];
-      draft.facts.push(['', '']);
+      draft.facts.push(['', { en: '', es: '' }]);
       break;
     case 'experience':
       if (!draft.experiences) draft.experiences = [];
       const n = String(draft.experiences.length + 1).padStart(2, '0');
-      draft.experiences.push([n, '', '']);
+      draft.experiences.push([n, { en: '', es: '' }, { en: '', es: '' }]);
       break;
     case 'setting':
-      if (!draft.setting) draft.setting = { title: '', intro: '', cards: [] };
+      if (!draft.setting) draft.setting = { title: { en: '', es: '' }, intro: { en: '', es: '' }, cards: [] };
       if (!draft.setting.cards) draft.setting.cards = [];
-      draft.setting.cards.push({ title: '', line: '', source: '' });
+      draft.setting.cards.push({ title: { en: '', es: '' }, line: { en: '', es: '' }, source: '' });
       break;
   }
   draw();
@@ -652,21 +652,36 @@ function fieldSelect(path, label, value, options) {
   '</div>';
 }
 
-function fieldBilingual(path, label, obj) {
-  const en = (obj && obj.en) || '';
-  const es = (obj && obj.es) || '';
+/* opts.multiline renders a <textarea> instead of a single-line <input> —
+   used for the M6.8 fields promoted from fieldTextarea (title, intro,
+   conciergeIntro) so they keep the same multi-line editing they had
+   before, just doubled for EN/ES. Every existing caller (copy.*)
+   passes no 4th argument, so it keeps rendering exactly as before. */
+function fieldBilingual(path, label, obj, opts) {
+  // Tolerates a legacy plain-string value (pre-migration content, or a
+  // property row that was never migrated) by treating it as the EN
+  // value — matching the t()/textOf() convention used everywhere else
+  // in the M6.8 migration. Without this, a bare string is truthy but
+  // has no .en/.es, so both columns would silently render blank and
+  // an operator could overwrite the real (invisible) legacy text.
+  const isObj = obj && typeof obj === 'object';
+  const en = (isObj ? obj.en : obj) || '';
+  const es = (isObj ? obj.es : '') || '';
+  const multiline = !!(opts && opts.multiline);
+  const field = (value, langPath) => multiline
+    ? '<textarea class="ce-textarea" oninput="__ceInput(\'' + escAttr(langPath) + '\',this.value)">' + esc(value) + '</textarea>'
+    : '<input type="text" class="ce-input" value="' + esc(value) + '"' +
+      ' oninput="__ceInput(\'' + escAttr(langPath) + '\',this.value)" />';
   return '<div class="ce-field ce-field-bi">' +
     '<label class="ce-label">' + esc(label) + '</label>' +
     '<div class="ce-bilingual">' +
       '<div class="ce-bi-col">' +
         '<span class="ce-bi-tag mono">EN</span>' +
-        '<input type="text" class="ce-input" value="' + esc(en) + '"' +
-        ' oninput="__ceInput(\'' + escAttr(path + '.en') + '\',this.value)" />' +
+        field(en, path + '.en') +
       '</div>' +
       '<div class="ce-bi-col">' +
         '<span class="ce-bi-tag mono">ES</span>' +
-        '<input type="text" class="ce-input" value="' + esc(es) + '"' +
-        ' oninput="__ceInput(\'' + escAttr(path + '.es') + '\',this.value)" />' +
+        field(es, path + '.es') +
       '</div>' +
     '</div>' +
   '</div>';
@@ -684,7 +699,7 @@ function setPath(obj, path, value) {
   for (let i = 0; i < parts.length - 1; i++) {
     const k = parts[i];
     const nextKey = parts[i + 1];
-    if (cur[k] === undefined || cur[k] === null) {
+    if (cur[k] === undefined || cur[k] === null || typeof cur[k] !== 'object') {
       cur[k] = isArrayIndex(nextKey) ? [] : {};
     }
     cur = cur[k];

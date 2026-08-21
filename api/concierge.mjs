@@ -100,6 +100,31 @@ function buildLanguagePrompt(lang) {
     : 'Answer in English.';
 }
 
+/* M6.8: several content.json fields were promoted from plain strings to
+   {en, es} (bilingual content architecture — see app.js's t()/tkey()).
+   This prompt has no visitor `lang` to key off (the model is told
+   separately, via languageInstruction(), what language to ANSWER in —
+   the dossier it reads to get there has never been per-language), so
+   textEn() always resolves to English, tolerating the old plain-string
+   shape too so content not yet migrated keeps working exactly as
+   before. Recurses so nested dossier objects (dna, setting, facts) come
+   out as plain strings throughout, not {en, es} objects, before they
+   reach JSON.stringify. */
+function textEn(v) {
+  if (v == null) return v;
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return v.map(textEn);
+  if (typeof v === 'object' && ('en' in v || 'es' in v) && Object.keys(v).every(k => k === 'en' || k === 'es')) {
+    return v.en || v.es || '';
+  }
+  if (typeof v === 'object') {
+    const out = {};
+    for (const [k, val] of Object.entries(v)) out[k] = textEn(val);
+    return out;
+  }
+  return v;
+}
+
 function buildDossierPrompt(slug, dossier) {
   const content = dossier.content;
   const knowledge = dossier.knowledge;
@@ -107,7 +132,7 @@ function buildDossierPrompt(slug, dossier) {
   const spaceNames = Object.keys(knowledge.property?.spaces || {});
   const sceneNames = (content.sequences || []).map(s => s[0]);
 
-  return `You are the private digital advisor for ${content.label} — ${content.title.replace('\n', ' ')}, represented by ${content.brand}.
+  return `You are the private digital advisor for ${content.label} — ${textEn(content.title).replace('\n', ' ')}, represented by ${content.brand}.
 
 You are speaking with a prospective buyer who is exploring this residence before visiting it. They are considering a purchase in the millions. Your job is to help them perceive and understand the property, and to make them want to see it.
 
@@ -141,7 +166,7 @@ Include a space when the visitor would understand the answer better by seeing th
 
 # The property dossier
 
-${JSON.stringify({ property: knowledge.property, surroundings: knowledge.surroundings, dna: content.dna, setting: content.setting, sequences: content.sequences, facts: content.facts }, null, 1)}`;
+${JSON.stringify({ property: knowledge.property, surroundings: knowledge.surroundings, dna: textEn(content.dna), setting: textEn(content.setting), sequences: textEn(content.sequences), facts: textEn(content.facts) }, null, 1)}`;
 }
 
 export default async function handler(req, res) {

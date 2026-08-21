@@ -34,6 +34,21 @@ function activeAssets(){return (assetsModel&&assetsModel[current])||{}}
 /* Bilingual per-property copy: content.copy.{key}.{lang} */
 function pc(key){const c=model('copy');return (c&&c[key]&&c[key][lang])||''}
 
+/* M6.8: bilingual content architecture. Several content.json fields were
+   promoted from plain strings to {en, es} — t() reads one for DISPLAY at
+   the visitor's current language, tolerating BOTH shapes so content not
+   yet migrated (or a future property still on the old shape) keeps
+   rendering exactly as before. Falls back en→es→'' so an empty es (the
+   expected state until real translations are entered — this milestone
+   is architecture only, not translation) never blanks the page.
+   tkey() is the separate, deliberately English-preferred form for
+   values also used as analytics/grouping keys (not just display) — see
+   htmlSpatial's space_open track call — so the same zone opened by an
+   EN and an ES visitor still aggregates as one entry instead of
+   fragmenting Admin analytics by visitor language. */
+function t(v){return v==null?'':typeof v==='string'?v:(v[lang]||v.en||v.es||'')}
+function tkey(v){return v==null?'':typeof v==='string'?v:(v.en||v.es||'')}
+
 /* DNA dimensions and Setting cards are authored as objects. Legacy tuples
    still load, so an older property pack does not break. */
 function dnaDimensions(){
@@ -82,7 +97,7 @@ function openSetting(i){
   box.innerHTML=buildSettingDetail(card);
   box.classList.add('open');
   openSettingIndex=i;
-  LarumAnalytics.track('setting_open',{name:card?.title,source:card?.source});
+  LarumAnalytics.track('setting_open',{name:tkey(card?.title),source:card?.source});
 }
 
 function buildSettingDetail(card){
@@ -247,31 +262,31 @@ function railChapterIds(){
 }
 
 function htmlHero(p,c){
-  return `<section id="hero" class="hero">${p.heroVideo?`<video class="hero-video" autoplay muted loop playsinline poster="${p.image}"><source src="${p.heroVideo}" type="video/mp4"></video>`:''}<div class="hero-image" style="background-image:url('${p.image}')"></div><div class="hero-copy"><div class="eyebrow">${p.label} · ${p.brand}</div><h1>${p.title.replace('\n','<br>')}</h1><p>${p.subtitle}</p><div class="hero-proof"><span>04 chapters</span><span>Spatial narrative</span><span>Private concierge</span></div><div class="path-picker"><div class="mono">${lang==='en'?'Choose your way in':'Elige tu camino'}</div><button onclick="choosePath('live')"><b>01</b>${lang==='en'?'Live the day':'Vivir el día'} <span>↘</span></button><button onclick="choosePath('space')"><b>02</b>${lang==='en'?'Understand the space':'Entender el espacio'} <span>↘</span></button><button onclick="choosePath('private')"><b>03</b>${lang==='en'?'Speak privately':'Hablar en privado'} <span>↘</span></button></div><button class="cta" onclick="startArrival()">${c.know}<b>↘</b></button></div><div class="scroll">${c.scroll} ↓</div></section>`;
+  return `<section id="hero" class="hero">${p.heroVideo?`<video class="hero-video" autoplay muted loop playsinline poster="${p.image}"><source src="${p.heroVideo}" type="video/mp4"></video>`:''}<div class="hero-image" style="background-image:url('${p.image}')"></div><div class="hero-copy"><div class="eyebrow">${p.label} · ${p.brand}</div><h1>${t(p.title).replace('\n','<br>')}</h1><p>${t(p.subtitle)}</p><div class="hero-proof"><span>04 chapters</span><span>Spatial narrative</span><span>Private concierge</span></div><div class="path-picker"><div class="mono">${lang==='en'?'Choose your way in':'Elige tu camino'}</div><button onclick="choosePath('live')"><b>01</b>${lang==='en'?'Live the day':'Vivir el día'} <span>↘</span></button><button onclick="choosePath('space')"><b>02</b>${lang==='en'?'Understand the space':'Entender el espacio'} <span>↘</span></button><button onclick="choosePath('private')"><b>03</b>${lang==='en'?'Speak privately':'Hablar en privado'} <span>↘</span></button></div><button class="cta" onclick="startArrival()">${c.know}<b>↘</b></button></div><div class="scroll">${c.scroll} ↓</div></section>`;
 }
 function htmlIdentity(p,c){
-  return `<section id="identity" class="section light identity"><div class="grid"><div><div class="mono">01 · ${lang==='en'?'Identity':'Identidad'}</div><h2>${c.identity}</h2></div><div><p class="statement">${p.intro}</p><p>${pc('identityNote')}</p></div></div></section>`;
+  return `<section id="identity" class="section light identity"><div class="grid"><div><div class="mono">01 · ${lang==='en'?'Identity':'Identidad'}</div><h2>${c.identity}</h2></div><div><p class="statement">${t(p.intro)}</p><p>${pc('identityNote')}</p></div></div></section>`;
 }
 function htmlPropertyDna(p,c){
-  return `<section class="dna-section"><div class="dna-head"><div><div class="mono">02 · ${lang==='en'?'Property DNA':'ADN de la propiedad'}</div><h2>${p.dna?.title||p.title.replace('\n',' ')}</h2></div><p>${p.dna?.intro||p.intro}</p></div><div class="dna-grid">${dnaDimensions().map((d,i)=>`<div class="dna-item"><button class="dna-trigger" onclick="toggleDna(${i})" aria-expanded="false" aria-controls="dnaNote${i}"><div class="dna-top"><span>0${i+1}</span><b>${d.label}</b><strong>${d.score}</strong></div><div class="dna-bar"><i style="width:${d.score}%"></i></div></button><div class="dna-note" id="dnaNote${i}"><p>${d.note?.[lang]||''}</p></div></div>`).join('')}</div></section>`;
+  return `<section class="dna-section"><div class="dna-head"><div><div class="mono">02 · ${lang==='en'?'Property DNA':'ADN de la propiedad'}</div><h2>${t(p.dna?.title)||t(p.title).replace('\n',' ')}</h2></div><p>${t(p.dna?.intro)||t(p.intro)}</p></div><div class="dna-grid">${dnaDimensions().map((d,i)=>`<div class="dna-item"><button class="dna-trigger" onclick="toggleDna(${i})" aria-expanded="false" aria-controls="dnaNote${i}"><div class="dna-top"><span>0${i+1}</span><b>${d.label}</b><strong>${d.score}</strong></div><div class="dna-bar"><i style="width:${d.score}%"></i></div></button><div class="dna-note" id="dnaNote${i}"><p>${d.note?.[lang]||''}</p></div></div>`).join('')}</div></section>`;
 }
 function htmlImageBand(p,c){
   return `<div class="image-band" style="background-image:url('${p.band}')"><div class="image-label">02 · ${pc('bandLabel')}</div></div>`;
 }
 function htmlLivedSequence(p,c){
-  return `<section id="sequence" class="living-sequence"><div class="sequence-head"><div><div class="mono">03 · ${lang==='en'?'A day here':'Un día aquí'}</div><h2>${pc('sequenceTitle')}</h2></div><p>${pc('sequenceIntro')}</p></div><div class="sequence-stage" id="sequenceStage" style="background-image:linear-gradient(90deg,rgba(12,13,11,.62),rgba(12,13,11,.08)),url('${p.band}')"><div class="sequence-copy"><div class="mono" id="sequenceTime">${activeSequences()[0][1]}</div><h3 id="sequenceTitle">${activeSequences()[0][0]}</h3><p id="sequenceText">${activeSequences()[0][2]}</p></div><div class="sequence-controls">${activeSequences().map((s,i)=>`<button class="sequence-dot ${i===0?'active':''}" onclick="selectSequence(${i})"><span>0${i+1}</span><b>${s[0]}</b></button>`).join('')}</div></div><div class="scene-links" id="sceneLinks">${activeScenes()[0][1].map((space,i)=>`<button class="scene-link" onclick="openSpace('${space}')"><span>0${i+1}</span>${space}<b>↗</b></button>`).join('')}</div><button class="film-trigger" onclick="handleFilmTrigger()">${pc('filmLabel')} <b>▷</b></button></section>`;
+  return `<section id="sequence" class="living-sequence"><div class="sequence-head"><div><div class="mono">03 · ${lang==='en'?'A day here':'Un día aquí'}</div><h2>${pc('sequenceTitle')}</h2></div><p>${pc('sequenceIntro')}</p></div><div class="sequence-stage" id="sequenceStage" style="background-image:linear-gradient(90deg,rgba(12,13,11,.62),rgba(12,13,11,.08)),url('${p.band}')"><div class="sequence-copy"><div class="mono" id="sequenceTime">${activeSequences()[0][1]}</div><h3 id="sequenceTitle">${activeSequences()[0][0]}</h3><p id="sequenceText">${t(activeSequences()[0][2])}</p></div><div class="sequence-controls">${activeSequences().map((s,i)=>`<button class="sequence-dot ${i===0?'active':''}" onclick="selectSequence(${i})"><span>0${i+1}</span><b>${s[0]}</b></button>`).join('')}</div></div><div class="scene-links" id="sceneLinks">${activeScenes()[0][1].map((space,i)=>`<button class="scene-link" onclick="openSpace('${space}')"><span>0${i+1}</span>${space}<b>↗</b></button>`).join('')}</div><button class="film-trigger" onclick="handleFilmTrigger()">${pc('filmLabel')} <b>▷</b></button></section>`;
 }
 function htmlExplore(p,c){
-  return `<section id="explore" class="section dark"><div class="mono">04 · ${c.explore}</div><div class="experiences">${p.experiences.map(e=>`<article class="experience"><div class="number">${e[0]}</div><h3>${e[1]}</h3><p>${e[2]}</p></article>`).join('')}</div></section>`;
+  return `<section id="explore" class="section dark"><div class="mono">04 · ${c.explore}</div><div class="experiences">${p.experiences.map(e=>`<article class="experience"><div class="number">${e[0]}</div><h3>${t(e[1])}</h3><p>${t(e[2])}</p></article>`).join('')}</div></section>`;
 }
 function htmlSpatial(p,c){
-  return `<section id="spatial" class="spatial"><div class="spatial-head"><div><div class="mono">05 · ${lang==='en'?'Spatial intelligence':'Inteligencia espacial'}</div><h2>${pc('spatialTitle')}</h2></div><p>${pc('spatialIntro')}</p></div><div class="spatial-map"><div class="map-lines"></div>${activeSpatial().map((m,i)=>`<button class="map-node ${i===0?'active':''}" onclick="selectMapSpace(${i})"><span>${m[0]}</span><strong>${m[1]}</strong><small>${m[2]}</small></button>`).join('')}</div><div class="spatial-detail" id="spatialDetail">${pc('spatialDetail')}</div></section>`;
+  return `<section id="spatial" class="spatial"><div class="spatial-head"><div><div class="mono">05 · ${lang==='en'?'Spatial intelligence':'Inteligencia espacial'}</div><h2>${pc('spatialTitle')}</h2></div><p>${pc('spatialIntro')}</p></div><div class="spatial-map"><div class="map-lines"></div>${activeSpatial().map((m,i)=>`<button class="map-node ${i===0?'active':''}" onclick="selectMapSpace(${i})"><span>${m[0]}</span><strong>${t(m[1])}</strong><small>${m[2]}</small></button>`).join('')}</div><div class="spatial-detail" id="spatialDetail">${pc('spatialDetail')}</div></section>`;
 }
 function htmlDetails(p,c){
-  return `<section id="details" class="section light"><div class="grid"><div><div class="mono">06 · ${lang==='en'?'Verified details':'Datos verificados'}</div><h2>${pc('detailsTitle')}</h2></div><div><p>${pc('detailsIntro')}</p><div class="facts">${p.facts.map(f=>`<div class="fact"><strong>${f[0]}</strong><span>${f[1]}</span></div>`).join('')}</div></div></div></section>`;
+  return `<section id="details" class="section light"><div class="grid"><div><div class="mono">06 · ${lang==='en'?'Verified details':'Datos verificados'}</div><h2>${pc('detailsTitle')}</h2></div><div><p>${pc('detailsIntro')}</p><div class="facts">${p.facts.map(f=>`<div class="fact"><strong>${f[0]}</strong><span>${t(f[1])}</span></div>`).join('')}</div></div></div></section>`;
 }
 function htmlSetting(p,c){
-  return `<section id="setting" class="setting"><div class="setting-head"><div><div class="mono">07 · ${lang==='en'?'The setting':'El entorno'}</div><h2>${p.setting?.title||(lang==='en'?'The world around the property.':'El mundo alrededor de la propiedad.')}</h2></div><p>${p.setting?.intro||''}</p></div><div class="setting-grid">${settingCards().map((card,i)=>`<button class="setting-card ${card.source==='verification'?'verification':''}" onclick="openSetting(${i})"><span>0${i+1}</span><strong>${card.title}</strong><p>${card.line}</p><em class="setting-more">${lang==='en'?'Open':'Abrir'} <b>↗</b></em></button>`).join('')}</div><div class="setting-detail" id="settingDetail" aria-live="polite"></div></section>`;
+  return `<section id="setting" class="setting"><div class="setting-head"><div><div class="mono">07 · ${lang==='en'?'The setting':'El entorno'}</div><h2>${t(p.setting?.title)||(lang==='en'?'The world around the property.':'El mundo alrededor de la propiedad.')}</h2></div><p>${t(p.setting?.intro)}</p></div><div class="setting-grid">${settingCards().map((card,i)=>`<button class="setting-card ${card.source==='verification'?'verification':''}" onclick="openSetting(${i})"><span>0${i+1}</span><strong>${t(card.title)}</strong><p>${t(card.line)}</p><em class="setting-more">${lang==='en'?'Open':'Abrir'} <b>↗</b></em></button>`).join('')}</div><div class="setting-detail" id="settingDetail" aria-live="polite"></div></section>`;
 }
 function htmlDocuments(p,c){
   return `<section id="documents" class="documents"><div class="documents-head"><div><div class="mono">07 · ${lang==='en'?'Private documents':'Documentos privados'}</div><h2>${lang==='en'?'The information<br>behind the feeling.':'La información<br>detrás del sentimiento.'}</h2></div><p>${lang==='en'?'When you are ready to go deeper, access the documents that make the residence real: certification, plans and brochure.':'Cuando estés listo para profundizar, accede a los documentos que hacen real la residencia: certificación, planos y brochure.'}</p></div><div class="document-grid"><button class="document-card" onclick="openDocument('Energy performance certificate')"><span>01</span><strong>${lang==='en'?'Energy certificate':'Certificado energético'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button><button class="document-card" onclick="openDocument('Floor plans')"><span>02</span><strong>${lang==='en'?'Floor plans':'Planos'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button><button class="document-card" onclick="openDocument('Property brochure')"><span>03</span><strong>${lang==='en'?'Property brochure':'Brochure'}</strong><small>${lang==='en'?'Available on request · PDF':'Disponible bajo solicitud · PDF'}</small><b>↗</b></button></div></section>`;
@@ -283,7 +298,7 @@ function htmlConcierge(p,c){
   return `<section id="concierge" class="concierge"><div><div class="advisor"><div class="advisor-avatar">A</div><div><div class="mono">${lang==='en'?'Property Concierge':'Concierge de la propiedad'}</div><div style="font-size:12px;margin-top:5px">${lang==='en'?'Private advisor':'Asesor privado'} · ${p.label}</div></div></div><h2>${c.concierge}</h2><p style="font-size:13px;line-height:1.7;max-width:420px">${c.conciergeSub}</p>
 <div class="concierge-status" id="conciergeStatus"></div>
 <button class="cta" style="color:var(--ink);border-color:var(--ink)" onclick="document.querySelector('.chat input').focus()">${c.explore} <b>↘</b></button></div>
-<div class="chat"><div class="messages" id="chatMessages"><div class="bubble">${p.conciergeIntro}</div></div><form class="chat-form" onsubmit="chat(event)"><input id="chatInput" placeholder="${c.placeholder}"/><button>${c.send} ↗</button></form></div></section>`;
+<div class="chat"><div class="messages" id="chatMessages"><div class="bubble">${t(p.conciergeIntro)}</div></div><form class="chat-form" onsubmit="chat(event)"><input id="chatInput" placeholder="${c.placeholder}"/><button>${c.send} ↗</button></form></div></section>`;
 }
 function htmlArrival(p,c){
   return `<div id="arrivalOverlay" class="arrival-overlay" aria-hidden="true"><div class="arrival-backdrop"></div><div class="arrival-progress"><span class="arrival-step active">01</span><i></i><span class="arrival-step">02</span><i></i><span class="arrival-step">03</span></div><button class="arrival-close" onclick="closeArrival()">Close ×</button><div class="arrival-content"><div class="eyebrow" id="arrivalEyebrow">Arrival</div><h2 id="arrivalTitle"></h2><p id="arrivalText"></p><button class="arrival-next" onclick="nextArrival()">${lang==='en'?'Continue':'Continuar'} <b>↘</b></button></div></div>`;
@@ -542,7 +557,7 @@ function legacySelectSequence(i){
 function selectMapSpace(i){
   const m=activeSpatial()[i];
   document.querySelectorAll('.map-node').forEach((el,n)=>el.classList.toggle('active',n===i));
-  LarumAnalytics.track('space_open', { name: m[1] });
+  LarumAnalytics.track('space_open', { name: tkey(m[1]) });
   const details=model('spatialNodeDetails');
   const text=details?.[lang]?.[i];
   if(text)document.getElementById('spatialDetail').textContent=text;
