@@ -237,26 +237,34 @@ await test('createProperty throws on missing organization', async () => {
    ═══════════════════════════════════════════════════════════════ */
 console.log('\n[3] Store: savePropertyStatus / savePropertyMeta');
 
+/* M6.5a: every real (non-empty) update() now also filters on
+   updated_at and reads back via .select('updated_at') for the
+   optimistic-concurrency check — the mock's `then` handler must
+   return a 1-row array, not `data: null`, or the store would
+   misread a normal successful save as a 0-row conflict. */
 await test('savePropertyStatus updates status and sets published_at for published', async () => {
   let updatedPatch = null;
   let eqSlug = null;
+  let eqUpdatedAt = null;
 
   globalThis.window.supabaseClient = mockClient({
     properties: {
       then: (chain) => {
         updatedPatch = chain._updated;
         eqSlug = chain._eq?.slug;
-        return Promise.resolve({ data: null, error: null });
+        eqUpdatedAt = chain._eq?.updated_at;
+        return Promise.resolve({ data: [{ updated_at: '2026-01-02T00:00:00Z' }], error: null });
       }
     }
   });
 
-  await adminStore.savePropertyStatus('test-slug', 'published');
+  await adminStore.savePropertyStatus('test-slug', 'published', '2026-01-01T00:00:00Z');
 
   assert.ok(updatedPatch, 'update was not called');
   assert.equal(updatedPatch.status, 'published');
   assert.ok(updatedPatch.published_at, 'published_at should be set');
   assert.equal(eqSlug, 'test-slug');
+  assert.equal(eqUpdatedAt, '2026-01-01T00:00:00Z', 'the expectedUpdatedAt passed in must reach the .eq() filter');
 });
 
 await test('savePropertyStatus does NOT set published_at for draft', async () => {
@@ -266,15 +274,28 @@ await test('savePropertyStatus does NOT set published_at for draft', async () =>
     properties: {
       then: (chain) => {
         updatedPatch = chain._updated;
-        return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: [{ updated_at: '2026-01-02T00:00:00Z' }], error: null });
       }
     }
   });
 
-  await adminStore.savePropertyStatus('test-slug', 'draft');
+  await adminStore.savePropertyStatus('test-slug', 'draft', '2026-01-01T00:00:00Z');
 
   assert.equal(updatedPatch.status, 'draft');
   assert.equal(updatedPatch.published_at, undefined);
+});
+
+await test('savePropertyStatus throws ConflictError and does not touch the cache when 0 rows match', async () => {
+  globalThis.window.supabaseClient = mockClient({
+    properties: {
+      then: () => Promise.resolve({ data: [], error: null })
+    }
+  });
+
+  await assert.rejects(
+    () => adminStore.savePropertyStatus('test-slug', 'published', 'stale-timestamp'),
+    (e) => e instanceof adminStore.ConflictError
+  );
 });
 
 await test('savePropertyMeta only allows display_order, is_default, agent_id', async () => {
@@ -284,7 +305,7 @@ await test('savePropertyMeta only allows display_order, is_default, agent_id', a
     properties: {
       then: (chain) => {
         updatedPatch = chain._updated;
-        return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: [{ updated_at: '2026-01-02T00:00:00Z' }], error: null });
       }
     }
   });
@@ -295,7 +316,7 @@ await test('savePropertyMeta only allows display_order, is_default, agent_id', a
     agent_id: 'agent-1',
     status: 'published',
     slug: 'hacked'
-  });
+  }, '2026-01-01T00:00:00Z');
 
   assert.ok(updatedPatch, 'update was not called');
   assert.equal(updatedPatch.display_order, 3);
@@ -305,6 +326,30 @@ await test('savePropertyMeta only allows display_order, is_default, agent_id', a
   assert.equal(updatedPatch.slug, undefined, 'slug should not be in meta patch');
 });
 
+/* Review finding A (M6.5a): savePropertyStatus's own eqUpdatedAt check
+   above doesn't cover savePropertyMeta separately — same helper
+   function, but a copy-paste regression in either call site would go
+   uncaught without its own explicit assertion. */
+await test('savePropertyMeta: the expectedUpdatedAt argument reaches the .eq("updated_at", ...) filter', async () => {
+  let eqSlug = null;
+  let eqUpdatedAt = null;
+
+  globalThis.window.supabaseClient = mockClient({
+    properties: {
+      then: (chain) => {
+        eqSlug = chain._eq?.slug;
+        eqUpdatedAt = chain._eq?.updated_at;
+        return Promise.resolve({ data: [{ updated_at: '2026-01-02T00:00:00Z' }], error: null });
+      }
+    }
+  });
+
+  await adminStore.savePropertyMeta('test-slug', { display_order: 1 }, '2026-01-01T00:00:00Z');
+
+  assert.equal(eqSlug, 'test-slug');
+  assert.equal(eqUpdatedAt, '2026-01-01T00:00:00Z', 'the expectedUpdatedAt passed in must reach the .eq() filter');
+});
+
 await test('savePropertyMeta skips empty patch', async () => {
   let updateCalled = false;
 
@@ -312,12 +357,12 @@ await test('savePropertyMeta skips empty patch', async () => {
     properties: {
       then: (chain) => {
         if (chain._updated) updateCalled = true;
-        return Promise.resolve({ data: null, error: null });
+        return Promise.resolve({ data: [{ updated_at: '2026-01-02T00:00:00Z' }], error: null });
       }
     }
   });
 
-  await adminStore.savePropertyMeta('test-slug', { status: 'published' });
+  await adminStore.savePropertyMeta('test-slug', { status: 'published' }, '2026-01-01T00:00:00Z');
   assert.ok(!updateCalled, 'update should not be called for disallowed keys only');
 });
 

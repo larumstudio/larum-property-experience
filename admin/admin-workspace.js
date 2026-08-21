@@ -6,7 +6,7 @@
 
 import { esc, cap } from './admin-core.js';
 import { tabs, emptyState, badge, toast } from './admin-ui.js';
-import { loadProperty, getCached, getPropertyLabel, savePropertyStatus, savePropertyMeta, loadAgents, loadRevisions, createRevision, publishRevision, rollback } from './admin-property-store.js';
+import { loadProperty, getCached, getPropertyLabel, savePropertyStatus, savePropertyMeta, loadAgents, loadRevisions, createRevision, publishRevision, rollback, ConflictError } from './admin-property-store.js';
 import { resolveCapabilities } from './admin-auth-context.js';
 import * as contentEditor from './admin-content-editor.js';
 import * as assetsEditor from './admin-assets-editor.js';
@@ -415,11 +415,15 @@ async function handleStatusChange(target) {
   draw();
 
   try {
-    await savePropertyStatus(currentSlug, target);
+    /* Read updated_at off currentProperty right here, not earlier —
+       it's the same object as the store's cache entry, so if another
+       tab/save in this session already touched it, this always sees
+       that fresh value instead of a stale one captured earlier (M6.5a). */
+    await savePropertyStatus(currentSlug, target, currentProperty.updated_at);
     currentProperty.status = target;
     toast('Status changed to ' + target.replace(/_/g, ' '), 'success');
   } catch (e) {
-    toast('Status update failed: ' + e.message, 'error');
+    toast(e instanceof ConflictError ? e.message : 'Status update failed: ' + e.message, 'error');
   } finally {
     savingStatus = false;
     pendingStatus = null;
@@ -434,11 +438,11 @@ async function confirmStatusChange() {
   draw();
 
   try {
-    await savePropertyStatus(currentSlug, pendingStatus);
+    await savePropertyStatus(currentSlug, pendingStatus, currentProperty.updated_at);
     currentProperty.status = pendingStatus;
     toast('Status changed to ' + pendingStatus.replace(/_/g, ' '), 'success');
   } catch (e) {
-    toast('Status update failed: ' + e.message, 'error');
+    toast(e instanceof ConflictError ? e.message : 'Status update failed: ' + e.message, 'error');
   } finally {
     savingStatus = false;
     pendingStatus = null;
@@ -481,11 +485,11 @@ async function handleSaveMeta() {
   draw();
 
   try {
-    await savePropertyMeta(currentSlug, patch);
+    await savePropertyMeta(currentSlug, patch, currentProperty.updated_at);
     Object.assign(currentProperty, patch);
     toast('Metadata saved', 'success');
   } catch (e) {
-    toast('Save failed: ' + e.message, 'error');
+    toast(e instanceof ConflictError ? e.message : 'Save failed: ' + e.message, 'error');
   } finally {
     savingMeta = false;
     draw();

@@ -4,6 +4,8 @@
    writes to them.
    ───────────────────────────────────────────────────────────── */
 
+import { CONFLICT_MESSAGE } from './admin-property-store.js';
+
 export const state = {
   leads: [],
   sessions: [],
@@ -173,7 +175,21 @@ export async function updateLead(lead, patch) {
   const note = document.getElementById('savedNote');
   if (note) note.textContent = 'Saving…';
 
-  const { error } = await supabaseClient.from('leads').update(patch).eq('id', lead.id);
+  /* M6.5a: same compare-and-swap as the 5 property saves in
+     admin-property-store.js, keyed on leads.updated_at (migration
+     007 — leads had no such column before this). `lead` is the same
+     object reference held by whichever list rendered the drawer
+     (currentLeads[i] in admin-leads.js / admin-property-leads.js), and
+     it gets `updated_at` refreshed in place below on every successful
+     save — so reading `lead.updated_at` here is always the freshest
+     value this session knows, never a stale snapshot from when the
+     drawer first opened. */
+  const { data, error } = await supabaseClient
+    .from('leads')
+    .update(patch)
+    .eq('id', lead.id)
+    .eq('updated_at', lead.updated_at)
+    .select('updated_at');
 
   if (error) {
     /* M6.4 finding: clearing #savedNote to blank on failure looked
@@ -194,8 +210,34 @@ export async function updateLead(lead, patch) {
     return false;
   }
 
+  /* Zero rows matched: someone else saved this lead since it was
+     loaded. PostgREST does not treat this as an error — without this
+     check a stale save would look identical to a successful one. */
+  if (!data || data.length === 0) {
+    if (note) { note.textContent = CONFLICT_MESSAGE; note.classList.add('error'); }
+    const b = document.getElementById('banner');
+    if (b) {
+      b.innerHTML = '<strong>' + esc(CONFLICT_MESSAGE) + '</strong>';
+      b.classList.add('on');
+    }
+    return false;
+  }
+
+  /* `id` is the primary key — more than one row matching is expected-
+     impossible. Treated as a hard failure, never as silent success. */
+  if (data.length > 1) {
+    if (note) { note.textContent = 'Error — not saved'; note.classList.add('error'); }
+    const b = document.getElementById('banner');
+    if (b) {
+      b.innerHTML = '<strong>The lead could not be updated.</strong> Integrity error: more than one row matched — investigate before retrying.';
+      b.classList.add('on');
+    }
+    return false;
+  }
+
   if (note) note.classList.remove('error');
   Object.assign(lead, patch);
+  lead.updated_at = data[0].updated_at;
   if (note) note.textContent = 'Saved';
   return true;
 }

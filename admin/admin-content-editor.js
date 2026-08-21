@@ -10,13 +10,21 @@
 
 import { esc } from './admin-core.js';
 import { toast } from './admin-ui.js';
-import { saveContent } from './admin-property-store.js';
+import { saveContent, ConflictError } from './admin-property-store.js';
 
 let draft = null;
 let slug = null;
 let containerRef = null;
 let openSections = { identity: true };
 let saving = false;
+
+/* Live reference to the property object passed into render() — refreshed
+   on every call, NOT gated by sameSlug (unlike `draft`, which must
+   survive a tab switch untouched). Since this is the same object as
+   admin-property-store.js's cache entry, its `updated_at` is always
+   current at the moment handleSave() reads it, even if another tab
+   saved in between without this editor re-rendering (M6.5a). */
+let propertyRef = null;
 
 /* Admin Hardening Pass — read-only cross-refs into knowledge/assets.
    Never written back by this editor (it only ever saves `content`);
@@ -54,6 +62,7 @@ export function render(container, property) {
   containerRef = container;
   knowledgeRef = property.knowledge || {};
   assetsRef = property.assets || {};
+  propertyRef = property;
   if (!sameSlug) {
     slug = property.slug;
     draft = JSON.parse(JSON.stringify(property.content || {}));
@@ -68,6 +77,7 @@ export function teardown() {
   slug = null;
   knowledgeRef = {};
   assetsRef = {};
+  propertyRef = null;
   delete window.__ceToggle;
   delete window.__ceInput;
   delete window.__ceSave;
@@ -147,11 +157,11 @@ async function handleSave() {
   syncSceneNames();
 
   try {
-    await saveContent(slug, draft);
+    await saveContent(slug, draft, propertyRef?.updated_at);
     toast('Content saved', 'success');
     if (status) status.textContent = 'Saved';
   } catch (e) {
-    toast('Save failed: ' + e.message, 'error');
+    toast(e instanceof ConflictError ? e.message : 'Save failed: ' + e.message, 'error');
     if (status) status.textContent = 'Error';
   } finally {
     saving = false;

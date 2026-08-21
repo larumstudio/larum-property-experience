@@ -10,7 +10,7 @@
 
 import { esc } from './admin-core.js';
 import { toast } from './admin-ui.js';
-import { saveAssets } from './admin-property-store.js';
+import { saveAssets, ConflictError } from './admin-property-store.js';
 
 let draft = null;
 let slug = null;
@@ -18,6 +18,11 @@ let referenceSpaces = [];
 let containerRef = null;
 let openSections = { meta: true };
 let saving = false;
+
+/* Live reference to the property passed into render(), refreshed every
+   call regardless of sameSlug — see admin-content-editor.js's propertyRef
+   for the full reasoning (M6.5a). */
+let propertyRef = null;
 
 const SECTIONS = [
   { id: 'meta',   label: 'Meta' },
@@ -41,6 +46,7 @@ export function render(container, property) {
   referenceSpaces = Array.from(new Set(
     scenes.flatMap(s => Array.isArray(s?.[1]) ? s[1] : [])
   ));
+  propertyRef = property;
   if (!sameSlug) {
     slug = property.slug;
     draft = JSON.parse(JSON.stringify(property.assets || {}));
@@ -54,6 +60,7 @@ export function teardown() {
   draft = null;
   slug = null;
   referenceSpaces = [];
+  propertyRef = null;
   delete window.__aeToggle;
   delete window.__aeInput;
   delete window.__aeInputBool;
@@ -142,11 +149,11 @@ async function handleSave() {
   if (status) status.textContent = '';
 
   try {
-    await saveAssets(slug, draft);
+    await saveAssets(slug, draft, propertyRef?.updated_at);
     toast('Assets saved', 'success');
     if (status) status.textContent = 'Saved';
   } catch (e) {
-    toast('Save failed: ' + e.message, 'error');
+    toast(e instanceof ConflictError ? e.message : 'Save failed: ' + e.message, 'error');
     if (status) status.textContent = 'Error';
   } finally {
     saving = false;

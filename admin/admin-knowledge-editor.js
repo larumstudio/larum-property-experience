@@ -21,7 +21,7 @@
 
 import { esc } from './admin-core.js';
 import { toast } from './admin-ui.js';
-import { saveKnowledge } from './admin-property-store.js';
+import { saveKnowledge, ConflictError } from './admin-property-store.js';
 
 /* Analytics fires only these three trigger strings. Others are legal
    in the pack but never dispatch — surface as warning, not error. */
@@ -302,11 +302,11 @@ async function handleSave() {
   saving = true;
   updateToolbar();
   try {
-    await saveKnowledge(currentSlug, deepClone(draft));
+    await saveKnowledge(currentSlug, deepClone(draft), currentProperty?.updated_at);
     baseline = deepClone(draft);
     toast('Knowledge saved', 'success');
   } catch (e) {
-    toast('Save failed: ' + (e.message || 'unknown'), 'error');
+    toast(e instanceof ConflictError ? e.message : 'Save failed: ' + (e.message || 'unknown'), 'error');
   } finally {
     saving = false;
     updateToolbar();

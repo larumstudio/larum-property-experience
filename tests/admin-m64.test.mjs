@@ -163,18 +163,34 @@ await test('the warning never disables or removes the Confirm button — this wa
    ═══════════════════════════════════════════════════════════════ */
 console.log('\n[4] updateLead() surfaces failure inline, not just in the far-away banner');
 
-function mockLeadsClient(shouldError) {
-  return {
+/* M6.5a: updateLead() now does .update(patch).eq('id',x).eq('updated_at',y)
+   .select('updated_at') — mode picks which of the 3 real outcomes the
+   mock chain resolves to: 'error' (real Supabase/RLS failure),
+   'conflict' (0 rows — someone else saved this lead first) or
+   undefined (success, 1 row, returns a fresh updated_at).
+
+   eq() calls are recorded on `chain._eq` (review finding A) so a test
+   can confirm lead.updated_at actually reaches the filter, not just
+   that the mocked outcome is handled correctly. */
+function mockLeadsClient(mode) {
+  const captured = { eq: {} };
+  const client = {
+    _captured: captured,
     from(table) {
-      return {
-        update: (patch) => ({
-          eq: async () => shouldError
-            ? { error: { message: 'permission denied for table leads' } }
-            : { error: null }
-        })
+      const chain = {
+        update: (patch) => chain,
+        eq: (k, v) => { captured.eq[k] = v; return chain; },
+        select: (cols) => chain,
+        then: (resolve) => {
+          if (mode === 'error') return Promise.resolve({ data: null, error: { message: 'permission denied for table leads' } }).then(resolve);
+          if (mode === 'conflict') return Promise.resolve({ data: [], error: null }).then(resolve);
+          return Promise.resolve({ data: [{ updated_at: '2026-01-02T00:00:00Z' }], error: null }).then(resolve);
+        }
       };
+      return chain;
     }
   };
+  return client;
 }
 
 await test('failed update: lead object is NOT mutated, #savedNote shows an inline error (functional)', async () => {
@@ -184,14 +200,14 @@ await test('failed update: lead object is NOT mutated, #savedNote shows an inlin
   const banner = { innerHTML: '', classList: { add() {} } };
   const origGetById = globalThis.document.getElementById;
   globalThis.document.getElementById = (id) => id === 'savedNote' ? savedNote : (id === 'banner' ? banner : null);
-  globalThis.supabaseClient = mockLeadsClient(true);
+  globalThis.supabaseClient = mockLeadsClient('error');
 
   try {
-    const lead = { id: 'lead-1', status: 'new', notes: 'original notes' };
+    const lead = { id: 'lead-1', status: 'new', notes: 'original notes', updated_at: '2026-01-01T00:00:00Z' };
     const ok = await adminCore.updateLead(lead, { status: 'contacted', notes: 'new notes' });
 
     assert.equal(ok, false);
-    assert.deepEqual(lead, { id: 'lead-1', status: 'new', notes: 'original notes' },
+    assert.deepEqual(lead, { id: 'lead-1', status: 'new', notes: 'original notes', updated_at: '2026-01-01T00:00:00Z' },
       'a failed write must never mutate the in-memory lead object');
     assert.notEqual(savedNote.textContent, '', 'the inline note must show something on failure, not go blank (M6.4 finding)');
     assert.ok(added.includes('error'), '#savedNote must get the .error class for a visible failure state');
@@ -201,23 +217,73 @@ await test('failed update: lead object is NOT mutated, #savedNote shows an inlin
   }
 });
 
-await test('successful update: lead object IS mutated, #savedNote shows Saved and clears any prior error state', async () => {
+await test('conflicting update (0 rows matched): lead object is NOT mutated, exact conflict message shown, never read as success (M6.5a)', async () => {
+  const adminCore = await import('../admin/admin-core.js');
+  const added = [];
+  const savedNote = { textContent: '', classList: { add: (c) => added.push(c), remove() {} } };
+  const banner = { innerHTML: '', classList: { add() {} } };
+  const origGetById = globalThis.document.getElementById;
+  globalThis.document.getElementById = (id) => id === 'savedNote' ? savedNote : (id === 'banner' ? banner : null);
+  globalThis.supabaseClient = mockLeadsClient('conflict');
+
+  try {
+    const lead = { id: 'lead-3', status: 'new', notes: 'original notes', updated_at: '2026-01-01T00:00:00Z' };
+    const ok = await adminCore.updateLead(lead, { status: 'contacted', notes: 'new notes' });
+
+    assert.equal(ok, false, 'a 0-row match must never be read as success');
+    assert.deepEqual(lead, { id: 'lead-3', status: 'new', notes: 'original notes', updated_at: '2026-01-01T00:00:00Z' },
+      'a conflicting write must never mutate the in-memory lead object');
+    assert.equal(savedNote.textContent, 'Este registro cambió mientras lo editabas. Recargá antes de guardar.');
+    assert.ok(added.includes('error'), '#savedNote must get the .error class on conflict too');
+  } finally {
+    globalThis.document.getElementById = origGetById;
+    delete globalThis.supabaseClient;
+  }
+});
+
+await test('successful update: lead object IS mutated (including updated_at), #savedNote shows Saved and clears any prior error state', async () => {
   const adminCore = await import('../admin/admin-core.js');
   const removed = [];
   const savedNote = { textContent: '', classList: { add() {}, remove(c) { removed.push(c); } } };
   const origGetById = globalThis.document.getElementById;
   globalThis.document.getElementById = (id) => id === 'savedNote' ? savedNote : null;
-  globalThis.supabaseClient = mockLeadsClient(false);
+  globalThis.supabaseClient = mockLeadsClient('success');
 
   try {
-    const lead = { id: 'lead-2', status: 'new', notes: 'x' };
+    const lead = { id: 'lead-2', status: 'new', notes: 'x', updated_at: '2026-01-01T00:00:00Z' };
     const ok = await adminCore.updateLead(lead, { status: 'contacted', notes: 'y' });
 
     assert.equal(ok, true);
     assert.equal(lead.status, 'contacted');
     assert.equal(lead.notes, 'y');
+    assert.equal(lead.updated_at, '2026-01-02T00:00:00Z', 'updated_at must sync to the server value returned on success');
     assert.equal(savedNote.textContent, 'Saved');
     assert.ok(removed.includes('error'), 'a successful save must clear any leftover .error state from a prior failed attempt');
+  } finally {
+    globalThis.document.getElementById = origGetById;
+    delete globalThis.supabaseClient;
+  }
+});
+
+/* Review finding A (M6.5a): the 3 tests above prove updateLead()
+   handles each mocked outcome correctly, but none of them confirm
+   lead.updated_at is the value actually sent in the .eq('updated_at',
+   ...) filter — a regression that silently dropped or mis-threaded
+   that argument would still pass them all. */
+await test('updateLead(): lead.updated_at reaches the .eq("updated_at", ...) filter (M6.5a)', async () => {
+  const adminCore = await import('../admin/admin-core.js');
+  const origGetById = globalThis.document.getElementById;
+  globalThis.document.getElementById = () => null;
+  const client = mockLeadsClient('success');
+  globalThis.supabaseClient = client;
+
+  try {
+    const lead = { id: 'lead-4', status: 'new', notes: 'x', updated_at: '2026-01-01T00:00:00Z' };
+    await adminCore.updateLead(lead, { status: 'contacted', notes: 'y' });
+
+    assert.equal(client._captured.eq.id, 'lead-4');
+    assert.equal(client._captured.eq.updated_at, '2026-01-01T00:00:00Z',
+      'lead.updated_at must reach the .eq() filter, not be dropped or mismatched');
   } finally {
     globalThis.document.getElementById = origGetById;
     delete globalThis.supabaseClient;

@@ -16,6 +16,68 @@ const store = {
   loading: new Set()
 };
 
+/* ── Optimistic concurrency (M6.5a) ───────────────────────────
+   Every write in this file that can race against another operator
+   (properties.content/assets/knowledge/status/meta) keys its UPDATE
+   on the row's own `updated_at` — not because the app assigns that
+   value, but because migration 001's touch_updated_at() trigger
+   already bumps it on every UPDATE, for free, on every table it's
+   attached to. Reusing it means zero new schema for the 5 functions
+   below (leads needed its own copy of the same column+trigger —
+   see docs/migrations/007_leads_updated_at.sql — since `leads` never
+   had one).
+
+   ConflictError is the ONE signal that separates "someone else wrote
+   this row since I loaded it" from a real Supabase/RLS/network error.
+   PostgREST does not treat "UPDATE matched 0 rows" as an error — an
+   .update().eq(...) with a stale updated_at returns { error: null,
+   data: [] } exactly like a legitimate empty result would. Skipping
+   the .select() and the data.length check here would make a real
+   conflict indistinguishable from success — the write silently loses
+   without ever telling the operator. That is the failure mode this
+   whole mechanism exists to prevent, so every caller of the functions
+   below must treat "no error" and "0 rows returned" as two separate
+   outcomes, never collapse them. */
+export const CONFLICT_MESSAGE = 'Este registro cambió mientras lo editabas. Recargá antes de guardar.';
+
+export class ConflictError extends Error {
+  constructor(message) {
+    super(message || CONFLICT_MESSAGE);
+    this.name = 'ConflictError';
+  }
+}
+
+/* Shared compare-and-swap UPDATE. `table`/`keyColumn` identify the row,
+   `expectedUpdatedAt` is what the caller believes `updated_at` still
+   is — read fresh from the shared cache at save time (never a value
+   captured once when a draft was opened), so sequential saves across
+   different tabs in the same session never collide with each other,
+   only with a write this session genuinely doesn't know about. Returns
+   the row's new `updated_at` on success so the caller can sync its
+   own cache; throws ConflictError on a 0-row match, a plain Error on
+   any real Supabase error, and a plain Error (never silently ignored)
+   on the — expected-impossible, `slug`/`id` are both unique — case of
+   more than one row matching. */
+async function updateWithConcurrencyCheck(table, keyColumn, keyValue, patch, expectedUpdatedAt) {
+  const { data, error } = await window.supabaseClient
+    .from(table)
+    .update(patch)
+    .eq(keyColumn, keyValue)
+    .eq('updated_at', expectedUpdatedAt)
+    .select('updated_at');
+
+  if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new ConflictError();
+  if (data.length > 1) {
+    throw new Error(
+      'Integrity error: more than one row matched ' + table + '.' + keyColumn + ' = ' + keyValue +
+      ' — ' + keyColumn + ' is expected to be unique. The write already happened on the server ' +
+      '(this is not a rolled-back conflict) — investigate the table before saving here again.'
+    );
+  }
+  return data[0].updated_at;
+}
+
 const BASE_INDEX_COLUMNS = [
   'id', 'slug', 'status',
   'name_en', 'name_es', 'location', 'reference',
@@ -143,45 +205,36 @@ export function clearCache() {
   store.cache.clear();
 }
 
-export async function saveContent(slug, content) {
-  const { error } = await window.supabaseClient
-    .from('properties')
-    .update({ content })
-    .eq('slug', slug);
-
-  if (error) throw new Error(error.message);
+export async function saveContent(slug, content, expectedUpdatedAt) {
+  const newUpdatedAt = await updateWithConcurrencyCheck(
+    'properties', 'slug', slug, { content }, expectedUpdatedAt);
 
   const cached = store.cache.get(slug);
   if (cached) {
     cached.content = JSON.parse(JSON.stringify(content));
+    cached.updated_at = newUpdatedAt;
   }
 }
 
-export async function saveAssets(slug, assets) {
-  const { error } = await window.supabaseClient
-    .from('properties')
-    .update({ assets })
-    .eq('slug', slug);
-
-  if (error) throw new Error(error.message);
+export async function saveAssets(slug, assets, expectedUpdatedAt) {
+  const newUpdatedAt = await updateWithConcurrencyCheck(
+    'properties', 'slug', slug, { assets }, expectedUpdatedAt);
 
   const cached = store.cache.get(slug);
   if (cached) {
     cached.assets = JSON.parse(JSON.stringify(assets));
+    cached.updated_at = newUpdatedAt;
   }
 }
 
-export async function saveKnowledge(slug, knowledge) {
-  const { error } = await window.supabaseClient
-    .from('properties')
-    .update({ knowledge })
-    .eq('slug', slug);
-
-  if (error) throw new Error(error.message);
+export async function saveKnowledge(slug, knowledge, expectedUpdatedAt) {
+  const newUpdatedAt = await updateWithConcurrencyCheck(
+    'properties', 'slug', slug, { knowledge }, expectedUpdatedAt);
 
   const cached = store.cache.get(slug);
   if (cached) {
     cached.knowledge = JSON.parse(JSON.stringify(knowledge));
+    cached.updated_at = newUpdatedAt;
   }
 }
 
@@ -455,30 +508,28 @@ export async function createProperty({ slug, label, brand, subtitle, intro, refe
 
 /* ── Update property metadata (Admin-M5.X) ───────────────── */
 
-export async function savePropertyStatus(slug, status) {
+export async function savePropertyStatus(slug, status, expectedUpdatedAt) {
   const patch = { status };
   if (status === 'published') patch.published_at = new Date().toISOString();
 
-  const { error } = await window.supabaseClient
-    .from('properties')
-    .update(patch)
-    .eq('slug', slug);
-
-  if (error) throw new Error(error.message);
+  const newUpdatedAt = await updateWithConcurrencyCheck(
+    'properties', 'slug', slug, patch, expectedUpdatedAt);
 
   const cached = store.cache.get(slug);
   if (cached) {
     cached.status = status;
     if (patch.published_at) cached.published_at = patch.published_at;
+    cached.updated_at = newUpdatedAt;
   }
   const idx = store.index.find(r => r.slug === slug);
   if (idx) {
     idx.status = status;
     if (patch.published_at) idx.published_at = patch.published_at;
+    idx.updated_at = newUpdatedAt;
   }
 }
 
-export async function savePropertyMeta(slug, meta) {
+export async function savePropertyMeta(slug, meta, expectedUpdatedAt) {
   const allowed = ['display_order', 'is_default', 'agent_id'];
   const patch = {};
   for (const key of allowed) {
@@ -486,17 +537,13 @@ export async function savePropertyMeta(slug, meta) {
   }
   if (!Object.keys(patch).length) return;
 
-  const { error } = await window.supabaseClient
-    .from('properties')
-    .update(patch)
-    .eq('slug', slug);
-
-  if (error) throw new Error(error.message);
+  const newUpdatedAt = await updateWithConcurrencyCheck(
+    'properties', 'slug', slug, patch, expectedUpdatedAt);
 
   const cached = store.cache.get(slug);
-  if (cached) Object.assign(cached, patch);
+  if (cached) { Object.assign(cached, patch); cached.updated_at = newUpdatedAt; }
   const idx = store.index.find(r => r.slug === slug);
-  if (idx) Object.assign(idx, patch);
+  if (idx) { Object.assign(idx, patch); idx.updated_at = newUpdatedAt; }
 }
 
 /* ── Load agents (for property create/edit) ──────────────── */
