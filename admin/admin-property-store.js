@@ -369,13 +369,8 @@ export async function createAudit(audit) {
   return data;
 }
 
-export async function updateAudit(id, patch) {
-  const { error } = await window.supabaseClient
-    .from('audits')
-    .update(patch)
-    .eq('id', id);
-
-  if (error) throw new Error(error.message);
+export async function updateAudit(id, patch, expectedUpdatedAt) {
+  return updateWithConcurrencyCheck('audits', 'id', id, patch, expectedUpdatedAt);
 }
 
 export async function deleteAudit(id) {
@@ -622,7 +617,7 @@ export async function createAgent({ name, slug, agency, role, photoUrl, bioEn, b
   return data;
 }
 
-export async function updateAgent(id, patch) {
+export async function updateAgent(id, patch, expectedUpdatedAt) {
   const allowed = ['name', 'slug', 'email', 'phone', 'agency', 'role', 'photo_url', 'bio', 'status'];
   const clean = {};
   for (const key of allowed) {
@@ -630,12 +625,7 @@ export async function updateAgent(id, patch) {
   }
   if (!Object.keys(clean).length) return;
 
-  const { error } = await window.supabaseClient
-    .from('agents')
-    .update(clean)
-    .eq('id', id);
-
-  if (error) throw new Error(error.message);
+  return updateWithConcurrencyCheck('agents', 'id', id, clean, expectedUpdatedAt);
 }
 
 /* ── Invite (M6.2) ────────────────────────────────────────────────

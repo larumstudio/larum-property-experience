@@ -8,7 +8,7 @@
 
 import { esc, fullDate } from './admin-core.js';
 import { badge, toast, emptyState } from './admin-ui.js';
-import { loadAudits, createAudit, updateAudit, deleteAudit } from './admin-property-store.js';
+import { loadAudits, createAudit, updateAudit, deleteAudit, ConflictError } from './admin-property-store.js';
 import { resolveCapabilities } from './admin-auth-context.js';
 
 const STATUSES = ['requested', 'in_progress', 'completed', 'cancelled'];
@@ -178,16 +178,19 @@ async function saveEdit() {
   }
 
   try {
-    await updateAudit(state.editingId, patch);
-    const audit = state.audits.find(a => a.id === state.editingId);
-    if (audit) Object.assign(audit, patch);
+    /* M6.6b — read updated_at fresh from state.audits (the same shared
+       reference the row lives at) right at save time, same reasoning
+       as M6.5a's property saves: never a value captured earlier. */
+    const existing = state.audits.find(a => a.id === state.editingId);
+    const newUpdatedAt = await updateAudit(state.editingId, patch, existing?.updated_at);
+    if (existing) { Object.assign(existing, patch); existing.updated_at = newUpdatedAt; }
     state.editingId = null;
     state.editDraft = null;
     state.saving = false;
     toast('Audit updated', 'success');
   } catch (e) {
     state.saving = false;
-    toast('Error: ' + e.message, 'error');
+    toast(e instanceof ConflictError ? e.message : 'Error: ' + e.message, 'error');
   }
   draw();
 }

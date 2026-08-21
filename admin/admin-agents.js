@@ -14,7 +14,7 @@
 import { esc, cap } from './admin-core.js';
 import { badge, emptyState, toast } from './admin-ui.js';
 import {
-  loadAllAgents, loadAgent, createAgent, updateAgent, loadPropertiesByAgent, inviteAgent
+  loadAllAgents, loadAgent, createAgent, updateAgent, loadPropertiesByAgent, inviteAgent, ConflictError
 } from './admin-property-store.js';
 import { navigate } from './admin-router.js';
 import { resolveCapabilities } from './admin-auth-context.js';
@@ -564,16 +564,19 @@ async function saveEdit() {
       bio: { en: editDraft.bio?.en || '', es: editDraft.bio?.es || '' },
       status: editDraft.status || 'active'
     };
-    await updateAgent(editDraft.id, patch);
+    /* M6.6b — same reasoning as M6.5a: read updated_at fresh from
+       detailAgent (the shared loaded row) right at save time. */
+    const newUpdatedAt = await updateAgent(editDraft.id, patch, detailAgent?.updated_at);
 
     Object.assign(detailAgent, patch);
+    detailAgent.updated_at = newUpdatedAt;
     const idxA = agents.findIndex(x => x.id === detailAgent.id);
-    if (idxA >= 0) Object.assign(agents[idxA], patch);
+    if (idxA >= 0) { Object.assign(agents[idxA], patch); agents[idxA].updated_at = newUpdatedAt; }
 
     toast('Agent saved', 'success');
     editDraft = null;
   } catch (e) {
-    toast('Save failed: ' + e.message, 'error');
+    toast(e instanceof ConflictError ? e.message : 'Save failed: ' + e.message, 'error');
   } finally {
     saving = false;
     draw();

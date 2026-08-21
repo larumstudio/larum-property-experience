@@ -548,13 +548,11 @@
 
     <div class="sidebar-nav">
       <button data-nav="dashboard" class="active"><span class="icon">◆</span> Dashboard</button>
-      <button data-nav="clientes"><span class="icon">◎</span> Clientes</button>
       <button data-nav="agentes"><span class="icon">◈</span> Agentes</button>
       <button data-nav="propiedades"><span class="icon">◇</span> Propiedades</button>
       <button data-nav="auditorias"><span class="icon">◉</span> Auditorías</button>
       <button data-nav="leads"><span class="icon">◈</span> Leads <span class="count" id="navLeads">0</span></button>
       <button data-nav="analytics"><span class="icon">◆</span> Analytics</button>
-      <button data-nav="ajustes"><span class="icon">◎</span> Ajustes</button>
     </div>
 
     <div class="sidebar-foot">
@@ -617,13 +615,11 @@ import * as analytics from './admin/admin-analytics.js';
 import * as agentes from './admin/admin-agents.js';
 
 register('dashboard', dashboard);
-register('clientes', null);
 register('agentes', agentes);
 register('propiedades', properties);
 register('auditorias', auditorias);
 register('leads', leads);
 register('analytics', analytics);
-register('ajustes', null);
 register('sessions', sessions);
 register('workspace', workspace);
 
@@ -707,9 +703,9 @@ document.getElementById('exportBtn').addEventListener('click', () => {
    on every larum:data-loaded (login, and every subsequent refresh);
    idempotent to reapply, and cheap since resolveCapabilities() is
    memoized after the first resolve (admin-core.js:getRole()). Any
-   data-nav value without a matching "nav.*" key (clientes, ajustes —
-   still undecided placeholders, out of scope for M6.2) is left exactly
-   as it is today. */
+   data-nav value without a matching "nav.*" key is left exactly as it
+   is today — none currently in that state (Clientes/Ajustes, the two
+   placeholders that used to be, were removed in M6.6). */
 document.addEventListener('larum:data-loaded', async () => {
   buildPropertyFilter();
   document.getElementById('navLeads').textContent = filteredLeads().length;

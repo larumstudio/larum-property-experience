@@ -4,7 +4,7 @@
    writes to them.
    ───────────────────────────────────────────────────────────── */
 
-import { CONFLICT_MESSAGE } from './admin-property-store.js';
+import { CONFLICT_MESSAGE, loadAllAgents } from './admin-property-store.js';
 
 export const state = {
   leads: [],
@@ -326,4 +326,52 @@ export function eventsFor(sessionId) {
   return state.events.filter(e => e.session_id === sessionId)
     .slice()
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+}
+
+/* ── Lead change history (M6.6a) ──────────────────────────────
+   Reads public.lead_history (migration 008, M6.5c) — RLS already
+   scopes this correctly per caller (agent: only their own leads;
+   admin: their whole org), so this makes no role check of its own.
+   Not bulk-loaded into `state` like leads/sessions/events — a lead's
+   history is only ever needed once its drawer is open, so it's
+   fetched on demand. */
+export async function loadLeadHistory(leadId) {
+  const { data, error } = await supabaseClient
+    .from('lead_history')
+    .select('*')
+    .eq('lead_id', leadId)
+    .order('changed_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+/* changed_by is a bare auth.users.id (migration 008) — there is no
+   admin roster to resolve names from (only agents have a name field
+   linked to an auth_user_id), so resolution is necessarily partial:
+   the viewer's own edits ("You"), edits by an agent this viewer's own
+   RLS can see (their own row for an agent, the whole org for an
+   admin), or a generic "Admin" fallback for anything else — most
+   commonly an admin account, which has no separate name to show. NULL
+   means the row was written outside the app (an elevated key, e.g. the SQL Editor
+   — see migration 008's own comment) and is labeled "System". */
+let agentDirectory = null; // Map<auth_user_id, name> — lazy, session-lifetime cache
+
+export async function ensureAgentDirectory() {
+  if (agentDirectory) return agentDirectory;
+  agentDirectory = new Map();
+  try {
+    const agents = await loadAllAgents();
+    for (const a of agents) if (a.auth_user_id) agentDirectory.set(a.auth_user_id, a.name);
+  } catch (e) {
+    // Non-fatal — actorLabel() below just falls back to generic labels.
+  }
+  return agentDirectory;
+}
+
+export function actorLabel(changedBy) {
+  if (!changedBy) return 'System';
+  if (state.user && changedBy === state.user.id) return 'You';
+  const name = agentDirectory && agentDirectory.get(changedBy);
+  return name || 'Admin';
 }

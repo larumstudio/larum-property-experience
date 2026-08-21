@@ -6,13 +6,14 @@
 import {
   state, filteredLeads, filteredSessions, esc, cap, minutes,
   timeAgo, fullDate, normaliseInterests, updateLead,
-  sessionForLead, eventsFor
+  sessionForLead, eventsFor, loadLeadHistory, ensureAgentDirectory, actorLabel
 } from './admin-core.js';
-import { badge, openDrawer, closeDrawer, section, chips, timeline, truncationNotice } from './admin-ui.js';
+import { badge, openDrawer, closeDrawer, section, chips, timeline, truncationNotice, historyHtml } from './admin-ui.js';
 
 export const title = 'Leads';
 
 let currentLeads = [];
+let openHistoryForLeadId = null; // M6.6a — guards against a stale async history load writing into a different lead's drawer
 
 export function render(container) {
   const leads = filteredLeads();
@@ -108,12 +109,38 @@ function openLead(i) {
         (status === 'contacted' ? '<button class="btn btn-outline" onclick="__reopenLead()">Back to new</button>' : '') +
         '<span class="saved" id="savedNote"></span>' +
       '</div>' +
-    '</div>'
+    '</div>' +
+
+    section('Change history', '<div id="leadHistoryMount">Loading…</div>')
   );
 
   window.__closeDrawer = () => closeDrawerGuarded(l.notes || '');
   window.__markContacted = () => markContacted(l, i);
   window.__reopenLead = () => reopenLead(l, i);
+
+  loadHistoryInto(l.id);
+}
+
+/* M6.6a — fetched on demand (lead_history is not bulk-loaded), guarded
+   against a stale response landing after the operator closed this
+   drawer or opened a different lead's before the fetch resolved. */
+async function loadHistoryInto(leadId) {
+  openHistoryForLeadId = leadId;
+  try {
+    const [rows] = await Promise.all([loadLeadHistory(leadId), ensureAgentDirectory()]);
+    if (openHistoryForLeadId !== leadId) return; // drawer moved on — discard
+    const mount = document.getElementById('leadHistoryMount');
+    if (!mount) return;
+    mount.innerHTML = historyHtml(rows.map(r => ({
+      changed_at: r.changed_at, field: r.field,
+      old_value: r.old_value, new_value: r.new_value,
+      actor: actorLabel(r.changed_by)
+    })));
+  } catch (e) {
+    if (openHistoryForLeadId !== leadId) return;
+    const mount = document.getElementById('leadHistoryMount');
+    if (mount) mount.innerHTML = '<div class="empty" style="padding:8px 0">Could not load history.</div>';
+  }
 }
 
 /* M6.4 finding: closing the drawer without pressing Save/Mark as
@@ -151,6 +178,7 @@ async function reopenLead(lead, idx) {
 
 export function teardown() {
   closeDrawer();
+  openHistoryForLeadId = null;
   delete window.__openLead;
   delete window.__closeDrawer;
   delete window.__markContacted;

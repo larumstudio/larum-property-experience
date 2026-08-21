@@ -236,6 +236,35 @@ export function timeline(events) {
   }).join('') + '</div>';
 }
 
+/* ── Lead change history (M6.6a) ─────────────────────────────
+   Pure renderer — takes already-resolved rows ({changed_at, actor,
+   field, old_value, new_value}), same separation as timeline() above
+   (data comes from the caller; this only draws it). Reuses badge()
+   for status transitions so a history entry reads exactly like the
+   status badge everywhere else in the admin. */
+export function historyHtml(rows) {
+  if (!rows.length) return '<div class="empty" style="padding:8px 0">No changes recorded yet.</div>';
+
+  return '<div class="timeline">' + rows.map(r => {
+    const change = r.field === 'status'
+      ? badge(r.old_value || '—') + ' <span style="color:var(--muted)">→</span> ' + badge(r.new_value || '—')
+      : '<span style="color:var(--muted);text-decoration:line-through">' + esc(truncate(r.old_value)) + '</span>' +
+        ' <span style="color:var(--muted)">→</span> ' +
+        '<span>' + esc(truncate(r.new_value)) + '</span>';
+
+    return '<div class="tl"><div class="tl-t">' + esc(fullDate(r.changed_at)) + '</div>' +
+      '<div class="tl-e"><b>' + esc(cap(r.field)) + '</b> · <span class="mono" style="color:var(--muted)">' + esc(r.actor) + '</span><br>' +
+      change +
+      '</div></div>';
+  }).join('') + '</div>';
+}
+
+function truncate(s, max) {
+  max = max || 60;
+  s = s || '—';
+  return s.length > max ? s.slice(0, max) + '…' : s;
+}
+
 /* ── Empty state ─────────────────────────────────────────── */
 
 export function emptyState(title, text) {
