@@ -339,11 +339,11 @@ const LarumAnalytics = (() => {
       typeof fetch === 'function';
   }
 
-  function sbWrite(path, body, prefer, keepalive) {
+  function sbWrite(path, body, prefer, keepalive, method) {
     const url = window.SUPABASE_URL + '/rest/v1/' + path;
     const payload = JSON.stringify(body);
     const init = {
-      method: 'POST',
+      method: method || 'POST',
       headers: {
         apikey: window.SUPABASE_ANON_KEY,
         Authorization: 'Bearer ' + window.SUPABASE_ANON_KEY,
@@ -357,6 +357,26 @@ const LarumAnalytics = (() => {
       if (!res.ok) return res.text().then(t => { throw new Error(res.status + ' ' + t); });
       return true;
     });
+  }
+
+  /* anon has no SELECT policy on `sessions` (by design — a SELECT policy
+     permissive enough for PostgREST's upsert path to see the conflicting
+     row would let anyone with the public anon key dump every visitor's
+     session data). `INSERT ... ON CONFLICT DO UPDATE` requires exactly
+     that SELECT visibility to resolve the conflict target, so it 401s
+     with a row-level security violation on every write after the first.
+     A plain INSERT (no conflict target) and a plain PATCH by id (whose
+     UPDATE policy is USING(true), no SELECT involved) both need no such
+     policy, so the row is created once and every later write patches it
+     by id instead of upserting. */
+  const SESSION_CREATED_KEY = 'larum_screated_v1';
+
+  function sessionAlreadyCreated(sid) {
+    try { return sessionStorage.getItem(SESSION_CREATED_KEY + '_' + sid) === '1'; } catch (e) { return false; }
+  }
+
+  function markSessionCreated(sid) {
+    try { sessionStorage.setItem(SESSION_CREATED_KEY + '_' + sid, '1'); } catch (e) { /* ignore */ }
   }
 
   /* A blocked or misconfigured database must never turn into a console flood
@@ -441,21 +461,48 @@ const LarumAnalytics = (() => {
     };
   }
 
-  /* Upsert on the primary key: the same row is rewritten as the visit grows,
-     so a visitor is one row whether they stayed ten seconds or ten minutes. */
+  /* The same row is rewritten as the visit grows, so a visitor is one row
+     whether they stayed ten seconds or ten minutes — created once with a
+     plain INSERT, then kept current with a plain PATCH by id (see sbWrite
+     above for why this replaced the on_conflict upsert). */
   function pushSession(keepalive) {
     if (!remoteReady() || !consentGiven || !sessionId) return Promise.resolve(false);
     sessionDirty = false;
-    return sbWrite(
-      'sessions?on_conflict=id',
-      [buildSessionRow()],
-      'return=minimal,resolution=merge-duplicates',
-      keepalive
-    ).catch(err => {
-      remoteFailed('session', err);
-      sessionDirty = true;
-      return false;
-    });
+    const row = buildSessionRow();
+
+    if (!sessionAlreadyCreated(sessionId)) {
+      return sbWrite('sessions', [row], 'return=minimal', keepalive)
+        .then(ok => { if (ok) markSessionCreated(sessionId); return ok; })
+        .catch(err => {
+          /* The id can already exist server-side without this tab knowing
+             it (a retried request whose first response never arrived, a
+             row from before this flag existed) — a plain INSERT then 409s
+             on the primary key. That is proof the row is there, so treat
+             it the same as a normal create and patch it instead of giving
+             up as a hard failure. */
+          const msg = String((err && err.message) || err);
+          if (msg.indexOf('23505') !== -1 || msg.indexOf('duplicate key') !== -1) {
+            markSessionCreated(sessionId);
+            return patchSession(row, keepalive);
+          }
+          remoteFailed('session', err);
+          sessionDirty = true;
+          return false;
+        });
+    }
+
+    return patchSession(row, keepalive);
+  }
+
+  function patchSession(row, keepalive) {
+    const patch = { ...row };
+    delete patch.id;
+    return sbWrite('sessions?id=eq.' + encodeURIComponent(sessionId), patch, 'return=minimal', keepalive, 'PATCH')
+      .catch(err => {
+        remoteFailed('session', err);
+        sessionDirty = true;
+        return false;
+      });
   }
 
   /* Last chance to write before the tab goes. Someone alt-tabbing back and
@@ -572,6 +619,7 @@ const LarumAnalytics = (() => {
     try { localStorage.removeItem(STORAGE_KEY + '_' + prop); } catch (e) {}
     try { sessionStorage.removeItem(SESSION_KEY + '_' + prop); } catch (e) {}
     try { sessionStorage.removeItem(DURATION_KEY + '_' + sessionId); } catch (e) {}
+    try { sessionStorage.removeItem(SESSION_CREATED_KEY + '_' + sessionId); } catch (e) {}
     state = {
       property: prop, propertyId: null, revisionId: null, family: null,
       lang, events: [], chapters: {}, scenes: {}, spaces: {},
