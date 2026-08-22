@@ -1,0 +1,125 @@
+const COPY = Object.freeze({
+  en: Object.freeze({
+    skipToContent: 'Skip to content',
+    brandSubline: 'Agent presence',
+    menuOpen: 'Open navigation',
+    menuClose: 'Close navigation',
+    navLabel: 'Agent profile navigation',
+    navProfile: 'Profile',
+    navApproach: 'Approach',
+    navProperties: 'Properties',
+    navContact: 'Contact',
+    languageLabel: 'Language',
+    agentProfile: 'Agent profile',
+    explorePortfolio: 'Explore portfolio',
+    contactAgent: 'Contact',
+    scrollToExplore: 'Scroll to explore',
+    representedBy: 'Represented by',
+    approachEyebrow: 'A personal perspective',
+    approachTitle: 'Approach, in their own words.',
+    propertiesEyebrow: 'Current portfolio',
+    propertiesTitle: 'Selected properties',
+    propertySingular: 'property',
+    propertyPlural: 'properties',
+    exploreProperty: 'Explore property',
+    newBuild: 'New build',
+    resale: 'Resale',
+    imageUnavailable: 'Image unavailable',
+    emptyPropertiesTitle: 'A portfolio in motion.',
+    emptyPropertiesBody: 'There are no properties available for public presentation at this time.',
+    contactEyebrow: 'Private conversation',
+    contactTitle: 'Begin a conversation.',
+    contactIntro: 'For a direct conversation about the current portfolio, contact the agent using the details below.',
+    email: 'Email',
+    phone: 'Telephone',
+    footerLine: 'Perception of value, thoughtfully presented.',
+    backToProfile: 'Back to profile',
+    missingSlugEyebrow: 'Agent profile',
+    missingSlugTitle: 'No agent selected.',
+    missingSlugBody: 'A valid agent slug is required to open this experience.',
+    notFoundEyebrow: 'Profile unavailable',
+    notFoundTitle: 'This agent could not be found.',
+    notFoundBody: 'The profile may have moved or may not be available for public presentation.',
+    inactiveEyebrow: 'Profile unavailable',
+    inactiveTitle: 'This profile is not currently available.',
+    inactiveBody: 'Return later or use another Larum Agent Profile link.',
+    errorEyebrow: 'Connection interrupted',
+    errorTitle: 'The profile could not be loaded.',
+    errorBody: 'Please try again. No partial or unverified profile data has been displayed.',
+    retry: 'Try again',
+    loading: 'Loading agent profile',
+    loaded: 'Agent profile loaded',
+    stateReady: 'Profile ready'
+  }),
+  es: Object.freeze({
+    skipToContent: 'Saltar al contenido',
+    brandSubline: 'Presencia del agente',
+    menuOpen: 'Abrir navegación',
+    menuClose: 'Cerrar navegación',
+    navLabel: 'Navegación del perfil del agente',
+    navProfile: 'Perfil',
+    navApproach: 'Enfoque',
+    navProperties: 'Propiedades',
+    navContact: 'Contacto',
+    languageLabel: 'Idioma',
+    agentProfile: 'Perfil del agente',
+    explorePortfolio: 'Explorar portfolio',
+    contactAgent: 'Contactar',
+    scrollToExplore: 'Desliza para explorar',
+    representedBy: 'Representado por',
+    approachEyebrow: 'Una perspectiva personal',
+    approachTitle: 'El enfoque, en sus propias palabras.',
+    propertiesEyebrow: 'Portfolio actual',
+    propertiesTitle: 'Propiedades seleccionadas',
+    propertySingular: 'propiedad',
+    propertyPlural: 'propiedades',
+    exploreProperty: 'Explorar propiedad',
+    newBuild: 'Obra nueva',
+    resale: 'Segunda mano',
+    imageUnavailable: 'Imagen no disponible',
+    emptyPropertiesTitle: 'Un portfolio en movimiento.',
+    emptyPropertiesBody: 'En este momento no hay propiedades disponibles para presentación pública.',
+    contactEyebrow: 'Conversación privada',
+    contactTitle: 'Iniciar una conversación.',
+    contactIntro: 'Para conversar directamente sobre el portfolio actual, contacta con el agente mediante los datos disponibles.',
+    email: 'Email',
+    phone: 'Teléfono',
+    footerLine: 'Percepción de valor, presentada con criterio.',
+    backToProfile: 'Volver al perfil',
+    missingSlugEyebrow: 'Perfil del agente',
+    missingSlugTitle: 'No se ha seleccionado un agente.',
+    missingSlugBody: 'Se necesita un slug de agente válido para abrir esta experiencia.',
+    notFoundEyebrow: 'Perfil no disponible',
+    notFoundTitle: 'No se ha encontrado este agente.',
+    notFoundBody: 'Es posible que el perfil haya cambiado o que no esté disponible para presentación pública.',
+    inactiveEyebrow: 'Perfil no disponible',
+    inactiveTitle: 'Este perfil no está disponible actualmente.',
+    inactiveBody: 'Vuelve más adelante o utiliza otro enlace de Larum Agent Profile.',
+    errorEyebrow: 'Conexión interrumpida',
+    errorTitle: 'No se ha podido cargar el perfil.',
+    errorBody: 'Inténtalo de nuevo. No se ha mostrado información parcial o sin verificar.',
+    retry: 'Intentar de nuevo',
+    loading: 'Cargando el perfil del agente',
+    loaded: 'Perfil del agente cargado',
+    stateReady: 'Perfil preparado'
+  })
+});
+
+export const SUPPORTED_LANGUAGES = Object.freeze(['en', 'es']);
+export const DEFAULT_LANGUAGE = 'en';
+
+export function normaliseLanguage(value) {
+  return SUPPORTED_LANGUAGES.includes(value) ? value : DEFAULT_LANGUAGE;
+}
+
+export function t(language, key) {
+  const lang = normaliseLanguage(language);
+  return COPY[lang][key] ?? COPY[DEFAULT_LANGUAGE][key] ?? key;
+}
+
+export function translatePropertyType(language, value) {
+  const type = String(value || '').trim().toLowerCase();
+  if (type === 'new') return t(language, 'newBuild');
+  if (type === 'resale') return t(language, 'resale');
+  return String(value || '').trim();
+}

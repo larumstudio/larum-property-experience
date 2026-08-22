@@ -12,12 +12,13 @@
    ───────────────────────────────────────────────────────────── */
 
 import { esc, cap } from './admin-core.js';
-import { badge, emptyState, toast } from './admin-ui.js';
+import { badge, emptyState, tabs, toast } from './admin-ui.js';
 import {
   loadAllAgents, loadAgent, createAgent, updateAgent, loadPropertiesByAgent, inviteAgent, ConflictError
 } from './admin-property-store.js';
 import { navigate } from './admin-router.js';
 import { resolveCapabilities } from './admin-auth-context.js';
+import { mount as mountAgentPage, unmount as unmountAgentPage } from './admin-agent-page.js';
 
 export const title = 'Agentes';
 
@@ -38,6 +39,7 @@ let editDraft = null;        // non-null while editing the open agent
 
 let caps = null;             // resolved once per render() — see admin-auth-context.js
 let inviting = false;
+let detailTab = 'ficha';     // 'ficha' | 'pagina' | 'propiedades'
 
 /* Every typed error code api/admin-invite-agent.mjs can return, mapped
    to something an admin can act on. Never echoes e.message raw — the
@@ -95,6 +97,8 @@ export function teardown() {
   saving = false;
   caps = null;
   inviting = false;
+  detailTab = 'ficha';
+  unmountAgentPage();
   delete window.__agToggleCreate;
   delete window.__agCancelCreate;
   delete window.__agCreateSubmit;
@@ -107,6 +111,7 @@ export function teardown() {
   delete window.__agCancelEdit;
   delete window.__agOpenPropertyWorkspace;
   delete window.__agInvite;
+  delete window.__agSwitchTab;
 }
 
 async function loadList() {
@@ -303,6 +308,8 @@ async function openDetail(id) {
   detailProperties = null;
   detailPropertiesError = null;
   editDraft = null;
+  detailTab = 'ficha';
+  unmountAgentPage();
   draw();
 
   if (!detailAgent) {
@@ -323,6 +330,8 @@ function backToList() {
   detailId = null;
   detailAgent = null;
   editDraft = null;
+  detailTab = 'ficha';
+  unmountAgentPage();
   draw();
 }
 
@@ -346,19 +355,35 @@ function drawDetail() {
     ' ' + badge(a.status || 'active') +
   '</div>';
 
-  html += '<div class="card">' +
-    '<div class="card-head"><h3>Ficha del agente</h3>' +
-    (!editing ? '<button class="btn btn-outline" onclick="__agEditToggle()">Edit</button>' : '') +
-    '</div>';
+  html += tabs([
+    { id: 'ficha', label: 'Ficha' },
+    { id: 'pagina', label: 'Página' },
+    { id: 'propiedades', label: 'Propiedades' }
+  ], detailTab, 'onclick="__agSwitchTab(this.dataset.tab)"');
 
-  html += editing ? renderEditForm() : renderReadOnly(a);
+  html += '<div id="agDetailTabContent" style="margin-top:16px">';
+
+  if (detailTab === 'ficha') {
+    html += '<div class="card">' +
+      '<div class="card-head"><h3>Ficha del agente</h3>' +
+      (!editing ? '<button class="btn btn-outline" onclick="__agEditToggle()">Edit</button>' : '') +
+      '</div>';
+    html += editing ? renderEditForm() : renderReadOnly(a);
+    html += '</div>';
+    html += renderAccessCard(a);
+  } else if (detailTab === 'propiedades') {
+    html += renderPropertiesCard();
+  }
+
   html += '</div>';
-
-  html += renderAccessCard(a);
-  html += renderPropertiesCard();
 
   containerRef.innerHTML = html;
   bindGlobals();
+
+  if (detailTab === 'pagina') {
+    const tabContent = document.getElementById('agDetailTabContent');
+    if (tabContent) mountAgentPage(tabContent, a);
+  }
 }
 
 /* ── Access (M6.2 — invite / connection status) ──────────────────
@@ -618,6 +643,13 @@ function renderPropertiesCard() {
   return html;
 }
 
+function switchTab(tab) {
+  if (tab === detailTab) return;
+  unmountAgentPage();
+  detailTab = tab;
+  draw();
+}
+
 function openPropertyWorkspace(slug) {
   navigate('workspace', slug);
 }
@@ -639,4 +671,5 @@ function bindGlobals() {
   window.__agCancelEdit = cancelEdit;
   window.__agOpenPropertyWorkspace = openPropertyWorkspace;
   window.__agInvite = handleInvite;
+  window.__agSwitchTab = switchTab;
 }

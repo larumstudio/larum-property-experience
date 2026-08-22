@@ -688,3 +688,117 @@ export async function loadRevisions(slug) {
 export function getPropertyLabel(row) {
   return row.name_es || row.name_en || row.slug;
 }
+
+/* ── Agent page configuration (M3 — Agent Experience) ──────── */
+
+export async function loadAgentPageConfig(agentId) {
+  const { data, error } = await window.supabaseClient
+    .from('agent_page_configurations')
+    .select('id, agent_id, preset, modules, created_at, updated_at')
+    .eq('agent_id', agentId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function saveAgentPageConfig(agentId, { preset, modules }) {
+  const { data: existing, error: lookupError } = await window.supabaseClient
+    .from('agent_page_configurations')
+    .select('id')
+    .eq('agent_id', agentId)
+    .maybeSingle();
+  if (lookupError) throw new Error(lookupError.message);
+
+  if (existing) {
+    const { data, error } = await window.supabaseClient
+      .from('agent_page_configurations')
+      .update({ preset, modules })
+      .eq('agent_id', agentId)
+      .select('id, agent_id, preset, modules, updated_at')
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  const { data, error } = await window.supabaseClient
+    .from('agent_page_configurations')
+    .insert({ agent_id: agentId, preset, modules })
+    .select('id, agent_id, preset, modules, updated_at')
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function loadAgentAnalytics(agentSlug) {
+  const property = 'agent:' + agentSlug;
+  const now = new Date();
+  const d7 = new Date(now - 7 * 86400000).toISOString();
+  const d30 = new Date(now - 30 * 86400000).toISOString();
+
+  const [eventsAll, events7, events30] = await Promise.all([
+    window.supabaseClient.from('analytics_events').select('event_type').eq('property', property),
+    window.supabaseClient.from('analytics_events').select('event_type').eq('property', property).gte('created_at', d7),
+    window.supabaseClient.from('analytics_events').select('event_type').eq('property', property).gte('created_at', d30)
+  ]);
+
+  const all = eventsAll.data || [];
+  const last7 = events7.data || [];
+  const last30 = events30.data || [];
+  const count = (arr, type) => arr.filter(e => e.event_type === type).length;
+
+  return {
+    totalVisits: count(all, 'page_view'),
+    visits7d: count(last7, 'page_view'),
+    visits30d: count(last30, 'page_view'),
+    propertyClicks: count(all, 'property_click'),
+    contactClicks: count(all, 'contact_click')
+  };
+}
+
+export async function loadAgentWeeklyReport(agentSlug, weeks) {
+  weeks = weeks || 4;
+  const property = 'agent:' + agentSlug;
+  const since = new Date(Date.now() - weeks * 7 * 86400000).toISOString();
+
+  const { data, error } = await window.supabaseClient
+    .from('analytics_events')
+    .select('event_type,created_at')
+    .eq('property', property)
+    .gte('created_at', since)
+    .order('created_at', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  const events = data || [];
+
+  const days = {};
+  events.forEach(e => {
+    const day = e.created_at.slice(0, 10);
+    if (!days[day]) days[day] = { date: day, page_view: 0, property_click: 0, contact_click: 0, section_view: 0, session_end: 0 };
+    const t = e.event_type;
+    if (t in days[day]) days[day][t]++;
+  });
+
+  const sorted = Object.values(days).sort((a, b) => a.date.localeCompare(b.date));
+
+  const weekBuckets = [];
+  const now = new Date();
+  for (let w = weeks - 1; w >= 0; w--) {
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - w * 7);
+    const start = new Date(end.getTime() - 6 * 86400000);
+    const startStr = start.toISOString().slice(0, 10);
+    const endStr = end.toISOString().slice(0, 10);
+    const weekDays = sorted.filter(d => d.date >= startStr && d.date <= endStr);
+    weekBuckets.push({
+      start: startStr,
+      end: endStr,
+      days: weekDays,
+      visits: weekDays.reduce((n, d) => n + d.page_view, 0),
+      propertyClicks: weekDays.reduce((n, d) => n + d.property_click, 0),
+      contactClicks: weekDays.reduce((n, d) => n + d.contact_click, 0),
+      sectionViews: weekDays.reduce((n, d) => n + d.section_view, 0)
+    });
+  }
+
+  return { weeks: weekBuckets, daily: sorted };
+}
