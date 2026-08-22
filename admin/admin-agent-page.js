@@ -14,11 +14,17 @@ import { loadAgentPageConfig, saveAgentPageConfig, loadAgentAnalytics, loadAgent
 const PRESETS = ['signature', 'essential'];
 
 const MODULE_DEFS = [
-  { type: 'hero',       label: 'Hero',        required: true,  variants: ['portrait-split', 'quiet-monogram'] },
-  { type: 'story',      label: 'Enfoque',     required: false, variants: ['editorial-split', 'compact'] },
-  { type: 'properties', label: 'Propiedades', required: true,  variants: ['asymmetric-grid', 'single-feature'] },
-  { type: 'contact',    label: 'Contacto',    required: false, variants: ['editorial-split', 'compact'] },
-  { type: 'footer',     label: 'Footer',      required: true,  variants: ['minimal'] }
+  { type: 'hero',         label: 'Hero',                    required: true,  variants: ['portrait-split', 'quiet-monogram'] },
+  { type: 'story',        label: 'Enfoque',                 required: false, variants: ['editorial-split', 'compact'] },
+  { type: 'properties',   label: 'Propiedades',             required: true,  variants: ['asymmetric-grid', 'single-feature'] },
+  { type: 'stats',        label: 'Cifras de trayectoria',   required: false, variants: ['inline'] },
+  { type: 'testimonials', label: 'Testimonios',             required: false, variants: ['grid'] },
+  { type: 'credentials',  label: 'Credenciales',            required: false, variants: ['list'] },
+  { type: 'areas',        label: 'Zonas de servicio',       required: false, variants: ['list'] },
+  { type: 'process',      label: 'Proceso / metodología',   required: false, variants: ['steps'] },
+  { type: 'faq',          label: 'FAQ',                     required: false, variants: ['list'] },
+  { type: 'contact',      label: 'Contacto',                required: false, variants: ['editorial-split', 'compact'] },
+  { type: 'footer',       label: 'Footer',                  required: true,  variants: ['minimal'] }
 ];
 
 let containerRef = null;
@@ -86,9 +92,13 @@ function ensureAllModules() {
   const existing = new Set(modules.map(m => m.type));
   for (const def of MODULE_DEFS) {
     if (!existing.has(def.type)) {
+      /* A module type introduced after this agent's config was saved
+         (e.g. testimonials/stats/credentials, added post-launch) has no
+         opinion recorded yet — default it the same way its own preset
+         would if set fresh today, not to "off" regardless of preset. */
       modules.push({
         type: def.type,
-        enabled: def.required,
+        enabled: def.required || preset === 'signature',
         variant: def.variants[0],
         order: modules.length
       });

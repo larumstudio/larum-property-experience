@@ -8,7 +8,7 @@ export function databaseProvider() {
     async getAgentBySlug(slug) {
       const { data, error } = await client
         .from('agents')
-        .select('id, slug, name, status, role, agency, photo_url, bio, email, phone')
+        .select('id, slug, name, status, role, agency, photo_url, bio, email, phone, testimonials, credentials, stats, external_listings, process_steps, faq, service_areas')
         .eq('slug', slug)
         .maybeSingle();
       if (error) throw new Error(error.message);

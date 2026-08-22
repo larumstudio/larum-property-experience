@@ -70,7 +70,87 @@ export function normaliseAgent(raw, providerSource = null) {
     bio: Object.freeze(normaliseLocalized(raw.bio)),
     email: safeEmail(raw.email),
     phone: safePhone(raw.phone),
+    testimonials: Object.freeze(normaliseList(raw.testimonials, normaliseTestimonial)),
+    credentials: Object.freeze(normaliseList(raw.credentials, normaliseCredential)),
+    stats: Object.freeze(normaliseList(raw.stats, normaliseStat)),
+    externalListings: Object.freeze(normaliseList(raw.externalListings ?? raw.external_listings, normaliseExternalListing)),
+    processSteps: Object.freeze(normaliseList(raw.processSteps ?? raw.process_steps, normaliseProcessStep)),
+    faq: Object.freeze(normaliseList(raw.faq, normaliseFaqEntry)),
+    serviceAreas: Object.freeze(normaliseList(raw.serviceAreas ?? raw.service_areas, normaliseServiceArea)),
     source: cleanText(providerSource || raw.source || 'unknown').toLowerCase()
+  });
+}
+
+function normaliseList(raw, normaliser) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normaliser).filter(Boolean);
+}
+
+function normaliseTestimonial(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const quote = normaliseLocalized(raw.quote);
+  if (!quote.en && !quote.es) return null;
+  return Object.freeze({
+    quote: Object.freeze(quote),
+    author: cleanText(raw.author),
+    context: cleanText(raw.context)
+  });
+}
+
+function normaliseCredential(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const label = normaliseLocalized(raw.label);
+  if (!label.en && !label.es) return null;
+  return Object.freeze({ label: Object.freeze(label) });
+}
+
+function normaliseStat(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const value = cleanText(raw.value);
+  const label = normaliseLocalized(raw.label);
+  if (!value || (!label.en && !label.es)) return null;
+  return Object.freeze({ value, label: Object.freeze(label) });
+}
+
+function normaliseExternalListing(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const url = safeWebUrl(raw.url);
+  if (!url) return null;
+  const title = normaliseLocalized(raw.title);
+  return Object.freeze({
+    title: Object.freeze(title),
+    url,
+    imageUrl: safeWebUrl(raw.imageUrl ?? raw.image_url),
+    location: cleanText(raw.location),
+    priceLabel: cleanText(raw.priceLabel ?? raw.price_label)
+  });
+}
+
+function normaliseProcessStep(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const title = normaliseLocalized(raw.title);
+  if (!title.en && !title.es) return null;
+  return Object.freeze({
+    title: Object.freeze(title),
+    description: Object.freeze(normaliseLocalized(raw.description))
+  });
+}
+
+function normaliseFaqEntry(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const question = normaliseLocalized(raw.question);
+  const answer = normaliseLocalized(raw.answer);
+  if ((!question.en && !question.es) || (!answer.en && !answer.es)) return null;
+  return Object.freeze({ question: Object.freeze(question), answer: Object.freeze(answer) });
+}
+
+function normaliseServiceArea(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const name = normaliseLocalized(raw.name);
+  if (!name.en && !name.es) return null;
+  return Object.freeze({
+    name: Object.freeze(name),
+    description: Object.freeze(normaliseLocalized(raw.description))
   });
 }
 

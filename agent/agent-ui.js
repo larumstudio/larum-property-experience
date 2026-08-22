@@ -33,6 +33,60 @@ export const MODULE_REGISTRY = Object.freeze({
     hasContent: () => true,
     renderer: renderProperties
   }),
+  stats: Object.freeze({
+    required: false,
+    navId: null,
+    navCopy: null,
+    defaultVariant: 'inline',
+    variants: Object.freeze(['inline']),
+    hasContent: profile => profile.agent?.stats?.length > 0,
+    renderer: renderStats
+  }),
+  testimonials: Object.freeze({
+    required: false,
+    navId: 'testimonials',
+    navCopy: 'navTestimonials',
+    defaultVariant: 'grid',
+    variants: Object.freeze(['grid']),
+    hasContent: profile => profile.agent?.testimonials?.length > 0,
+    renderer: renderTestimonials
+  }),
+  credentials: Object.freeze({
+    required: false,
+    navId: 'credentials',
+    navCopy: 'navCredentials',
+    defaultVariant: 'list',
+    variants: Object.freeze(['list']),
+    hasContent: profile => profile.agent?.credentials?.length > 0,
+    renderer: renderCredentials
+  }),
+  areas: Object.freeze({
+    required: false,
+    navId: 'areas',
+    navCopy: 'navAreas',
+    defaultVariant: 'list',
+    variants: Object.freeze(['list']),
+    hasContent: profile => profile.agent?.serviceAreas?.length > 0,
+    renderer: renderAreas
+  }),
+  process: Object.freeze({
+    required: false,
+    navId: 'process',
+    navCopy: 'navProcess',
+    defaultVariant: 'steps',
+    variants: Object.freeze(['steps']),
+    hasContent: profile => profile.agent?.processSteps?.length > 0,
+    renderer: renderProcess
+  }),
+  faq: Object.freeze({
+    required: false,
+    navId: 'faq',
+    navCopy: 'navFaq',
+    defaultVariant: 'list',
+    variants: Object.freeze(['list']),
+    hasContent: profile => profile.agent?.faq?.length > 0,
+    renderer: renderFaq
+  }),
   contact: Object.freeze({
     required: false,
     navId: 'contact',
@@ -76,6 +130,32 @@ export function resolveModules(profile, language) {
     if (!resolved.some(module => module.type === type)) {
       resolved.push(resolveModule(type, null));
     }
+  }
+
+  /* A module type introduced after this agent's page configuration was
+     last saved is absent from `configured` entirely — not disabled, just
+     never considered. Treat "never configured" as "on by default" rather
+     than requiring every existing agent to reopen and resave their page
+     just to pick up a new section, as long as there's actual content to
+     show (an agent with no testimonials still shows nothing either way).
+
+     Appending it to `resolved` would land every such module after
+     whatever was already explicitly configured (e.g. after Contact,
+     since Contact predates this module and got its `order` saved first)
+     regardless of where it conceptually belongs. Instead, insert it right
+     before the first already-resolved module that comes later in
+     MODULE_REGISTRY's own declaration order — the same order new configs
+     get via ensureAllModules() — so newly-introduced sections land where
+     they would if the agent's config were built fresh today. */
+  const registryOrder = Object.keys(MODULE_REGISTRY);
+  for (const [type, definition] of Object.entries(MODULE_REGISTRY)) {
+    if (seen.has(type) || definition.required) continue;
+    if (!definition.hasContent(profile, language)) continue;
+    const myIndex = registryOrder.indexOf(type);
+    const insertBefore = resolved.findIndex(m => registryOrder.indexOf(m.type) > myIndex);
+    const newModule = resolveModule(type, null);
+    if (insertBefore === -1) resolved.push(newModule);
+    else resolved.splice(insertBefore, 0, newModule);
   }
 
   const hero = resolved.find(module => module.type === 'hero');
@@ -297,10 +377,72 @@ function renderApproach({ profile, language, module, position }) {
     </section>`;
 }
 
+function renderStats({ profile, language, module }) {
+  const items = profile.agent.stats;
+  return `
+    <section id="stats" class="agent-stats agent-stats--${escapeAttribute(module.variant)}" data-section="stats" data-module="stats" data-variant="${escapeAttribute(module.variant)}">
+      <div class="agent-stats__grid">
+        ${items.map(item => `
+          <div class="agent-stats__item agent-reveal">
+            <strong>${escapeHtml(item.value)}</strong>
+            <span>${escapeHtml(getLocalized(item.label, language))}</span>
+          </div>`).join('')}
+      </div>
+    </section>`;
+}
+
+function renderTestimonials({ profile, language, module, position }) {
+  const items = profile.agent.testimonials;
+  return `
+    <section id="testimonials" class="agent-testimonials agent-testimonials--${escapeAttribute(module.variant)}" aria-labelledby="testimonialsTitle" data-section="testimonials" data-module="testimonials" data-variant="${escapeAttribute(module.variant)}">
+      <div class="agent-section-index agent-reveal" aria-hidden="true">${formatIndex(position)}</div>
+      <div class="agent-testimonials__heading agent-reveal">
+        <p class="agent-eyebrow">${escapeHtml(t(language, 'testimonialsEyebrow'))}</p>
+        <h2 id="testimonialsTitle">${escapeHtml(t(language, 'testimonialsTitle'))}</h2>
+      </div>
+      <div class="agent-testimonials__grid">
+        ${items.map(item => renderTestimonialCard(item, language)).join('')}
+      </div>
+    </section>`;
+}
+
+function renderTestimonialCard(item, language) {
+  const quote = getLocalized(item.quote, language);
+  const hasAttribution = Boolean(item.author || item.context);
+  return `
+    <figure class="agent-testimonial agent-reveal">
+      <blockquote>&ldquo;${escapeHtml(quote)}&rdquo;</blockquote>
+      ${hasAttribution ? `
+      <figcaption>
+        ${item.author ? `<strong>${escapeHtml(item.author)}</strong>` : ''}
+        ${item.context ? `<span>${escapeHtml(item.context)}</span>` : ''}
+      </figcaption>` : ''}
+    </figure>`;
+}
+
+function renderCredentials({ profile, language, module, position }) {
+  const items = profile.agent.credentials;
+  return `
+    <section id="credentials" class="agent-credentials agent-credentials--${escapeAttribute(module.variant)}" aria-labelledby="credentialsTitle" data-section="credentials" data-module="credentials" data-variant="${escapeAttribute(module.variant)}">
+      <div class="agent-section-index agent-reveal" aria-hidden="true">${formatIndex(position)}</div>
+      <div class="agent-credentials__heading agent-reveal">
+        <p class="agent-eyebrow">${escapeHtml(t(language, 'credentialsEyebrow'))}</p>
+        <h2 id="credentialsTitle">${escapeHtml(t(language, 'credentialsTitle'))}</h2>
+      </div>
+      <ul class="agent-credentials__list agent-reveal">
+        ${items.map(item => `<li>${escapeHtml(getLocalized(item.label, language))}</li>`).join('')}
+      </ul>
+    </section>`;
+}
+
 function renderProperties({ profile, language, module, position }) {
-  const limit = Number.isInteger(module.settings.limit) ? module.settings.limit : profile.properties.length;
-  const properties = profile.properties.slice(0, limit);
-  const count = properties.length;
+  const combined = [
+    ...profile.properties.map(property => ({ kind: 'larum', property })),
+    ...(profile.agent?.externalListings || []).map(listing => ({ kind: 'external', listing }))
+  ];
+  const limit = Number.isInteger(module.settings.limit) ? module.settings.limit : combined.length;
+  const items = combined.slice(0, limit);
+  const count = items.length;
   const countLabel = `${count} ${t(language, count === 1 ? 'propertySingular' : 'propertyPlural')}`;
 
   return `
@@ -313,7 +455,10 @@ function renderProperties({ profile, language, module, position }) {
         <span class="agent-properties__count">${escapeHtml(countLabel)}</span>
       </header>
       ${count
-        ? `<div class="agent-property-grid">${properties.map((property, index) => renderPropertyCard(property, language, index, count)).join('')}</div>`
+        ? `<div class="agent-property-grid">${items.map((item, index) => item.kind === 'larum'
+            ? renderPropertyCard(item.property, language, index, count)
+            : renderExternalListingCard(item.listing, language, index, count)
+          ).join('')}</div>`
         : renderEmptyProperties(language)}
     </section>`;
 }
@@ -356,6 +501,46 @@ function renderPropertyCard(property, language, index, count) {
     </article>`;
 }
 
+function renderExternalListingCard(listing, language, index, count) {
+  const name = getLocalized(listing.title, language) || safeHostname(listing.url) || listing.url;
+  const hostname = safeHostname(listing.url);
+  const cardClass = [
+    'agent-property-card',
+    'agent-property-card--external',
+    index === 0 && count > 1 ? 'agent-property-card--feature' : '',
+    listing.imageUrl ? '' : 'is-image-missing',
+    'agent-reveal'
+  ].filter(Boolean).join(' ');
+
+  return `
+    <article class="${cardClass}">
+      <a href="${escapeAttribute(listing.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${name} — ${t(language, 'externalListingCta')}`)}">
+        <figure data-image-frame>
+          ${listing.imageUrl ? `<img src="${escapeAttribute(listing.imageUrl)}" alt="${escapeAttribute(name)}" loading="lazy" decoding="async" data-fallback-image />` : ''}
+          <div class="agent-property-card__fallback" aria-hidden="true">
+            <i></i><span>${escapeHtml(t(language, 'imageUnavailable'))}</span>
+          </div>
+          <div class="agent-property-card__shade" aria-hidden="true"></div>
+          ${listing.location ? `<span class="agent-property-card__location">${escapeHtml(listing.location)}</span>` : ''}
+          <figcaption>
+            <div>
+              <h3>${escapeHtml(name)}</h3>
+              <p class="agent-property-card__meta">
+                ${hostname ? `<span>${escapeHtml(hostname)}</span>` : ''}
+              </p>
+            </div>
+            ${listing.priceLabel ? `<strong>${escapeHtml(listing.priceLabel)}</strong>` : ''}
+          </figcaption>
+          <span class="agent-property-card__cta">${escapeHtml(t(language, 'externalListingCta'))}<b aria-hidden="true">↗</b></span>
+        </figure>
+      </a>
+    </article>`;
+}
+
+function safeHostname(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch (error) { return ''; }
+}
+
 function renderEmptyProperties(language) {
   return `
     <div class="agent-empty-portfolio agent-reveal">
@@ -365,6 +550,64 @@ function renderEmptyProperties(language) {
         <p>${escapeHtml(t(language, 'emptyPropertiesBody'))}</p>
       </div>
     </div>`;
+}
+
+function renderAreas({ profile, language, module, position }) {
+  const items = profile.agent.serviceAreas;
+  return `
+    <section id="areas" class="agent-areas agent-areas--${escapeAttribute(module.variant)}" aria-labelledby="areasTitle" data-section="areas" data-module="areas" data-variant="${escapeAttribute(module.variant)}">
+      <div class="agent-section-index agent-reveal" aria-hidden="true">${formatIndex(position)}</div>
+      <div class="agent-areas__heading agent-reveal">
+        <p class="agent-eyebrow">${escapeHtml(t(language, 'areasEyebrow'))}</p>
+        <h2 id="areasTitle">${escapeHtml(t(language, 'areasTitle'))}</h2>
+      </div>
+      <div class="agent-areas__grid">
+        ${items.map(item => `
+          <div class="agent-area agent-reveal">
+            <h3>${escapeHtml(getLocalized(item.name, language))}</h3>
+            ${getLocalized(item.description, language) ? `<p>${escapeHtml(getLocalized(item.description, language))}</p>` : ''}
+          </div>`).join('')}
+      </div>
+    </section>`;
+}
+
+function renderProcess({ profile, language, module, position }) {
+  const items = profile.agent.processSteps;
+  return `
+    <section id="process" class="agent-process agent-process--${escapeAttribute(module.variant)}" aria-labelledby="processTitle" data-section="process" data-module="process" data-variant="${escapeAttribute(module.variant)}">
+      <div class="agent-section-index agent-reveal" aria-hidden="true">${formatIndex(position)}</div>
+      <div class="agent-process__heading agent-reveal">
+        <p class="agent-eyebrow">${escapeHtml(t(language, 'processEyebrow'))}</p>
+        <h2 id="processTitle">${escapeHtml(t(language, 'processTitle'))}</h2>
+      </div>
+      <ol class="agent-process__steps">
+        ${items.map((item, index) => `
+          <li class="agent-process__step agent-reveal">
+            <span class="agent-process__number" aria-hidden="true">${formatIndex(index + 1)}</span>
+            <h3>${escapeHtml(getLocalized(item.title, language))}</h3>
+            ${getLocalized(item.description, language) ? `<p>${escapeHtml(getLocalized(item.description, language))}</p>` : ''}
+          </li>`).join('')}
+      </ol>
+    </section>`;
+}
+
+function renderFaq({ profile, language, module, position }) {
+  const items = profile.agent.faq;
+  return `
+    <section id="faq" class="agent-faq agent-faq--${escapeAttribute(module.variant)}" aria-labelledby="faqTitle" data-section="faq" data-module="faq" data-variant="${escapeAttribute(module.variant)}">
+      <div class="agent-section-index agent-reveal" aria-hidden="true">${formatIndex(position)}</div>
+      <div class="agent-faq__heading agent-reveal">
+        <p class="agent-eyebrow">${escapeHtml(t(language, 'faqEyebrow'))}</p>
+        <h2 id="faqTitle">${escapeHtml(t(language, 'faqTitle'))}</h2>
+      </div>
+      <div class="agent-faq__list">
+        ${items.map(item => `
+          <details class="agent-faq__item agent-reveal">
+            <summary>${escapeHtml(getLocalized(item.question, language))}</summary>
+            <p>${escapeHtml(getLocalized(item.answer, language))}</p>
+          </details>`).join('')}
+      </div>
+    </section>`;
 }
 
 function renderContact({ profile, language, module, position }) {

@@ -562,7 +562,7 @@ export async function loadAgents() {
    regardless of status, and every column the "agents" table exposes
    (migration 001 §2) that a real agent record needs. */
 
-const AGENT_COLUMNS = 'id, name, slug, email, phone, agency, role, photo_url, bio, status, organization_id, auth_user_id, created_at, updated_at';
+const AGENT_COLUMNS = 'id, name, slug, email, phone, agency, role, photo_url, bio, status, organization_id, auth_user_id, created_at, updated_at, testimonials, credentials, stats, external_listings, process_steps, faq, service_areas';
 
 export async function loadAllAgents() {
   const { data, error } = await window.supabaseClient
@@ -618,7 +618,11 @@ export async function createAgent({ name, slug, agency, role, photoUrl, bioEn, b
 }
 
 export async function updateAgent(id, patch, expectedUpdatedAt) {
-  const allowed = ['name', 'slug', 'email', 'phone', 'agency', 'role', 'photo_url', 'bio', 'status'];
+  const allowed = [
+    'name', 'slug', 'email', 'phone', 'agency', 'role', 'photo_url', 'bio', 'status',
+    'testimonials', 'credentials', 'stats', 'external_listings',
+    'process_steps', 'faq', 'service_areas'
+  ];
   const clean = {};
   for (const key of allowed) {
     if (patch[key] !== undefined) clean[key] = patch[key];

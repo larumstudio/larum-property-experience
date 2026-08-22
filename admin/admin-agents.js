@@ -25,6 +25,75 @@ export const title = 'Agentes';
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const STATUS_OPTS = ['active', 'inactive'];
 
+/* Repeatable list editors (Ficha tab) — testimonials, credentials, stats
+   and external listings all live as jsonb arrays on the agent row
+   (migration 012). One generic add/remove/input handler set covers all
+   four instead of bespoke functions per array, keyed by the array's own
+   column name as `path`. */
+const LIST_TEMPLATES = {
+  testimonials: { quote: { en: '', es: '' }, author: '', context: '' },
+  credentials: { label: { en: '', es: '' } },
+  stats: { value: '', label: { en: '', es: '' } },
+  external_listings: { title: { en: '', es: '' }, url: '', image_url: '', location: '', price_label: '' },
+  process_steps: { title: { en: '', es: '' }, description: { en: '', es: '' } },
+  faq: { question: { en: '', es: '' }, answer: { en: '', es: '' } },
+  service_areas: { name: { en: '', es: '' }, description: { en: '', es: '' } }
+};
+
+const LIST_FIELDS = {
+  testimonials: [
+    { key: 'quote.en', label: 'Quote (EN)', type: 'textarea' },
+    { key: 'quote.es', label: 'Quote (ES)', type: 'textarea' },
+    { key: 'author', label: 'Author', type: 'text' },
+    { key: 'context', label: 'Context — e.g. "Buyer, Madrid"', type: 'text' }
+  ],
+  credentials: [
+    { key: 'label.en', label: 'Label (EN)', type: 'text' },
+    { key: 'label.es', label: 'Label (ES)', type: 'text' }
+  ],
+  stats: [
+    { key: 'value', label: 'Value — e.g. "15+", "€120M", "200+"', type: 'text' },
+    { key: 'label.en', label: 'Label (EN)', type: 'text' },
+    { key: 'label.es', label: 'Label (ES)', type: 'text' }
+  ],
+  external_listings: [
+    { key: 'title.en', label: 'Title (EN)', type: 'text' },
+    { key: 'title.es', label: 'Title (ES)', type: 'text' },
+    { key: 'url', label: 'Listing URL (e.g. an Idealista link)', type: 'text' },
+    { key: 'image_url', label: 'Image URL (optional)', type: 'text' },
+    { key: 'location', label: 'Location (optional)', type: 'text' },
+    { key: 'price_label', label: 'Price label (optional) — e.g. "€450,000"', type: 'text' }
+  ],
+  process_steps: [
+    { key: 'title.en', label: 'Step title (EN)', type: 'text' },
+    { key: 'title.es', label: 'Step title (ES)', type: 'text' },
+    { key: 'description.en', label: 'Step description (EN)', type: 'textarea' },
+    { key: 'description.es', label: 'Step description (ES)', type: 'textarea' }
+  ],
+  faq: [
+    { key: 'question.en', label: 'Question (EN)', type: 'text' },
+    { key: 'question.es', label: 'Question (ES)', type: 'text' },
+    { key: 'answer.en', label: 'Answer (EN)', type: 'textarea' },
+    { key: 'answer.es', label: 'Answer (ES)', type: 'textarea' }
+  ],
+  service_areas: [
+    { key: 'name.en', label: 'Area name (EN)', type: 'text' },
+    { key: 'name.es', label: 'Area name (ES)', type: 'text' },
+    { key: 'description.en', label: 'Description (EN)', type: 'textarea' },
+    { key: 'description.es', label: 'Description (ES)', type: 'textarea' }
+  ]
+};
+
+const LIST_SECTION_LABELS = {
+  testimonials: 'Testimonials',
+  credentials: 'Credentials',
+  stats: 'Track record (stats)',
+  external_listings: 'External listings (e.g. Idealista)',
+  process_steps: 'Process / methodology',
+  faq: 'FAQ',
+  service_areas: 'Service areas'
+};
+
 let containerRef = null;
 let mode = 'list';           // 'list' | 'create' | 'detail'
 let agents = [];
@@ -112,6 +181,9 @@ export function teardown() {
   delete window.__agOpenPropertyWorkspace;
   delete window.__agInvite;
   delete window.__agSwitchTab;
+  delete window.__agListInput;
+  delete window.__agListAdd;
+  delete window.__agListRemove;
 }
 
 async function loadList() {
@@ -483,13 +555,26 @@ function renderReadOnly(a) {
     '<div class="ce-subsec" style="margin-top:14px"><div class="ce-subsec-label mono">Bio (EN)</div></div>' +
     '<div class="ce-readonly" style="white-space:pre-wrap">' + esc(bio.en || '—') + '</div>' +
     '<div class="ce-subsec" style="margin-top:10px"><div class="ce-subsec-label mono">Bio (ES)</div></div>' +
-    '<div class="ce-readonly" style="white-space:pre-wrap">' + esc(bio.es || '—') + '</div>'
+    '<div class="ce-readonly" style="white-space:pre-wrap">' + esc(bio.es || '—') + '</div>' +
+    '<div class="ce-subsec" style="margin-top:14px"><div class="ce-subsec-label mono">Página del agente</div></div>' +
+    '<div class="mono" style="font-size:11px;color:var(--muted)">' +
+      (a.testimonials?.length || 0) + ' testimonials · ' +
+      (a.stats?.length || 0) + ' stats · ' +
+      (a.credentials?.length || 0) + ' credentials · ' +
+      (a.external_listings?.length || 0) + ' external listings · ' +
+      (a.service_areas?.length || 0) + ' areas · ' +
+      (a.process_steps?.length || 0) + ' process steps · ' +
+      (a.faq?.length || 0) + ' FAQ' +
+    '</div>'
   );
 }
 
 function toggleEdit() {
   editDraft = JSON.parse(JSON.stringify(detailAgent));
   if (!editDraft.bio) editDraft.bio = { en: '', es: '' };
+  for (const path of Object.keys(LIST_TEMPLATES)) {
+    if (!Array.isArray(editDraft[path])) editDraft[path] = [];
+  }
   draw();
 }
 
@@ -524,6 +609,13 @@ function renderEditForm() {
       eselect('status', 'Status', a.status || 'active') +
       etextarea('bio.en', 'Bio (EN)', bio.en || '') +
       etextarea('bio.es', 'Bio (ES)', bio.es || '') +
+      renderListEditor('testimonials') +
+      renderListEditor('stats') +
+      renderListEditor('credentials') +
+      renderListEditor('external_listings') +
+      renderListEditor('service_areas') +
+      renderListEditor('process_steps') +
+      renderListEditor('faq') +
       '<div style="display:flex;gap:8px;margin-top:12px">' +
         '<button class="btn btn-primary" onclick="__agSaveEdit()"' + (saving ? ' disabled' : '') + '>' +
           (saving ? 'Saving...' : 'Save changes') +
@@ -562,6 +654,68 @@ function eselect(path, label, value) {
   '</div>';
 }
 
+function renderListEditor(path) {
+  const items = Array.isArray(editDraft[path]) ? editDraft[path] : [];
+  const fields = LIST_FIELDS[path];
+
+  let html = '<div class="ce-subsec" style="margin-top:18px">' +
+    '<div class="ce-subsec-label mono">' + esc(LIST_SECTION_LABELS[path]) + '</div></div>';
+
+  items.forEach((item, index) => {
+    html += '<div style="border:1px solid var(--line);padding:12px;margin-bottom:10px;border-radius:6px">';
+    fields.forEach(f => {
+      const value = getNestedValue(item, f.key) || '';
+      const id = 'agl_' + path + '_' + index + '_' + f.key.replace(/\./g, '_');
+      const escapedPath = path.replace(/'/g, "\\'");
+      const escapedKey = f.key.replace(/'/g, "\\'");
+      const onInput = 'oninput="__agListInput(\'' + escapedPath + '\',' + index + ',\'' + escapedKey + '\',this.value)"';
+      html += '<div class="ce-field">' +
+        '<label class="ce-label" style="font-size:10px" for="' + id + '">' + esc(f.label) + '</label>' +
+        (f.type === 'textarea'
+          ? '<textarea class="ce-textarea" id="' + id + '" ' + onInput + '>' + esc(value) + '</textarea>'
+          : '<input type="text" class="ce-input" id="' + id + '" value="' + esc(value) + '" ' + onInput + ' />') +
+        '</div>';
+    });
+    html += '<button class="btn btn-outline" style="font-size:11px;padding:2px 8px" ' +
+      'onclick="__agListRemove(\'' + path.replace(/'/g, "\\'") + '\',' + index + ')">Remove</button>';
+    html += '</div>';
+  });
+
+  html += '<button class="btn btn-outline" style="font-size:12px" onclick="__agListAdd(\'' + path.replace(/'/g, "\\'") + '\')">+ Add</button>';
+  return html;
+}
+
+function getNestedValue(obj, key) {
+  return key.split('.').reduce((cur, part) => (cur && typeof cur === 'object' ? cur[part] : undefined), obj);
+}
+
+function handleListInput(path, index, key, value) {
+  if (!editDraft) return;
+  if (!Array.isArray(editDraft[path])) editDraft[path] = [];
+  const item = editDraft[path][index];
+  if (!item) return;
+  const parts = key.split('.');
+  let cur = item;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (typeof cur[parts[i]] !== 'object' || cur[parts[i]] === null) cur[parts[i]] = {};
+    cur = cur[parts[i]];
+  }
+  cur[parts[parts.length - 1]] = value;
+}
+
+function handleListAdd(path) {
+  if (!editDraft) return;
+  if (!Array.isArray(editDraft[path])) editDraft[path] = [];
+  editDraft[path].push(JSON.parse(JSON.stringify(LIST_TEMPLATES[path])));
+  draw();
+}
+
+function handleListRemove(path, index) {
+  if (!editDraft || !Array.isArray(editDraft[path])) return;
+  editDraft[path].splice(index, 1);
+  draw();
+}
+
 async function saveEdit() {
   if (!editDraft || saving) return;
 
@@ -587,7 +741,14 @@ async function saveEdit() {
       phone: (editDraft.phone || '').trim() || null,
       photo_url: (editDraft.photo_url || '').trim() || null,
       bio: { en: editDraft.bio?.en || '', es: editDraft.bio?.es || '' },
-      status: editDraft.status || 'active'
+      status: editDraft.status || 'active',
+      testimonials: editDraft.testimonials || [],
+      credentials: editDraft.credentials || [],
+      stats: editDraft.stats || [],
+      external_listings: editDraft.external_listings || [],
+      process_steps: editDraft.process_steps || [],
+      faq: editDraft.faq || [],
+      service_areas: editDraft.service_areas || []
     };
     /* M6.6b — same reasoning as M6.5a: read updated_at fresh from
        detailAgent (the shared loaded row) right at save time. */
@@ -672,4 +833,7 @@ function bindGlobals() {
   window.__agOpenPropertyWorkspace = openPropertyWorkspace;
   window.__agInvite = handleInvite;
   window.__agSwitchTab = switchTab;
+  window.__agListInput = handleListInput;
+  window.__agListAdd = handleListAdd;
+  window.__agListRemove = handleListRemove;
 }

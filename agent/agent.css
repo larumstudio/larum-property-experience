@@ -963,6 +963,330 @@ body.agent-experience {
 }
 
 /* Contact */
+/* Stats — a slim strip, no section index or eyebrow of its own */
+.agent-stats {
+  padding: clamp(46px, 6vw, 72px) var(--agent-gutter);
+  background: var(--agent-paper);
+  color: var(--agent-ink);
+  border-bottom: 1px solid var(--agent-line-dark);
+}
+
+.agent-stats__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: clamp(24px, 4vw, 56px);
+}
+
+.agent-stats__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.agent-stats__item strong {
+  font-family: var(--agent-display);
+  font-size: clamp(32px, 3.4vw, 52px);
+  font-weight: 400;
+  color: #6c5932;
+  letter-spacing: -0.02em;
+}
+
+.agent-stats__item span {
+  color: #776f5f;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Testimonials */
+.agent-testimonials {
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: minmax(42px, 0.18fr) minmax(300px, 0.6fr) minmax(420px, 1.22fr);
+  gap: clamp(36px, 6vw, 100px);
+  align-items: start;
+  padding: clamp(100px, 11vw, 160px) var(--agent-gutter);
+  background: var(--agent-ink-soft);
+  color: var(--agent-paper);
+}
+
+.agent-testimonials__heading h2 {
+  max-width: 480px;
+  margin-top: 22px;
+  font-family: var(--agent-display);
+  font-size: clamp(46px, 5.2vw, 78px);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+}
+
+.agent-testimonials__grid {
+  display: grid;
+  gap: clamp(28px, 4vw, 48px);
+}
+
+.agent-testimonial {
+  padding-bottom: clamp(28px, 4vw, 48px);
+  border-bottom: 1px solid var(--agent-line-light);
+}
+
+.agent-testimonial:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.agent-testimonial blockquote {
+  margin: 0;
+  max-width: 62ch;
+  font-family: var(--agent-display);
+  font-size: clamp(20px, 2vw, 30px);
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--agent-paper);
+}
+
+.agent-testimonial figcaption {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin-top: 16px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.agent-testimonial figcaption strong {
+  color: var(--agent-gold-soft);
+  font-weight: 500;
+}
+
+.agent-testimonial figcaption span {
+  color: var(--agent-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 9px;
+}
+
+/* Credentials */
+.agent-credentials {
+  min-height: 420px;
+  display: grid;
+  grid-template-columns: minmax(42px, 0.18fr) minmax(300px, 0.7fr) minmax(420px, 1.12fr);
+  gap: clamp(36px, 6vw, 100px);
+  align-items: start;
+  padding: clamp(90px, 10vw, 150px) var(--agent-gutter);
+  background: var(--agent-paper-deep);
+  color: var(--agent-ink);
+}
+
+.agent-credentials .agent-eyebrow {
+  color: #776f5f;
+}
+
+.agent-credentials__heading h2 {
+  max-width: 480px;
+  margin-top: 22px;
+  font-family: var(--agent-display);
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.agent-credentials__list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-credentials__list li {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--agent-line-dark);
+  color: #4c4d47;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.agent-credentials__list li:last-child {
+  border-bottom: none;
+}
+
+/* Service areas */
+.agent-areas {
+  min-height: 420px;
+  display: grid;
+  grid-template-columns: minmax(42px, 0.18fr) minmax(300px, 0.7fr) minmax(420px, 1.12fr);
+  gap: clamp(36px, 6vw, 100px);
+  align-items: start;
+  padding: clamp(90px, 10vw, 150px) var(--agent-gutter);
+  background: var(--agent-paper);
+  color: var(--agent-ink);
+}
+
+.agent-areas .agent-eyebrow {
+  color: #776f5f;
+}
+
+.agent-areas__heading h2 {
+  max-width: 480px;
+  margin-top: 22px;
+  font-family: var(--agent-display);
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.agent-areas__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: clamp(24px, 3vw, 40px);
+}
+
+.agent-area h3 {
+  font-family: var(--agent-display);
+  font-size: 24px;
+  font-weight: 400;
+  color: #6c5932;
+  margin-bottom: 8px;
+}
+
+.agent-area p {
+  max-width: 32ch;
+  color: #5f6059;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* Process / methodology */
+.agent-process {
+  min-height: 480px;
+  padding: clamp(90px, 10vw, 150px) var(--agent-gutter);
+  background: var(--agent-ink-soft);
+  color: var(--agent-paper);
+}
+
+.agent-process__heading {
+  max-width: 620px;
+  margin-bottom: clamp(40px, 5vw, 70px);
+}
+
+.agent-process__heading h2 {
+  margin-top: 22px;
+  font-family: var(--agent-display);
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.agent-process__steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: clamp(28px, 4vw, 48px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-process__step {
+  padding-top: 20px;
+  border-top: 1px solid var(--agent-line-light);
+}
+
+.agent-process__number {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--agent-gold);
+  font-family: var(--agent-display);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+.agent-process__step h3 {
+  font-family: var(--agent-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--agent-paper);
+  margin-bottom: 10px;
+}
+
+.agent-process__step p {
+  max-width: 32ch;
+  color: var(--agent-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* FAQ */
+.agent-faq {
+  min-height: 420px;
+  display: grid;
+  grid-template-columns: minmax(42px, 0.18fr) minmax(300px, 0.7fr) minmax(420px, 1.12fr);
+  gap: clamp(36px, 6vw, 100px);
+  align-items: start;
+  padding: clamp(90px, 10vw, 150px) var(--agent-gutter);
+  background: var(--agent-paper-deep);
+  color: var(--agent-ink);
+}
+
+.agent-faq .agent-eyebrow {
+  color: #776f5f;
+}
+
+.agent-faq__heading h2 {
+  max-width: 480px;
+  margin-top: 22px;
+  font-family: var(--agent-display);
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 400;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.agent-faq__list {
+  display: grid;
+  gap: 0;
+}
+
+.agent-faq__item {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--agent-line-dark);
+}
+
+.agent-faq__item summary {
+  cursor: pointer;
+  font-family: var(--agent-display);
+  font-size: 18px;
+  font-weight: 400;
+  color: #2a2b26;
+  list-style: none;
+}
+
+.agent-faq__item summary::-webkit-details-marker {
+  display: none;
+}
+
+.agent-faq__item summary::after {
+  content: '+';
+  float: right;
+  color: var(--agent-gold);
+  font-size: 20px;
+}
+
+.agent-faq__item[open] summary::after {
+  content: '–';
+}
+
+.agent-faq__item p {
+  max-width: 62ch;
+  margin-top: 14px;
+  color: #5f6059;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
 .agent-contact {
   min-height: 680px;
   display: grid;
@@ -1188,7 +1512,11 @@ body.agent-experience {
   }
 
   .agent-approach,
-  .agent-contact {
+  .agent-contact,
+  .agent-testimonials,
+  .agent-credentials,
+  .agent-areas,
+  .agent-faq {
     grid-template-columns: 40px 0.84fr 1.16fr;
     gap: 40px;
   }
@@ -1232,7 +1560,11 @@ body.agent-experience {
   }
 
   .agent-approach,
-  .agent-contact {
+  .agent-contact,
+  .agent-testimonials,
+  .agent-credentials,
+  .agent-areas,
+  .agent-faq {
     grid-template-columns: 34px 1fr 1fr;
     gap: 34px;
   }
@@ -1373,7 +1705,12 @@ body.agent-experience {
   }
 
   .agent-approach,
-  .agent-contact {
+  .agent-contact,
+  .agent-testimonials,
+  .agent-credentials,
+  .agent-areas,
+  .agent-faq,
+  .agent-process {
     min-height: auto;
     grid-template-columns: 1fr;
     gap: 34px;
@@ -1386,7 +1723,12 @@ body.agent-experience {
   }
 
   .agent-approach__title h2,
-  .agent-contact h2 {
+  .agent-contact h2,
+  .agent-testimonials__heading h2,
+  .agent-credentials__heading h2,
+  .agent-areas__heading h2,
+  .agent-faq__heading h2,
+  .agent-process__heading h2 {
     max-width: 640px;
   }
 
@@ -1511,7 +1853,12 @@ body.agent-experience {
 
   .agent-approach__title h2,
   .agent-properties__header h2,
-  .agent-contact h2 {
+  .agent-contact h2,
+  .agent-testimonials__heading h2,
+  .agent-credentials__heading h2,
+  .agent-areas__heading h2,
+  .agent-faq__heading h2,
+  .agent-process__heading h2 {
     font-size: clamp(54px, 17vw, 76px);
   }
 

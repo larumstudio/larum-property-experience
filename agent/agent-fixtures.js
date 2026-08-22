@@ -18,6 +18,97 @@ export const FIXTURE_AGENTS = Object.freeze([
     }),
     email: 'elena.rios@example.com',
     phone: '+1 202 555 0147',
+    testimonials: Object.freeze([
+      Object.freeze({
+        quote: Object.freeze({
+          en: 'Elena understood exactly what we were looking for before we could fully articulate it ourselves. The whole process felt considered, never rushed.',
+          es: 'Elena entendió exactamente lo que buscábamos antes de que pudiéramos explicarlo del todo. Todo el proceso se sintió cuidado, nunca apresurado.'
+        }),
+        author: 'M. & J. Alden',
+        context: 'Buyers, Madrid'
+      }),
+      Object.freeze({
+        quote: Object.freeze({
+          en: 'A rare combination of market knowledge and genuine discretion.',
+          es: 'Una combinación poco común de conocimiento del mercado y discreción genuina.'
+        }),
+        author: 'Private client',
+        context: 'Seller, Marbella'
+      })
+    ]),
+    credentials: Object.freeze([
+      Object.freeze({ label: Object.freeze({ en: 'Certified Luxury Home Marketing Specialist', es: 'Especialista Certificada en Marketing de Propiedades de Lujo' }) }),
+      Object.freeze({ label: Object.freeze({ en: 'Fluent in English, Spanish and French', es: 'Fluida en inglés, español y francés' }) })
+    ]),
+    stats: Object.freeze([
+      Object.freeze({ value: '15+', label: Object.freeze({ en: 'Years of experience', es: 'Años de experiencia' }) }),
+      Object.freeze({ value: '€180M', label: Object.freeze({ en: 'Transacted volume', es: 'Volumen transaccionado' }) }),
+      Object.freeze({ value: '90+', label: Object.freeze({ en: 'Properties represented', es: 'Propiedades representadas' }) })
+    ]),
+    external_listings: Object.freeze([
+      Object.freeze({
+        title: Object.freeze({ en: 'Penthouse, Serrano', es: 'Ático, Serrano' }),
+        url: 'https://www.idealista.com/',
+        image_url: null,
+        location: 'Madrid · Salamanca',
+        price_label: '€2,450,000'
+      })
+    ]),
+    process_steps: Object.freeze([
+      Object.freeze({
+        title: Object.freeze({ en: 'Diagnosis', es: 'Diagnóstico' }),
+        description: Object.freeze({
+          en: 'A private visit to understand the property and set positioning and price.',
+          es: 'Una visita privada para entender la propiedad y definir posicionamiento y precio.'
+        })
+      }),
+      Object.freeze({
+        title: Object.freeze({ en: 'Presentation', es: 'Presentación' }),
+        description: Object.freeze({
+          en: 'Professional photography, narrative and a bilingual dossier prepared for serious buyers.',
+          es: 'Fotografía profesional, narrativa y un dossier bilingüe preparado para compradores serios.'
+        })
+      }),
+      Object.freeze({
+        title: Object.freeze({ en: 'Reach', es: 'Difusión' }),
+        description: Object.freeze({
+          en: 'Targeted distribution through the agent\'s own network and qualified channels.',
+          es: 'Distribución dirigida a través de la red propia del agente y canales cualificados.'
+        })
+      }),
+      Object.freeze({
+        title: Object.freeze({ en: 'Negotiation', es: 'Negociación' }),
+        description: Object.freeze({
+          en: 'Guided negotiation and legal accompaniment through to closing.',
+          es: 'Negociación acompañada y seguimiento legal hasta el cierre.'
+        })
+      })
+    ]),
+    faq: Object.freeze([
+      Object.freeze({
+        question: Object.freeze({ en: 'Do you work on an exclusive basis?', es: '¿Trabaja en exclusiva?' }),
+        answer: Object.freeze({
+          en: 'Yes. It is a mutual commitment — full attention to the property in exchange for the time an editorial presentation needs.',
+          es: 'Sí. Es un compromiso mutuo — dedicación total a la propiedad a cambio del tiempo que requiere una presentación editorial.'
+        })
+      }),
+      Object.freeze({
+        question: Object.freeze({ en: 'Do you work with international buyers?', es: '¿Trabaja con compradores internacionales?' }),
+        answer: Object.freeze({
+          en: 'Yes — a significant share of enquiries come from outside Spain.',
+          es: 'Sí — una parte importante de las consultas llega desde fuera de España.'
+        })
+      })
+    ]),
+    service_areas: Object.freeze([
+      Object.freeze({
+        name: Object.freeze({ en: 'Madrid', es: 'Madrid' }),
+        description: Object.freeze({
+          en: 'Salamanca, Chamberí and the central residential districts.',
+          es: 'Salamanca, Chamberí y los distritos residenciales centrales.'
+        })
+      })
+    ]),
     source: 'fixture'
   }),
   Object.freeze({
